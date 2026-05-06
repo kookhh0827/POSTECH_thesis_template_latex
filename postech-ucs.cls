@@ -111,9 +111,10 @@
     \else \fi }
 \AtEndDocument{}                             % \end{document}와 함께 실행
 
-%% 편집용지 설정 ver0.5
-\usepackage[paperheight=257mm,paperwidth=182mm,
-			left=25mm,right=25mm,top=35mm,bottom=30mm]{geometry}
+%% 편집용지 설정 ver0.7 (2026 지침: A4)
+\usepackage[paperheight=297mm,paperwidth=210mm,
+			left=25mm,right=25mm,top=35mm,bottom=30mm,
+			headheight=15mm,headsep=0mm,footskip=15mm]{geometry}
 %상단여백 20
 %하단여백 15
 %머리말 15
@@ -121,7 +122,7 @@
 %왼쪽 25
 %오른쪽 25
 %top=상단여백+머리말 bottom=하단여백+꼬리말
-%용지 사이즈 JIS B5 257X182 (국내 4X6 배판)
+%용지 사이즈 A4 210x297mm (2026 학위논문 작성 지침)
 
 %% ver0.2 : blank page 정의
 \usepackage{afterpage}
@@ -151,7 +152,7 @@
 %% pagestyle
 \def\ps@postech{\let\@mkboth\@gobbletwo
      \let\@oddhead\@empty
-     \def\@oddfoot{\reset@font\hfil--\ \thepage\ --
+     \def\@oddfoot{\reset@font\hfil-\ \thepage\ -
      \hfil}%
      \let\@evenhead\@empty\let\@evenfoot\@oddfoot
 }
@@ -251,8 +252,8 @@
     \ifthenelse{\equal{#1}{MS}}
 	    {\renewcommand{\@degreeCode}{\@degreePrefix #1}
     	\renewcommand{\@childDeptNameKor}{신소재공학과}
-    	\renewcommand{\@childDeptNameEng}{Department of Material Science and Engineering}
-        \renewcommand{\@programDeptNameEng}{Material Science and Engineering}
+    	\renewcommand{\@childDeptNameEng}{Department of Materials Science and Engineering}
+        \renewcommand{\@programDeptNameEng}{Materials Science and Engineering}
     	\renewcommand{\@degreeField}{#2}} {}
     \ifthenelse{\equal{#1}{ME}}
         {\renewcommand{\@degreeCode}{\@degreePrefix #1}
@@ -286,9 +287,9 @@
          \renewcommand{\@degreeField}{#2}} {}
      \ifthenelse{\equal{#1}{CITE}}
         {\renewcommand{\@degreeCode}{\@degreePrefix #1}
-         \renewcommand{\@childDeptNameKor}{창의IT융합공학과}
-         \renewcommand{\@childDeptNameEng}{Department of Creative IT Engineering}
-         \renewcommand{\@programDeptNameEng}{IT Engineering}
+         \renewcommand{\@childDeptNameKor}{IT융합공학과}
+         \renewcommand{\@childDeptNameEng}{Department of Convergence IT Engineering}
+         \renewcommand{\@programDeptNameEng}{Convergence IT Engineering}
          \renewcommand{\@degreeField}{#2}} {}
      \ifthenelse{\equal{#1}{EV}}
         {\renewcommand{\@degreeCode}{\@degreePrefix #1}
@@ -340,9 +341,88 @@
          \renewcommand{\@degreeField}{#2}} {}
     \ifthenelse{\equal{#1}{GIFT}}
         {\renewcommand{\@degreeCode}{\@degreePrefix #1}
-         \renewcommand{\@childDeptNameKor}{철강‧에너지소재대학원}
-         \renewcommand{\@childDeptNameEng}{Graduate Institute of Ferrous and Energy materials Technology}
-         \renewcommand{\@programDeptNameEng}{Ferrous and Energy materials Technology}
+         \renewcommand{\@childDeptNameKor}{친환경소재대학원}
+         \renewcommand{\@childDeptNameEng}{Graduate Institute of Ferrous \& Eco Materials Technology}
+         \renewcommand{\@programDeptNameEng}{Ferrous \& Eco Materials Technology}
+         \renewcommand{\@degreeField}{#2}} {}
+    %% 2026 지침 신규/개편 학과
+    \ifthenelse{\equal{#1}{ST}}
+        {\renewcommand{\@degreeCode}{\@degreePrefix #1}
+         \renewcommand{\@childDeptNameKor}{반도체대학원}
+         \renewcommand{\@childDeptNameEng}{Graduate School of Semiconductor Technology}
+         \renewcommand{\@programDeptNameEng}{Semiconductor Technology}
+         \renewcommand{\@degreeField}{#2}} {}
+    \ifthenelse{\equal{#1}{FT}}
+        {\renewcommand{\@degreeCode}{\@degreePrefix #1}
+         \renewcommand{\@parentDeptNameKor}{친환경소재대학원}
+         \renewcommand{\@parentDeptNameEng}{Graduate Institute of Ferrous \& Eco Materials Technology}
+         \renewcommand{\@childDeptNameKor}{친환경소재학과}
+         \renewcommand{\@childDeptNameEng}{Department of Ferrous \& Eco Materials Technology}
+         \renewcommand{\@programDeptNameEng}{Ferrous \& Eco Materials Technology}
+         \renewcommand{\@degreeField}{#2}} {}
+    \ifthenelse{\equal{#1}{BE}}
+        {\renewcommand{\@degreeCode}{\@degreePrefix #1}
+         \renewcommand{\@parentDeptNameKor}{친환경소재대학원}
+         \renewcommand{\@parentDeptNameEng}{Graduate Institute of Ferrous \& Eco Materials Technology}
+         \renewcommand{\@childDeptNameKor}{배터리공학과}
+         \renewcommand{\@childDeptNameEng}{Department of Battery Engineering}
+         \renewcommand{\@programDeptNameEng}{Battery Engineering}
+         \renewcommand{\@degreeField}{#2}} {}
+    \ifthenelse{\equal{#1}{MED}}
+        {\renewcommand{\@degreeCode}{\@degreePrefix #1}
+         \renewcommand{\@parentDeptNameKor}{융합대학원}
+         \renewcommand{\@parentDeptNameEng}{Graduate School of Convergence Science and Technology}
+         \renewcommand{\@childDeptNameKor}{의과학 전공}
+         \renewcommand{\@childDeptNameEng}{Major in Medical Science and Engineering}
+         \renewcommand{\@programDeptNameEng}{Medical Science and Engineering}
+         \renewcommand{\@degreeField}{#2}} {}
+    \ifthenelse{\equal{#1}{DST}}
+        {\renewcommand{\@degreeCode}{\@degreePrefix #1}
+         \renewcommand{\@parentDeptNameKor}{융합대학원}
+         \renewcommand{\@parentDeptNameEng}{Graduate School of Convergence Science and Technology}
+         \renewcommand{\@childDeptNameKor}{국방과학기술 전공}
+         \renewcommand{\@childDeptNameEng}{Major in Defense Science and Technology}
+         \renewcommand{\@programDeptNameEng}{Defense Science and Technology}
+         \renewcommand{\@degreeField}{#2}} {}
+    \ifthenelse{\equal{#1}{SDS}}
+        {\renewcommand{\@degreeCode}{\@degreePrefix #1}
+         \renewcommand{\@parentDeptNameKor}{융합대학원}
+         \renewcommand{\@parentDeptNameEng}{Graduate School of Convergence Science and Technology}
+         \renewcommand{\@childDeptNameKor}{소셜데이터사이언스 전공}
+         \renewcommand{\@childDeptNameEng}{Major in Social Data Science}
+         \renewcommand{\@programDeptNameEng}{Social Data Science}
+         \renewcommand{\@degreeField}{#2}} {}
+    \ifthenelse{\equal{#1}{QIS}}
+        {\renewcommand{\@degreeCode}{\@degreePrefix #1}
+         \renewcommand{\@parentDeptNameKor}{융합대학원}
+         \renewcommand{\@parentDeptNameEng}{Graduate School of Convergence Science and Technology}
+         \renewcommand{\@childDeptNameKor}{양자정보과학 전공}
+         \renewcommand{\@childDeptNameEng}{Major in Quantum Information Science}
+         \renewcommand{\@programDeptNameEng}{Quantum Information Science}
+         \renewcommand{\@degreeField}{#2}} {}
+    \ifthenelse{\equal{#1}{IDS}}
+        {\renewcommand{\@degreeCode}{\@degreePrefix #1}
+         \renewcommand{\@parentDeptNameKor}{융합대학원}
+         \renewcommand{\@parentDeptNameEng}{Graduate School of Convergence Science and Technology}
+         \renewcommand{\@childDeptNameKor}{산업데이터사이언스 전공}
+         \renewcommand{\@childDeptNameEng}{Major in Industrial Data Science}
+         \renewcommand{\@programDeptNameEng}{Industrial Data Science}
+         \renewcommand{\@degreeField}{#2}} {}
+    \ifthenelse{\equal{#1}{CFT}}
+        {\renewcommand{\@degreeCode}{\@degreePrefix #1}
+         \renewcommand{\@parentDeptNameKor}{융합대학원}
+         \renewcommand{\@parentDeptNameEng}{Graduate School of Convergence Science and Technology}
+         \renewcommand{\@childDeptNameKor}{푸드테크융합 전공}
+         \renewcommand{\@childDeptNameEng}{Major in Convergence Food Technology}
+         \renewcommand{\@programDeptNameEng}{Convergence Food Technology}
+         \renewcommand{\@degreeField}{#2}} {}
+    \ifthenelse{\equal{#1}{MSIP}}
+        {\renewcommand{\@degreeCode}{\@degreePrefix #1}
+         \renewcommand{\@parentDeptNameKor}{융합대학원}
+         \renewcommand{\@parentDeptNameEng}{Graduate School of Convergence Science and Technology}
+         \renewcommand{\@childDeptNameKor}{철강경영 전공}
+         \renewcommand{\@childDeptNameEng}{Major in Management in the Steel Industry}
+         \renewcommand{\@programDeptNameEng}{Management in the Steel Industry}
          \renewcommand{\@degreeField}{#2}} {}
 
     \renewcommand{\@affFullNameKor}{%               % 학과/전공 한글이름
@@ -609,7 +689,7 @@
      %\pagenumbering{Roman}
 %\pagenumbering{arabic}              % 페이지 아라비아 숫자 포맷
 \let\linebreak\@tempbreak                    % \linebreak 명령 복원
-%    \afterpage{\blankpage}                      % % ver0.2 : 초록 이후 백색별지
+    \afterpage{\blankpage}                      % 2026 지침: 초록 다음 백색별지
 }
 
 %%
@@ -694,7 +774,10 @@
 %%
 %% 이력서 내부 요소 생성
 %%
-    \newenvironment{personaldata}{%            % 개인정보
+    %% 2026 지침 참조 12: 개인정보 보호를 위해 Name, Education, Experience,
+    %% Affiliation 외의 항목 작성 금지. dateofbirth/birthplace/domicile/
+    %% address/email 등 추가 필드는 의도적으로 정의하지 않음.
+    \newenvironment{personaldata}{%            % 개인정보 (이름만)
         \thispagestyle{empty}               % ver0.2 : 쪽 번호없음
         \begin{list}{}{%
             \setlength{\labelwidth}{70pt}
@@ -709,50 +792,7 @@
                 \def\@arg{[Name\hfill]}
             \fi
             \expandafter\item\@arg ##1}
-        \newcommand{\dateofbirth}[3]{%        % 생년월일
-            \ifx\@ccvlang\@korean
-                \def\@arg{[생\hfill년\hfill월\hfill일]}
-                \expandafter\item\@arg ##1년 ##2월 ##3일
-            \else
-                \def\@arg{[Date of Birth\hfill]}
-                \expandafter\item\@arg \@dateUSenglish{##1}{##2}{##3}
-            \fi }
-        \newcommand{\birthplace}[1]{%         % 출생지
-            \ifx\@ccvlang\@korean
-                \def\@arg{[출\hfill생\hfill지]}
-            \else
-               \def\@arg{[Birthplace\hfill]}
-           \fi
-           \expandafter\item\@arg ##1}
-        \newcommand{\domicile}[1]{%           % 본적지
-            \ifx\@ccvlang\@korean
-                \def\@arg{[본\hfill적\hfill지]}
-            \else
-                \def\@arg{[Domicile\hfill]}
-            \fi
-            \expandafter\item\@arg ##1}
-        \newcommand{\address}[1]{%            % 주소지
-            \ifx\@ccvlang\@korean
-                \def\@arg{[주\hfill소]}
-            \else
-                \def\@arg{[Address\hfill]}
-            \fi
-            \expandafter\item\@arg ##1}
-        \newcommand{\email}[1]{%              % E-mail
-            \ifx\@ccvlang\@korean
-                \def\@arg{[E-mail\hfill주\hfill소]}
-            \else
-                \def\@arg{[E-mail\hfill]}
-            \fi
-          \expandafter\item\@arg ##1}
-        %이력서에 집어넣을 추가 필드가 필요하면 위를 참고하여 만들어 쓸 것.
-        %\newcommand{(필드명령)}[1]{%
-        %   \ifx\@ccvlang\@korean
-        %       \def\@arg{[(한글필드명)]}
-        %   \else
-        %       \def\@arg{[(영문필드명)]}
-        %   \fi
-        %   \expandafter\item\@arg ##1}
+        %% 2026 지침 참조 12에 따라 추가 개인정보 필드는 추가하지 마십시오.
     }{\end{list}}
 
     \newenvironment{education}{%               % 학력
