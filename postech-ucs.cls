@@ -620,17 +620,17 @@
         \begin{flushright}
 		\Large
 		\@refereeMonth. \@refereeDay. \@refereeYear \\ \vspace{2\baselineskip}
-	\begin{tabular}{r c r}   % 심사위원명단
+	\begin{tabular}{r@{\quad}c@{\quad}r}   % 심사위원명단 (각 컬럼 사이 \quad 간격)
                 \@ifundefined{@refereeChief}{}
-                    {\\[4pt] Committee Chair & \ \makebox[\width]{\@refereeChief}  & \ (Seal)}
+                    {Committee Chair & \@refereeChief & (Seal)\\[4pt]}
                 \@ifundefined{@refereeSecond}{}
-                    {\\[4pt] Member   & \ \makebox[\width]{\@refereeSecond} & \ (Seal)}
+                    {Member & \@refereeSecond & (Seal)\\[4pt]}
                 \@ifundefined{@refereeThird}{}
-                    {\\[4pt] Member   & \ \makebox[\width]{\@refereeThird}  & \ (Seal)}
+                    {Member & \@refereeThird & (Seal)\\[4pt]}
                 \@ifundefined{@refereeFourth}{}
-                    {\\[4pt] Member   & \ \makebox[\width]{\@refereeFourth} & \ (Seal)}
+                    {Member & \@refereeFourth & (Seal)\\[4pt]}
                 \@ifundefined{@refereeFifth}{}
-                    {\\[4pt] Member   & \ \makebox[\width]{\@refereeFifth} & \ (Seal)}
+                    {Member & \@refereeFifth & (Seal)\\[4pt]}
             \end{tabular}
         \end{flushright}
     \end{minipage}
