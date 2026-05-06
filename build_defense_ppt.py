@@ -1,13 +1,21 @@
 """
-Master's thesis defense slides
-Hyunho Kook -- Stabilizing Direct Training of Spiking Neural Networks
-22 slides, ~20 min defense
+Master's thesis defense slides — Option A (18 slides, ~20 min)
+Hyunho Kook -- Stabilizing Direct Training of SNNs
+
+Design follows reference deck MP-Init_TrSG_Defense.pptx:
+  - Navy / teal / amber / coral palette
+  - Serif title (Cambria), sans body (Calibri)
+  - Decorative circles on cover/conclusion
+  - Section label · slide title · content
+  - Audience: advisor + ML/CS people who don't know SNN
 """
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+from pptx.oxml.ns import qn
+from copy import deepcopy
 import os
 
 ASSETS = "ppt_assets"
@@ -17,939 +25,1107 @@ prs = Presentation()
 prs.slide_width = Inches(13.333)
 prs.slide_height = Inches(7.5)
 
-# Color palette
-NAVY    = RGBColor(0x14, 0x36, 0x5C)   # primary dark
-RED     = RGBColor(0xC0, 0x39, 0x2B)   # accent
-GRAY    = RGBColor(0x55, 0x55, 0x55)
-LIGHT   = RGBColor(0xF4, 0xF4, 0xF4)
-GREEN   = RGBColor(0x2E, 0x7D, 0x32)
-ORANGE  = RGBColor(0xE6, 0x77, 0x22)
+# ─── Palette (from reference) ──────────────────────────────────────
+NAVY     = RGBColor(0x0F, 0x25, 0x40)
+NAVY_DK  = RGBColor(0x09, 0x1A, 0x30)
+TEAL     = RGBColor(0x1D, 0x7E, 0x7E)
+TEAL_LT  = RGBColor(0xE5, 0xF5, 0xF0)
+AMBER    = RGBColor(0xE0, 0xB8, 0x5F)
+AMBER_LT = RGBColor(0xFA, 0xEE, 0xCB)
+CORAL    = RGBColor(0xE5, 0x69, 0x45)
+CORAL_LT = RGBColor(0xFA, 0xEE, 0xE0)
+INK      = RGBColor(0x1A, 0x1A, 0x1A)
+GRAY     = RGBColor(0x7A, 0x7A, 0x7A)
+GRAY_LT  = RGBColor(0xE5, 0xE5, 0xE0)
+WHITE    = RGBColor(0xFF, 0xFF, 0xFF)
+CREAM    = RGBColor(0xF8, 0xF7, 0xF2)
 
+SERIF = "Cambria"
+SANS  = "Calibri"
 
-def add_blank_slide():
-    return prs.slides.add_slide(prs.slide_layouts[6])  # 6 = blank
+# ─── Helpers ───────────────────────────────────────────────────────
+def add_blank():
+    return prs.slides.add_slide(prs.slide_layouts[6])
 
+def fill_bg(slide, color):
+    bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+        0, 0, prs.slide_width, prs.slide_height)
+    bg.fill.solid(); bg.fill.fore_color.rgb = color
+    bg.line.fill.background()
+    bg.shadow.inherit = False
+    # send to back
+    spTree = slide.shapes._spTree
+    spTree.remove(bg._element); spTree.insert(2, bg._element)
+    return bg
 
-def add_title_bar(slide, text, sub=None):
-    # Top accent bar
-    bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
-                                  Inches(0), Inches(0),
-                                  prs.slide_width, Inches(0.07))
-    bar.fill.solid(); bar.fill.fore_color.rgb = NAVY
-    bar.line.fill.background()
+def add_circle(slide, x, y, d, color):
+    """Decorative circle for title/cover slides."""
+    c = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(x), Inches(y),
+                                Inches(d), Inches(d))
+    c.fill.solid(); c.fill.fore_color.rgb = color
+    c.line.fill.background()
+    return c
 
-    # Title text
-    tx = slide.shapes.add_textbox(Inches(0.5), Inches(0.22),
-                                   Inches(12.3), Inches(0.7))
-    tf = tx.text_frame
-    tf.word_wrap = True
-    p = tf.paragraphs[0]
-    p.text = text
-    p.font.size = Pt(28); p.font.bold = True; p.font.color.rgb = NAVY
-
-    if sub:
-        sx = slide.shapes.add_textbox(Inches(0.5), Inches(0.85),
-                                       Inches(12.3), Inches(0.4))
-        sp = sx.text_frame.paragraphs[0]
-        sp.text = sub
-        sp.font.size = Pt(14); sp.font.color.rgb = GRAY
-
-
-def add_text(slide, x, y, w, h, text, *,
-             size=18, bold=False, color=None, align=None):
+def text(slide, x, y, w, h, txt, *, font=SANS, size=18, bold=False, italic=False,
+         color=INK, align=None, anchor=None, spacing=None):
     tx = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
     tf = tx.text_frame
     tf.word_wrap = True
+    tf.margin_left = tf.margin_right = Inches(0)
+    tf.margin_top = tf.margin_bottom = Inches(0)
     p = tf.paragraphs[0]
-    p.text = text
+    p.text = txt
+    p.font.name = font
     p.font.size = Pt(size)
     p.font.bold = bold
-    if color: p.font.color.rgb = color
+    p.font.italic = italic
+    p.font.color.rgb = color
     if align: p.alignment = align
+    if anchor: tf.vertical_anchor = anchor
+    if spacing:
+        for r in p.runs:
+            rPr = r._r.get_or_add_rPr()
+            rPr.set('spc', str(spacing))
     return tx
 
+def section_label(slide, txt):
+    """Top section label, ALL CAPS letter-spaced teal."""
+    text(slide, 0.5, 0.4, 12, 0.3, txt.upper(),
+         font=SANS, size=11, bold=True, color=TEAL, spacing=300)
 
-def add_bullets(slide, x, y, w, h, items, *, size=18, color=None):
+def slide_title(slide, txt, sub=None):
+    text(slide, 0.5, 0.85, 12.3, 0.85, txt,
+         font=SERIF, size=30, bold=True, color=NAVY)
+    if sub:
+        text(slide, 0.5, 1.75, 12.3, 0.4, sub,
+             font=SANS, size=14, italic=True, color=GRAY)
+
+def page_footer(slide, n, total=18):
+    text(slide, 0.5, 7.10, 6, 0.3, "Defense — Hyunho Kook",
+         font=SANS, size=10, color=GRAY)
+    text(slide, 7.0, 7.10, 5.8, 0.3, f"{n} / {total}",
+         font=SANS, size=10, color=GRAY, align=PP_ALIGN.RIGHT)
+
+def amber_underline(slide, x, y, w=0.7):
+    bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+        Inches(x), Inches(y), Inches(w), Inches(0.04))
+    bar.fill.solid(); bar.fill.fore_color.rgb = AMBER
+    bar.line.fill.background()
+    return bar
+
+def callout_box(slide, x, y, w, h, *, fill=NAVY, accent=AMBER,
+                title=None, body=None, title_size=14, body_size=12,
+                title_color=AMBER, body_color=WHITE):
+    # vertical accent line
+    bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+        Inches(x), Inches(y), Inches(0.06), Inches(h))
+    bar.fill.solid(); bar.fill.fore_color.rgb = accent
+    bar.line.fill.background()
+    # background box
+    box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+        Inches(x + 0.06), Inches(y), Inches(w - 0.06), Inches(h))
+    box.fill.solid(); box.fill.fore_color.rgb = fill
+    box.line.fill.background()
+    # text
+    if title or body:
+        tx = slide.shapes.add_textbox(
+            Inches(x + 0.35), Inches(y + 0.15),
+            Inches(w - 0.5), Inches(h - 0.3))
+        tf = tx.text_frame; tf.word_wrap = True
+        if title:
+            p = tf.paragraphs[0]
+            p.text = title
+            p.font.name = SANS; p.font.size = Pt(title_size); p.font.bold = True
+            p.font.color.rgb = title_color
+        if body:
+            p2 = tf.add_paragraph() if title else tf.paragraphs[0]
+            p2.text = body
+            p2.font.name = SANS; p2.font.size = Pt(body_size)
+            p2.font.color.rgb = body_color
+            p2.space_before = Pt(6) if title else Pt(0)
+
+def card(slide, x, y, w, h, *, fill=WHITE, border=TEAL, border_w=1.5):
+    rect = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+        Inches(x), Inches(y), Inches(w), Inches(h))
+    rect.fill.solid(); rect.fill.fore_color.rgb = fill
+    rect.line.color.rgb = border; rect.line.width = Pt(border_w)
+    return rect
+
+def bullets(slide, x, y, w, h, items, *, size=14, color=INK,
+            bullet="•", spacing=6):
     tx = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
-    tf = tx.text_frame
-    tf.word_wrap = True
+    tf = tx.text_frame; tf.word_wrap = True
     for i, item in enumerate(items):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-        if isinstance(item, tuple):
-            text, lvl = item
-        else:
-            text, lvl = item, 0
-        p.text = ('• ' if lvl == 0 else '   – ') + text
-        p.font.size = Pt(size)
-        p.level = lvl
-        if color: p.font.color.rgb = color
-    return tx
+        p.text = f"{bullet}  {item}"
+        p.font.name = SANS; p.font.size = Pt(size); p.font.color.rgb = color
+        if i > 0: p.space_before = Pt(spacing)
 
 
-def add_image(slide, path, x, y, w=None, h=None):
+def img(slide, path, x, y, w=None, h=None):
     if not os.path.exists(path):
         return None
-    if w is not None and h is not None:
-        return slide.shapes.add_picture(path, Inches(x), Inches(y),
-                                         width=Inches(w), height=Inches(h))
-    elif w is not None:
-        return slide.shapes.add_picture(path, Inches(x), Inches(y), width=Inches(w))
-    elif h is not None:
-        return slide.shapes.add_picture(path, Inches(x), Inches(y), height=Inches(h))
-    else:
-        return slide.shapes.add_picture(path, Inches(x), Inches(y))
-
-
-def add_footer(slide, page_num, total=22):
-    tx = slide.shapes.add_textbox(Inches(11.5), Inches(7.05),
-                                   Inches(1.6), Inches(0.3))
-    p = tx.text_frame.paragraphs[0]
-    p.text = f"{page_num} / {total}"
-    p.font.size = Pt(10); p.font.color.rgb = GRAY
-    p.alignment = PP_ALIGN.RIGHT
-
-
-def add_box(slide, x, y, w, h, text, *,
-            fill=None, outline=None, font_size=16, font_color=None, bold=True):
-    shp = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
-                                  Inches(x), Inches(y), Inches(w), Inches(h))
-    if fill:
-        shp.fill.solid(); shp.fill.fore_color.rgb = fill
-    else:
-        shp.fill.background()
-    if outline:
-        shp.line.color.rgb = outline; shp.line.width = Pt(1.5)
-    else:
-        shp.line.fill.background()
-    tf = shp.text_frame
-    tf.word_wrap = True
-    tf.margin_left = tf.margin_right = Inches(0.1)
-    tf.margin_top = tf.margin_bottom = Inches(0.05)
-    p = tf.paragraphs[0]
-    p.text = text
-    p.font.size = Pt(font_size); p.font.bold = bold
-    p.font.color.rgb = font_color or NAVY
-    p.alignment = PP_ALIGN.CENTER
-    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-    return shp
-
-
-# ─────────────────────────────────────────────────────────────────
-# S1. Title
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-# Background bar at bottom
-bar = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
-                          Inches(0), Inches(7.0),
-                          prs.slide_width, Inches(0.5))
-bar.fill.solid(); bar.fill.fore_color.rgb = NAVY; bar.line.fill.background()
-
-# Top accent line
-acc = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
-                          Inches(0), Inches(0),
-                          prs.slide_width, Inches(0.15))
-acc.fill.solid(); acc.fill.fore_color.rgb = NAVY; acc.line.fill.background()
-
-add_text(s, 0.7, 1.5, 12, 1.0,
-         "Master's Thesis Defense", size=20, color=GRAY)
-
-add_text(s, 0.7, 2.1, 12, 1.6,
-         "Enhancing Stability in Direct Training of",
-         size=36, bold=True, color=NAVY)
-add_text(s, 0.7, 2.8, 12, 1.6,
-         "Spiking Neural Networks",
-         size=36, bold=True, color=NAVY)
-add_text(s, 0.7, 3.7, 12, 0.8,
-         "Membrane Potential Initialization &",
-         size=24, color=RED)
-add_text(s, 0.7, 4.2, 12, 0.8,
-         "Threshold-Robust Surrogate Gradient",
-         size=24, color=RED)
-
-add_text(s, 0.7, 5.5, 12, 0.4,
-         "Hyunho Kook (국 현 호)", size=20, bold=True, color=NAVY)
-add_text(s, 0.7, 5.95, 12, 0.4,
-         "Department of Computer Science and Engineering, POSTECH",
-         size=14, color=GRAY)
-add_text(s, 0.7, 6.3, 12, 0.4,
-         "Advisor: Prof. Eunhyeok Park", size=14, color=GRAY)
-
-# Date placeholder bottom-right
-tx = s.shapes.add_textbox(Inches(11), Inches(7.05), Inches(2.2), Inches(0.4))
-p = tx.text_frame.paragraphs[0]
-p.text = "January 2026"
-p.font.size = Pt(12); p.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
-p.alignment = PP_ALIGN.RIGHT
-
-
-# ─────────────────────────────────────────────────────────────────
-# S2. Why SNNs?
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Why Spiking Neural Networks?",
-              "Energy-efficient AI through event-driven computation")
-
-# Left column: motivation
-add_text(s, 0.5, 1.5, 6, 0.5,
-         "The energy problem", size=20, bold=True, color=NAVY)
-add_bullets(s, 0.5, 2.0, 6.2, 3,
-            ["Modern DNNs scale to megawatt power budgets",
-             "Edge inference faces tight energy constraints",
-             "SNNs: spike-based, event-driven  →  efficient on neuromorphic HW"],
-            size=16)
-
-# Right column: status
-add_text(s, 7.0, 1.5, 6, 0.5,
-         "Current state of SNN training", size=20, bold=True, color=NAVY)
-add_bullets(s, 7.0, 2.0, 6, 3,
-            ["Direct training narrows the accuracy gap",
-             "Yet two persistent instabilities remain"],
-            size=16)
-
-# Bottom: two boxes highlighting the two problems
-add_box(s, 0.5, 5.0, 6, 1.6,
-        "① Temporal Covariate Shift\n(membrane potential drift across timesteps)",
-        outline=RED, font_size=18, font_color=RED)
-add_box(s, 7.0, 5.0, 6, 1.6,
-        "② Gradient Pathology\n(when V_thr is trainable, gradients explode/vanish)",
-        outline=RED, font_size=18, font_color=RED)
-
-add_text(s, 0.5, 6.7, 13, 0.4,
-         "This thesis: precise diagnoses + minimal interventions for both.",
-         size=16, bold=True, color=GRAY, align=PP_ALIGN.CENTER)
-add_footer(s, 2)
-
-
-# ─────────────────────────────────────────────────────────────────
-# S3. LIF Neuron
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "LIF Neuron in 30 Seconds",
-              "The discrete-time leaky integrate-and-fire model")
-
-# Three equations on the left
-add_text(s, 0.6, 1.4, 6.4, 0.4,
-         "Three updates per timestep", size=18, bold=True, color=NAVY)
-
-# Equation boxes
-eq_y = 2.0
-add_box(s, 0.6, eq_y,        6.4, 0.85,
-        "Integrate:    M[t] = (1 − 1/τ)·U[t−1]  +  (1/τ)·I_in[t]",
-        outline=NAVY, font_size=14, bold=False, font_color=NAVY)
-add_box(s, 0.6, eq_y + 1.0,  6.4, 0.85,
-        "Fire:    S[t] = H( M[t] − V_thr )       (1 if exceeds, else 0)",
-        outline=NAVY, font_size=14, bold=False, font_color=NAVY)
-add_box(s, 0.6, eq_y + 2.0,  6.4, 0.85,
-        "Reset:   U[t] = M[t] − V_thr · S[t]    (soft reset)",
-        outline=NAVY, font_size=14, bold=False, font_color=NAVY)
-
-# Right side: cartoon description
-add_text(s, 7.4, 1.4, 5.5, 0.4,
-         "Intuition", size=18, bold=True, color=NAVY)
-add_bullets(s, 7.4, 1.9, 5.5, 4.5,
-            ["M[t]: membrane potential — the running 'sum'",
-             "V_thr: firing threshold",
-             "When M[t] crosses V_thr, the neuron fires (S=1) and resets",
-             "Two key learnable parameters: V_thr, τ",
-             "All temporal dynamics happen here"],
-            size=15)
-
-add_text(s, 0.6, 6.5, 12, 0.5,
-         "Everything in this thesis revolves around the membrane potential M[t] and threshold V_thr.",
-         size=14, bold=True, color=RED, align=PP_ALIGN.CENTER)
-add_footer(s, 3)
-
-
-# ─────────────────────────────────────────────────────────────────
-# S4. Direct Training & Surrogate Gradient
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Direct Training & Surrogate Gradient",
-              "Learning through the discontinuous spike function")
-
-add_text(s, 0.6, 1.4, 12, 0.5,
-         "Heaviside spike → not differentiable", size=18, bold=True, color=NAVY)
-
-# Left: H(x) explanation
-add_box(s, 0.6, 2.1, 5.8, 1.2,
-        "S = H(M − V_thr)\nH'(x) = δ(x)  (Dirac delta)\nGradient blocked",
-        fill=LIGHT, outline=GRAY, font_size=14, font_color=GRAY)
-
-# Right: surrogate
-add_box(s, 6.8, 2.1, 5.8, 1.2,
-        "Replace H with smooth surrogate f(x)\nf'(x) ≈ H'(x) near 0\nGradient flows",
-        fill=LIGHT, outline=NAVY, font_size=14, font_color=NAVY)
-
-# Common surrogate shapes
-add_text(s, 0.6, 3.6, 12, 0.4,
-         "Common surrogate-derivative shapes", size=16, bold=True, color=NAVY)
-
-add_box(s, 0.6, 4.1, 3.0, 0.8,
-        "Rectangular\nf' = 1/γ · 1{|x|<γ/2}",
-        outline=NAVY, font_size=12, font_color=NAVY)
-add_box(s, 3.8, 4.1, 3.0, 0.8,
-        "Triangular\nf' = max(0, γ−|x|)/γ²",
-        outline=NAVY, font_size=12, font_color=NAVY)
-add_box(s, 7.0, 4.1, 3.0, 0.8,
-        "Arctan\nf' = γ / (2(1+(πγx/2)²))",
-        outline=NAVY, font_size=12, font_color=NAVY)
-add_box(s, 10.2, 4.1, 3.0, 0.8,
-        "Sigmoid\nf' = (1/γ)·σ(x/γ)(1−σ)",
-        outline=NAVY, font_size=12, font_color=NAVY)
-
-# Foreshadow
-add_text(s, 0.6, 5.6, 13, 1.5,
-         "→ The choice of where x is centered (M − V_thr  vs.  M/V_thr − 1)\n"
-         "    looks innocent, but becomes critical once V_thr is learnable.\n"
-         "    (The other half of this talk.)",
-         size=16, color=RED, bold=True)
-add_footer(s, 4)
-
-
-# ─────────────────────────────────────────────────────────────────
-# S5. TCS — what's the problem
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Temporal Covariate Shift (TCS)",
-              "Per-timestep activation distributions drift apart")
-
-add_image(s, ASSETS + "/density_plot_membrane_potential_tdbn.png",
-          0.5, 1.4, w=6.5)
-
-add_text(s, 7.5, 1.4, 5.5, 0.5,
-         "Symptom", size=18, bold=True, color=NAVY)
-add_bullets(s, 7.5, 1.9, 5.5, 4,
-            ["Membrane potential M[t] drifts across timesteps",
-             "BN statistics estimated at one timestep no longer fit at another",
-             "Spike outputs swing → accuracy degrades"],
-            size=14)
-
-add_text(s, 7.5, 4.5, 5.5, 0.5,
-         "Existing fixes are partial", size=18, bold=True, color=RED)
-add_bullets(s, 7.5, 5.0, 5.5, 1.5,
-            ["TEBN, TAB: per-timestep BN parameters",
-             "More parameters, more compute",
-             "And — they don't actually fix M[t]"],
-            size=14, color=RED)
-
-add_text(s, 0.5, 6.6, 12.5, 0.4,
-         "tdBN (no TCS handling): each timestep curve sits at a different center",
-         size=12, color=GRAY, align=PP_ALIGN.CENTER)
-add_footer(s, 5)
-
-
-# ─────────────────────────────────────────────────────────────────
-# S6. Trainable V_thr
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Why is Trainable V_thr Hard?",
-              "The threshold sits in the surrogate's argument — small changes warp the gradient")
-
-add_bullets(s, 0.6, 1.5, 12.2, 1.5,
-            ["V_thr controls when a neuron fires — fundamental to LIF behavior",
-             "Modern training methods (PLIF, LTMD, DIET-SNN) make it trainable",
-             "But: existing surrogate gradients are highly sensitive to V_thr scale"],
-            size=16)
-
-# Visual: two scenarios
-add_text(s, 0.6, 3.4, 12.2, 0.5,
-         "What can go wrong (preview of contribution 2)", size=18, bold=True, color=RED)
-
-add_box(s, 0.6, 4.0, 6.0, 2.0,
-        "V_thr too small\n→ gradient floods the layer\nor explodes through 1/V_thr",
-        fill=LIGHT, outline=RED, font_size=16, font_color=RED)
-add_box(s, 6.8, 4.0, 6.0, 2.0,
-        "V_thr too large\n→ gradient starves\nor vanishes through 1/V_thr",
-        fill=LIGHT, outline=RED, font_size=16, font_color=RED)
-
-add_text(s, 0.6, 6.4, 12.2, 0.5,
-         "→ Learning V_thr blindly is dangerous. We diagnose & fix in Part B.",
-         size=16, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
-add_footer(s, 6)
-
-
-# ─────────────────────────────────────────────────────────────────
-# S7. Two Open Problems
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Two Open Problems",
-              "Unsolved by the existing literature")
-
-# Big numbered boxes
-add_box(s, 0.6, 1.7, 12.2, 2.3,
-        "①  TCS in the membrane potential is not addressed by existing normalization.\n\n"
-        "    TEBN / TAB stabilize activations but the underlying M[t] keeps drifting.",
-        fill=LIGHT, outline=NAVY, font_size=18, font_color=NAVY)
-
-add_box(s, 0.6, 4.3, 12.2, 2.3,
-        "②  Gradient pathology under trainable V_thr has never been explicitly analyzed.\n\n"
-        "    Prior surrogate-gradient methods are not designed to be threshold-robust.",
-        fill=LIGHT, outline=RED, font_size=18, font_color=RED)
-
-add_text(s, 0.6, 6.85, 12.2, 0.4,
-         "Both problems persist despite years of SNN training research.",
-         size=14, color=GRAY, align=PP_ALIGN.CENTER)
-add_footer(s, 7)
-
-
-# ─────────────────────────────────────────────────────────────────
-# S8. Contributions
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Contributions",
-              "Two methods, one principled story")
-
-# Left: MP-Init contribution
-add_box(s, 0.5, 1.5, 6.2, 4.8,
-        "MP-Init",
-        fill=NAVY, outline=NAVY, font_size=22, font_color=RGBColor(0xFF,0xFF,0xFF))
-add_text(s, 0.5, 2.4, 6.2, 0.4,
-         "Membrane Potential Initialization",
-         size=14, color=GRAY, align=PP_ALIGN.CENTER)
-add_bullets(s, 0.7, 3.0, 5.8, 3.2,
-            ["Trace TCS to its root: membrane potential",
-             "Theorem: M[t] converges geometrically to a unique stationary π (Doeblin)",
-             "Algorithm: per-layer running mean of U[T] aligns initial state with π",
-             "Eliminates TCS — at zero parameter overhead",
-             "Inference: standard LIF, fully HW-compatible"],
-            size=13)
-
-# Right: TrSG contribution
-add_box(s, 6.9, 1.5, 6.2, 4.8,
-        "TrSG",
-        fill=RED, outline=RED, font_size=22, font_color=RGBColor(0xFF,0xFF,0xFF))
-add_text(s, 6.9, 2.4, 6.2, 0.4,
-         "Threshold-Robust Surrogate Gradient",
-         size=14, color=GRAY, align=PP_ALIGN.CENTER)
-add_bullets(s, 7.1, 3.0, 5.8, 3.2,
-            ["Classify existing SGs into AS-SG / RS-SG families",
-             "Show how each fails when V_thr changes scale",
-             "Fix: forward pass O = V_thr · S — cancels 1/V_thr factor exactly",
-             "Gradient magnitude becomes threshold-invariant",
-             "Inference: weight-rescaling restores binary spikes"],
-            size=13)
-
-add_text(s, 0.5, 6.55, 12.5, 0.5,
-         "Validation:  SOTA on CIFAR-10/100, ImageNet, DVS-CIFAR10  +  generalizes to Transformer SNNs and detection.",
-         size=14, bold=True, color=GREEN, align=PP_ALIGN.CENTER)
-add_footer(s, 8)
-
-
-# ─────────────────────────────────────────────────────────────────
-# Section divider — Part A: MP-Init
-# (NOT counted as a numbered slide; we'll keep S9-S13 for Part A)
-# Actually we keep numbering tight, the user said 22 slides total.
-# So we put the section header tag inside each Part A slide title.
-# Skip a divider slide. Continue with S9.
-# ─────────────────────────────────────────────────────────────────
-
-
-# ─────────────────────────────────────────────────────────────────
-# S9. Empirical Evidence
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Part A · MP-Init  ▸  Empirical Evidence",
-              "The membrane potential drifts — even under TCS-aware normalization")
-
-# 4-panel composite
-add_image(s, ASSETS + "/density_plot_membrane_potential_tdbn.png", 0.4, 1.4, w=3.1)
-add_text(s, 0.4, 4.1, 3.1, 0.3, "(a) tdBN", size=12, color=GRAY, align=PP_ALIGN.CENTER)
-add_image(s, ASSETS + "/density_plot_membrane_potential_tebn.png", 3.7, 1.4, w=3.1)
-add_text(s, 3.7, 4.1, 3.1, 0.3, "(b) TEBN", size=12, color=GRAY, align=PP_ALIGN.CENTER)
-add_image(s, ASSETS + "/density_plot_membrane_potential_tab.png", 7.0, 1.4, w=3.1)
-add_text(s, 7.0, 4.1, 3.1, 0.3, "(c) TAB", size=12, color=GRAY, align=PP_ALIGN.CENTER)
-add_image(s, ASSETS + "/density_plot_membrane_potential_mpinit.png", 10.3, 1.4, w=3.1)
-add_text(s, 10.3, 4.1, 3.1, 0.3, "(d) MP-Init (ours)", size=12, color=GREEN, align=PP_ALIGN.CENTER, bold=True)
-
-add_text(s, 0.5, 4.7, 12.5, 0.5,
-         "Membrane potential distributions across timesteps (ResNet-19, CIFAR-100)",
-         size=14, color=GRAY, align=PP_ALIGN.CENTER)
-
-add_box(s, 0.5, 5.4, 12.3, 1.5,
-        "Existing TCS-aware normalizations (TEBN, TAB) align activations\nbut leave M[t] drifting.   MP-Init is the first to align M[t] itself.",
-        fill=LIGHT, outline=RED, font_size=16, font_color=RED)
-add_footer(s, 9)
-
-
-# ─────────────────────────────────────────────────────────────────
-# S10. Markov Chain View
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Part A · MP-Init  ▸  Markov-Chain View",
-              "Why does M[t] always drift toward a single distribution?")
-
-add_text(s, 0.5, 1.4, 12.5, 0.5,
-         "Recurrence is a Markov chain", size=18, bold=True, color=NAVY)
-add_box(s, 0.5, 1.9, 12.5, 0.7,
-        "U[t+1]  =  f( U[t], I_in[t+1] )       —  i.i.d. inputs ⇒ Markov chain",
-        outline=NAVY, font_size=14, font_color=NAVY, bold=False)
-
-add_text(s, 0.5, 2.8, 12.5, 0.5,
-         "Theorem (informal)", size=18, bold=True, color=NAVY)
-add_box(s, 0.5, 3.3, 12.5, 1.4,
-        "Under (i.i.d. inputs) + (bounded U[t]), the chain satisfies\n"
-        "Doeblin's minorization condition. Hence it has a unique stationary distribution π,\n"
-        "and    ‖ Pⁿ(x, ·) − π(·) ‖_TV  ≤  C · (1 − ε)ⁿ      (geometric convergence)",
-        fill=LIGHT, outline=NAVY, font_size=14, font_color=NAVY, bold=False)
-
-add_text(s, 0.5, 4.95, 12.5, 0.5,
-         "Implications", size=18, bold=True, color=RED)
-add_bullets(s, 0.5, 5.45, 12.5, 1.7,
-            ["Initial state ≠ π  ⇒  TCS is mathematically inevitable",
-             "Standard practice: U[0]=0 — but π(0) is generally far from zero",
-             "→  Fix the initial state, not the normalization layer"],
-            size=14)
-add_footer(s, 10)
-
-
-# ─────────────────────────────────────────────────────────────────
-# S11. The Idea
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Part A · MP-Init  ▸  The Idea",
-              "A per-layer constant suffices — and the right constant is E[π]")
-
-# Top: lemma
-add_text(s, 0.5, 1.4, 12.5, 0.5,
-         "Lemma: best constant is the mean", size=18, bold=True, color=NAVY)
-add_box(s, 0.5, 1.9, 12.5, 0.7,
-        "argmin_c  E[ (π − c)² ]   =   E[π]",
-        fill=LIGHT, outline=NAVY, font_size=14, font_color=NAVY, bold=False)
-
-# Middle: how to estimate E[π]
-add_text(s, 0.5, 2.85, 12.5, 0.5,
-         "How to estimate E[π] without knowing π", size=18, bold=True, color=NAVY)
-add_bullets(s, 0.5, 3.35, 12.5, 1.5,
-            ["By the theorem, U[T] is the timestep closest to π",
-             "Maintain a running mean μ ← β·μ + (1−β)·E[U[T]]   over training",
-             "Use μ as the initial state at every batch"],
-            size=14)
-
-# Bottom: visual story
-add_box(s, 0.5, 5.0, 12.5, 1.7,
-        "Story:    U[0] = 0   ───drift───▸   π        becomes        U[0] = E[π]   ───stable───▸   π",
-        fill=LIGHT, outline=GREEN, font_size=15, font_color=GREEN)
-
-add_text(s, 0.5, 6.85, 12.5, 0.4,
-         "Cost: one running-mean buffer per layer.",
-         size=12, color=GRAY, align=PP_ALIGN.CENTER)
-add_footer(s, 11)
-
-
-# ─────────────────────────────────────────────────────────────────
-# S12. MP-Init Algorithm
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Part A · MP-Init  ▸  Algorithm",
-              "Six lines of pseudocode, training-only update")
-
-# Pseudocode box
+    kw = {}
+    if w is not None: kw["width"] = Inches(w)
+    if h is not None: kw["height"] = Inches(h)
+    return slide.shapes.add_picture(path, Inches(x), Inches(y), **kw)
+
+
+# ════════════════════════════════════════════════════════════════════
+# S1 — Title
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+fill_bg(s, NAVY)
+# Decorative circles
+add_circle(s, -2.0, -2.0, 5.5, NAVY_DK)
+add_circle(s, 10.5, 4.5, 4.0, NAVY_DK)
+
+text(s, 0.7, 0.9, 10, 0.4, "MASTER'S THESIS DEFENSE",
+     font=SANS, size=12, bold=True, color=AMBER, spacing=400)
+text(s, 0.7, 1.7, 12, 1.3,
+     "Enhancing Stability in Direct Training",
+     font=SERIF, size=44, bold=True, color=WHITE)
+text(s, 0.7, 2.55, 12, 1.3,
+     "of Spiking Neural Networks",
+     font=SERIF, size=44, bold=True, color=WHITE)
+text(s, 0.7, 3.7, 12, 0.5,
+     "Membrane Potential Initialization & Threshold-Robust Surrogate Gradients",
+     font=SERIF, size=16, italic=True, color=AMBER)
+
+# Amber underline
+amber_underline(s, 0.7, 4.45, w=1.0)
+
+text(s, 0.7, 4.7, 9, 0.4, "Hyunho Kook  (국 현 호)",
+     font=SANS, size=18, bold=True, color=WHITE)
+text(s, 0.7, 5.2, 9, 0.35, "Advisor: Prof. Eunhyeok Park",
+     font=SANS, size=12, color=RGBColor(0xCB, 0xD8, 0xE0))
+text(s, 0.7, 5.55, 9, 0.35, "Committee: Prof. Jungseul Ok · Prof. Jae-Joon Kim",
+     font=SANS, size=12, color=RGBColor(0xCB, 0xD8, 0xE0))
+
+text(s, 0.7, 7.05, 12, 0.3,
+     "Department of Computer Science and Engineering · POSTECH · January 2026",
+     font=SANS, size=10, color=RGBColor(0x80, 0x95, 0xA8))
+
+
+# ════════════════════════════════════════════════════════════════════
+# S2 — Why SNNs?
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Motivation")
+slide_title(s, "Why Spiking Neural Networks?")
+
+# Left column: 3 rows of bullet points
+y = 2.4
+text(s, 0.5, y, 7.2, 0.45,
+     "DNNs are powerful but expensive",
+     font=SANS, size=15, bold=True, color=NAVY)
+text(s, 0.5, y+0.5, 7.2, 1.0,
+     "Training and serving large models routinely consumes megawatt-scale power; "
+     "even edge inference is hard under tight energy budgets.",
+     font=SANS, size=12, color=INK)
+
+text(s, 0.5, y+1.6, 7.2, 0.45,
+     "SNNs: an event-driven alternative",
+     font=SANS, size=15, bold=True, color=NAVY)
+text(s, 0.5, y+2.1, 7.2, 1.0,
+     "Information flows as discrete spikes over time. Paired with neuromorphic hardware, "
+     "computation skips inactive neurons — orders of magnitude lower energy.",
+     font=SANS, size=12, color=INK)
+
+text(s, 0.5, y+3.2, 7.2, 0.45,
+     "But direct training is unstable",
+     font=SANS, size=15, bold=True, color=CORAL)
+text(s, 0.5, y+3.7, 7.2, 1.0,
+     "Recent direct-training methods narrowed the accuracy gap, yet two persistent instabilities "
+     "still hold SNNs back.",
+     font=SANS, size=12, color=INK)
+
+# Right column: dark callout panel
+panel_x, panel_y, panel_w, panel_h = 8.5, 2.3, 4.4, 4.4
+box = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+    Inches(panel_x), Inches(panel_y), Inches(panel_w), Inches(panel_h))
+box.fill.solid(); box.fill.fore_color.rgb = NAVY; box.line.fill.background()
+
+text(s, panel_x + 0.3, panel_y + 0.25, panel_w - 0.5, 0.3,
+     "THIS THESIS", font=SANS, size=10, bold=True, color=AMBER, spacing=400)
+text(s, panel_x + 0.3, panel_y + 0.7, panel_w - 0.5, 0.5,
+     "Two instabilities,",
+     font=SERIF, size=22, bold=True, color=WHITE)
+text(s, panel_x + 0.3, panel_y + 1.15, panel_w - 0.5, 0.5,
+     "two principled fixes.",
+     font=SERIF, size=22, bold=True, color=WHITE)
+
+# Two numbered items inside panel
+nx, ny1, ny2 = panel_x + 0.3, panel_y + 2.0, panel_y + 3.2
+# accent bar 1
+ab1 = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+    Inches(nx), Inches(ny1), Inches(0.04), Inches(0.85))
+ab1.fill.solid(); ab1.fill.fore_color.rgb = TEAL; ab1.line.fill.background()
+text(s, nx + 0.15, ny1, panel_w - 0.6, 0.3,
+     "①  Temporal Covariate Shift",
+     font=SANS, size=13, bold=True, color=WHITE)
+text(s, nx + 0.15, ny1 + 0.35, panel_w - 0.6, 0.5,
+     "in the membrane potential — invisible to existing remedies.",
+     font=SANS, size=10, color=RGBColor(0xCB, 0xD8, 0xE0))
+# accent bar 2
+ab2 = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+    Inches(nx), Inches(ny2), Inches(0.04), Inches(0.95))
+ab2.fill.solid(); ab2.fill.fore_color.rgb = AMBER; ab2.line.fill.background()
+text(s, nx + 0.15, ny2, panel_w - 0.6, 0.3,
+     "②  Gradient pathology",
+     font=SANS, size=13, bold=True, color=WHITE)
+text(s, nx + 0.15, ny2 + 0.35, panel_w - 0.6, 0.6,
+     "when the firing threshold becomes a learnable parameter — never explicitly characterized before.",
+     font=SANS, size=10, color=RGBColor(0xCB, 0xD8, 0xE0))
+
+page_footer(s, 2)
+
+
+# ════════════════════════════════════════════════════════════════════
+# S3 — SNNs in 60 seconds (LIF + surrogate gradient)
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Background · 1/2")
+slide_title(s, "Spiking Neurons in 60 Seconds",
+            "How information flows, and how we get gradients through it")
+
+# Left: LIF
+text(s, 0.5, 2.5, 6.2, 0.4,
+     "Leaky Integrate-and-Fire neuron",
+     font=SANS, size=14, bold=True, color=NAVY)
+
+eq_y = 3.0
+def equation_box(slide, x, y, w, h, label, eq):
+    box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+        Inches(x), Inches(y), Inches(w), Inches(h))
+    box.fill.solid(); box.fill.fore_color.rgb = CREAM
+    box.line.color.rgb = GRAY_LT; box.line.width = Pt(0.5)
+    text(slide, x + 0.15, y + 0.05, 1.4, 0.3,
+         label, font=SANS, size=10, bold=True, color=TEAL)
+    text(slide, x + 1.5, y + 0.05, w - 1.6, h - 0.1, eq,
+         font="Cambria Math", size=12, color=INK,
+         anchor=MSO_ANCHOR.MIDDLE)
+
+equation_box(s, 0.5, eq_y,        6.2, 0.6,
+             "Integrate", "M[t] = (1−1/τ)·U[t−1]  +  (1/τ)·I_in[t]")
+equation_box(s, 0.5, eq_y + 0.75, 6.2, 0.6,
+             "Fire",      "S[t] = H( M[t] − V_thr )       (1 if exceeds, else 0)")
+equation_box(s, 0.5, eq_y + 1.5,  6.2, 0.6,
+             "Reset",     "U[t] = M[t] − V_thr · S[t]   (soft reset)")
+
+text(s, 0.5, eq_y + 2.2, 6.2, 0.5,
+     "Two key learnable parameters:  τ  (leakage)  and  V_thr  (threshold).",
+     font=SANS, size=11, italic=True, color=GRAY)
+
+# Right: Surrogate gradient
+text(s, 7.2, 2.5, 5.6, 0.4,
+     "Heaviside is non-differentiable",
+     font=SANS, size=14, bold=True, color=NAVY)
+text(s, 7.2, 2.95, 5.6, 0.5,
+     "S = H(M − V_thr)   ⇒   H'(x) = δ(x)   ⇒   no gradient flow",
+     font="Cambria Math", size=12, color=INK)
+
+text(s, 7.2, 3.7, 5.6, 0.4,
+     "Surrogate gradient (SG)",
+     font=SANS, size=14, bold=True, color=NAVY)
+text(s, 7.2, 4.15, 5.6, 1.5,
+     "Replace H with a smooth surrogate f near the threshold.\n"
+     "Use f'(x) ≈ H'(x) only in backward pass — forward pass\n"
+     "still emits binary spikes.",
+     font=SANS, size=12, color=INK)
+
+# Bottom callout
+callout_box(s, 0.5, 6.05, 12.3, 0.85,
+            title="Everything in this thesis turns on M[t] and V_thr.",
+            body="The membrane potential drives TCS;  the threshold drives the gradient pathology.",
+            title_size=13, body_size=11)
+
+page_footer(s, 3)
+
+
+# ════════════════════════════════════════════════════════════════════
+# S4 — Diagnosis ① TCS in membrane potential
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Background · 2/2")
+slide_title(s, "Diagnosis ①: TCS Lives in the Membrane Potential")
+
+# Left: prose
+text(s, 0.5, 2.5, 6.5, 0.4,
+     "What everyone notices",
+     font=SANS, size=14, bold=True, color=NAVY)
+text(s, 0.5, 2.95, 6.5, 1.5,
+     "Activation distributions drift across timesteps. Batch-norm statistics estimated\n"
+     "at one timestep no longer fit at another — accuracy drops.",
+     font=SANS, size=12, color=INK)
+
+text(s, 0.5, 4.2, 6.5, 0.4,
+     "What existing fixes do",
+     font=SANS, size=14, bold=True, color=NAVY)
+text(s, 0.5, 4.65, 6.5, 1.0,
+     "TEBN, TAB add per-timestep BN parameters.\n"
+     "More compute, more parameters — and they don't reach the cause.",
+     font=SANS, size=12, color=INK)
+
+# Bottom callout — the claim
+callout_box(s, 0.5, 6.0, 6.5, 0.95,
+            fill=NAVY, accent=CORAL,
+            title="Our claim",
+            body="TCS originates one level deeper — in M[t] itself.",
+            title_color=CORAL, title_size=13, body_size=12)
+
+# Right: figure
+img(s, ASSETS + "/density_plot_membrane_potential_tdbn.png", 7.5, 2.4, w=5.4)
+text(s, 7.5, 6.3, 5.4, 0.3,
+     "M[t] under tdBN — distribution clearly drifts as t grows",
+     font=SANS, size=10, italic=True, color=CORAL, align=PP_ALIGN.CENTER)
+
+page_footer(s, 4)
+
+
+# ════════════════════════════════════════════════════════════════════
+# S5 — Diagnosis ② V_thr training breaks gradient
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Setup")
+slide_title(s, "Diagnosis ②: Trainable V_thr Breaks the Gradient")
+
+text(s, 0.5, 2.5, 12.3, 0.5,
+     "V_thr controls when a neuron fires — we want it to learn.",
+     font=SANS, size=15, bold=True, color=NAVY)
+text(s, 0.5, 3.05, 12.3, 0.6,
+     "Modern methods (PLIF, LTMD, DIET-SNN) all make V_thr trainable. But the surrogate gradient flowing\n"
+     "through V_thr is highly sensitive to its scale.",
+     font=SANS, size=12, color=INK)
+
+# Two failure scenarios
+fy = 4.1
+
+# Left scenario
+left_x, right_x, w, h = 0.5, 6.95, 5.85, 2.0
+rect_l = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+    Inches(left_x), Inches(fy), Inches(w), Inches(h))
+rect_l.fill.solid(); rect_l.fill.fore_color.rgb = CORAL_LT
+rect_l.line.color.rgb = CORAL; rect_l.line.width = Pt(1.2)
+text(s, left_x + 0.3, fy + 0.2, 1.3, 0.3,
+     "V_thr ≪ 1", font=SANS, size=12, bold=True, color=CORAL)
+text(s, left_x + 0.3, fy + 0.6, w - 0.5, 1.4,
+     "AS-SG floods the layer (window covers most of the distribution).\n"
+     "RS-SG explodes through the 1/V_thr factor in the chain rule.",
+     font=SANS, size=12, color=INK)
+
+# Right scenario
+rect_r = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+    Inches(right_x), Inches(fy), Inches(w), Inches(h))
+rect_r.fill.solid(); rect_r.fill.fore_color.rgb = CORAL_LT
+rect_r.line.color.rgb = CORAL; rect_r.line.width = Pt(1.2)
+text(s, right_x + 0.3, fy + 0.2, 1.3, 0.3,
+     "V_thr ≫ 1", font=SANS, size=12, bold=True, color=CORAL)
+text(s, right_x + 0.3, fy + 0.6, w - 0.5, 1.4,
+     "AS-SG starves (window misses most of the distribution).\n"
+     "RS-SG vanishes through the same 1/V_thr factor.",
+     font=SANS, size=12, color=INK)
+
+text(s, 0.5, 6.4, 12.3, 0.5,
+     "These are not corner cases — real trainings visit them.",
+     font=SANS, size=13, italic=True, color=NAVY, align=PP_ALIGN.CENTER)
+
+page_footer(s, 5)
+
+
+# ════════════════════════════════════════════════════════════════════
+# S6 — Theory: Markov chain
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Part I · MP-Init")
+slide_title(s, "Why Does the Membrane Potential Drift?",
+            "Because it's a Markov chain pulled toward a unique distribution")
+
+# Recurrence
+callout_box(s, 0.5, 2.4, 12.3, 0.9,
+            fill=CREAM, accent=TEAL,
+            title="The recurrence is a Markov chain",
+            body="U[t+1]  =  f( U[t],  I_in[t+1] )         — i.i.d. inputs ⇒ Markov chain",
+            title_color=TEAL, body_color=INK,
+            title_size=14, body_size=14)
+
+# Theorem
+callout_box(s, 0.5, 3.5, 12.3, 1.6,
+            fill=NAVY, accent=AMBER,
+            title="Theorem  (Doeblin minorization)",
+            body="Under (i.i.d. inputs) + (bounded U[t]),  the chain has a unique stationary "
+                 "distribution π.  Moreover,\n\n"
+                 "      ‖ Pⁿ(x, ·)  −  π(·) ‖_TV   ≤   C · (1 − ε)ⁿ        (geometric convergence)",
+            title_color=AMBER, body_color=WHITE,
+            title_size=14, body_size=12)
+
+# Implications
+text(s, 0.5, 5.4, 12.3, 0.5,
+     "Implications",
+     font=SANS, size=14, bold=True, color=CORAL)
+bullets(s, 0.5, 5.85, 12.3, 1.5, [
+    "Initial state ≠ π   ⇒   TCS is mathematically inevitable",
+    "Standard practice  U[0] = 0  is almost always far from π",
+    "Don't fix the normalization layer — fix the initial state",
+], size=13, color=INK, bullet="▸")
+
+page_footer(s, 6)
+
+
+# ════════════════════════════════════════════════════════════════════
+# S7 — MP-Init: Algorithm
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Part I · MP-Init")
+slide_title(s, "MP-Init — Initialize at the Stationary Mean",
+            "U[T] is the closest sample to π → use a running mean of E[U[T]]")
+
+# Left: lemma + estimate
+text(s, 0.5, 2.5, 6.5, 0.4,
+     "Lemma — best constant is the mean",
+     font=SANS, size=14, bold=True, color=NAVY)
+callout_box(s, 0.5, 2.95, 6.5, 0.7,
+            fill=CREAM, accent=TEAL,
+            body="argmin_c   E[ (π − c)² ]   =   E[π]",
+            body_color=INK, body_size=14, title_size=12)
+
+text(s, 0.5, 3.95, 6.5, 0.4,
+     "Practical estimator",
+     font=SANS, size=14, bold=True, color=NAVY)
+text(s, 0.5, 4.4, 6.5, 1.5,
+     "U[T] is the closest sample to π. Maintain a per-layer running mean\n"
+     "μ ← β · μ  +  (1 − β) · mean( U[T] )    over training, β = 0.9.\n"
+     "At every batch, set U[0] = μ.",
+     font=SANS, size=12, color=INK)
+
+# Right: pseudocode
+code_x = 7.4
+text(s, code_x, 2.5, 5.4, 0.4,
+     "Algorithm  (training-only)",
+     font=SANS, size=14, bold=True, color=NAVY)
+
+code_box = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+    Inches(code_x), Inches(2.95), Inches(5.4), Inches(2.7))
+code_box.fill.solid(); code_box.fill.fore_color.rgb = NAVY
+code_box.line.fill.background()
+
 code_lines = [
-    "Init  μ_l ← 0   for each layer l",
+    "init  μ_l ← 0   for each layer l",
+    "",
     "for each batch:",
-    "   U_l[0] ← μ_l                              ← apply at start",
-    "   run T LIF steps as usual",
-    "   batch_mean ← mean( U_l[T] of active neurons )",
-    "   μ_l ← β · μ_l  +  (1 − β) · batch_mean    ← EMA, β = 0.9",
+    "    U_l[0] ← μ_l",
+    "    run T LIF steps as usual",
+    "    m ← mean( U_l[T] of active neurons )",
+    "    μ_l ← β · μ_l  +  (1 − β) · m",
 ]
-add_text(s, 0.5, 1.4, 12.5, 0.5,
-         "MP-Init pseudocode", size=18, bold=True, color=NAVY)
-
-# code monospace box
-shp = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
-                          Inches(0.5), Inches(2.0),
-                          Inches(12.5), Inches(2.6))
-shp.fill.solid(); shp.fill.fore_color.rgb = LIGHT
-shp.line.color.rgb = NAVY; shp.line.width = Pt(1)
-tf = shp.text_frame; tf.word_wrap = True
-tf.margin_left = Inches(0.3); tf.margin_top = Inches(0.15)
+ctx = s.shapes.add_textbox(Inches(code_x + 0.25), Inches(3.05),
+                            Inches(5.0), Inches(2.5))
+tf = ctx.text_frame; tf.word_wrap = True
 for i, line in enumerate(code_lines):
     p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
     p.text = line
-    p.font.name = "Consolas"
-    p.font.size = Pt(14); p.font.color.rgb = NAVY
+    p.font.name = "Consolas"; p.font.size = Pt(11.5); p.font.color.rgb = WHITE
 
-# Inference box highlighting
-add_box(s, 0.5, 4.9, 12.5, 1.2,
-        "Inference:    μ_l is fixed  ⇒  standard LIF dynamics, no extra ops, full HW compatibility.",
-        fill=NAVY, outline=NAVY,
-        font_size=16, font_color=RGBColor(0xFF,0xFF,0xFF))
+# Bottom strip
+callout_box(s, 0.5, 6.05, 12.3, 0.9,
+            fill=TEAL, accent=AMBER,
+            title="Inference: μ frozen → standard LIF dynamics",
+            body="Zero changes to BN, no per-timestep parameters, full neuromorphic-hardware compatibility.",
+            title_color=WHITE, body_color=RGBColor(0xE0, 0xF0, 0xEA),
+            title_size=13, body_size=11)
 
-add_bullets(s, 0.5, 6.3, 12.5, 1.0,
-            ["O(L) extra parameters  (L = layers)",
-             "No change to BN, no per-timestep parameters, no extra losses"],
-            size=13, color=GRAY)
-add_footer(s, 12)
+page_footer(s, 7)
 
 
-# ─────────────────────────────────────────────────────────────────
-# S13. MP-Init Works
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Part A · MP-Init  ▸  It Works",
-              "Distribution alignment + geometric convergence + consistent gains")
+# ════════════════════════════════════════════════════════════════════
+# S8 — MP-Init: Result + Mechanism
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Part I · MP-Init")
+slide_title(s, "MP-Init Works — at Both the Distribution and the Metric")
 
-add_image(s, ASSETS + "/density_plot_membrane_potential_mpinit.png", 0.4, 1.4, w=4.0)
-add_text(s, 0.4, 4.7, 4.0, 0.3, "Aligned distributions",
-         size=11, color=GRAY, align=PP_ALIGN.CENTER)
+# Top row: 4 panels showing distribution alignment
+text(s, 0.5, 2.4, 12.3, 0.4,
+     "Membrane potential distributions across timesteps  (ResNet-19 / CIFAR-100)",
+     font=SANS, size=11, italic=True, color=GRAY)
+img(s, ASSETS + "/density_plot_membrane_potential_tdbn.png", 0.5, 2.8, w=2.95)
+img(s, ASSETS + "/density_plot_membrane_potential_tebn.png", 3.6, 2.8, w=2.95)
+img(s, ASSETS + "/density_plot_membrane_potential_tab.png",  6.7, 2.8, w=2.95)
+img(s, ASSETS + "/density_plot_membrane_potential_mpinit.png", 9.8, 2.8, w=2.95)
+text(s, 0.5, 4.65, 2.95, 0.3, "tdBN", font=SANS, size=10, color=GRAY, align=PP_ALIGN.CENTER)
+text(s, 3.6, 4.65, 2.95, 0.3, "TEBN", font=SANS, size=10, color=GRAY, align=PP_ALIGN.CENTER)
+text(s, 6.7, 4.65, 2.95, 0.3, "TAB",  font=SANS, size=10, color=GRAY, align=PP_ALIGN.CENTER)
+text(s, 9.8, 4.65, 2.95, 0.3, "MP-Init (ours)",
+     font=SANS, size=10, bold=True, color=TEAL, align=PP_ALIGN.CENTER)
 
-add_image(s, ASSETS + "/tv_distance.png", 4.6, 1.4, w=4.0)
-add_text(s, 4.6, 4.7, 4.0, 0.3, "Geometric TV decay",
-         size=11, color=GRAY, align=PP_ALIGN.CENTER)
+# Bottom: gain table card
+text(s, 0.5, 5.15, 12.3, 0.4,
+     "Consistent accuracy gain on every baseline",
+     font=SANS, size=12, bold=True, color=NAVY)
 
-# Right: Table 6.1 highlights
-add_text(s, 8.9, 1.4, 4.2, 0.4,
-         "Consistent gains", size=16, bold=True, color=NAVY)
-add_box(s, 8.9, 1.9, 4.2, 2.7,
-        "CIFAR-100 (T=4)\n"
-        "  tdBN          75.55  →  76.09\n"
-        "  TEBN          75.96  →  76.45\n"
-        "  TAB           76.25  →  77.24\n\n"
-        "DVS-CIFAR10 (T=10)\n"
-        "  tdBN          76.60  →  77.37\n"
-        "  TEBN          75.17  →  76.70",
-        fill=LIGHT, outline=NAVY, font_size=12, font_color=NAVY, bold=False)
+# Compact gain table
+gx, gy, gw, gh = 0.5, 5.55, 7.0, 1.4
+card(s, gx, gy, gw, gh, fill=CREAM, border=GRAY_LT, border_w=0.5)
+gain_lines = [
+    ("CIFAR-100, T=4   tdBN",        "75.55", "76.09"),
+    ("                 TEBN",        "75.96", "76.45"),
+    ("                 TAB",         "76.25", "77.24"),
+    ("DVS-CIFAR10, T=10  tdBN",      "76.60", "77.37"),
+]
+ctx = s.shapes.add_textbox(Inches(gx + 0.2), Inches(gy + 0.1),
+                            Inches(gw - 0.4), Inches(gh - 0.2))
+tf = ctx.text_frame; tf.word_wrap = True
+for i, (label, base, ours) in enumerate(gain_lines):
+    p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+    p.text = f"{label:<32s} {base}  →  {ours}"
+    p.font.name = "Consolas"; p.font.size = Pt(11); p.font.color.rgb = INK
 
-add_box(s, 0.5, 5.4, 12.5, 1.5,
-        "MP-Init helps tdBN, TEBN, and TAB alike.\n"
-        "Most pronounced at small T:  T=2  →  +1.66 %pt    (latency-critical regime)",
-        fill=LIGHT, outline=GREEN, font_size=15, font_color=GREEN)
-add_footer(s, 13)
+# Right: highlighted +1.66
+hx = 7.8
+hbox = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+    Inches(hx), Inches(5.55), Inches(5.0), Inches(1.4))
+hbox.fill.solid(); hbox.fill.fore_color.rgb = AMBER_LT
+hbox.line.color.rgb = AMBER; hbox.line.width = Pt(1.2)
+text(s, hx + 0.25, 5.65, 4.5, 0.55,
+     "+1.66 %pt at T = 2",
+     font=SERIF, size=22, bold=True, color=NAVY)
+text(s, hx + 0.25, 6.2, 4.5, 0.65,
+     "Biggest gain in the most latency-critical regime —\nexactly where SNN energy efficiency matters.",
+     font=SANS, size=10, color=INK)
 
-
-# ─────────────────────────────────────────────────────────────────
-# Part B: TrSG
-# ─────────────────────────────────────────────────────────────────
-
-
-# ─────────────────────────────────────────────────────────────────
-# S14. Two SG Families
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Part B · TrSG  ▸  Two Surrogate-Gradient Families",
-              "AS-SG vs RS-SG — innocent-looking choice with consequences")
-
-# Left box
-add_box(s, 0.5, 1.5, 6.0, 0.7,
-        "AS-SG: Absolute-Scale", fill=NAVY, outline=NAVY,
-        font_size=18, font_color=RGBColor(0xFF,0xFF,0xFF))
-add_box(s, 0.5, 2.3, 6.0, 1.0,
-        "x  =  M[t]  −  V_thr",
-        fill=LIGHT, outline=NAVY, font_size=14, font_color=NAVY, bold=False)
-add_bullets(s, 0.6, 3.5, 5.8, 1.8,
-            ["Window width fixed at γ — independent of V_thr",
-             "Magnitude independent of V_thr",
-             "Used by tdBN, TET, PLIF, LTMD, …"],
-            size=13)
-
-# Right box
-add_box(s, 6.7, 1.5, 6.0, 0.7,
-        "RS-SG: Relative-Scale", fill=NAVY, outline=NAVY,
-        font_size=18, font_color=RGBColor(0xFF,0xFF,0xFF))
-add_box(s, 6.7, 2.3, 6.0, 1.0,
-        "x  =  M[t] / V_thr  −  1",
-        fill=LIGHT, outline=NAVY, font_size=14, font_color=NAVY, bold=False)
-add_bullets(s, 6.8, 3.5, 5.8, 1.8,
-            ["Window width scales with V_thr ✓",
-             "But magnitude scales as 1 / V_thr ✗",
-             "Used by Meng 2023, DIET-SNN"],
-            size=13)
-
-add_box(s, 0.5, 5.5, 12.2, 1.4,
-        "These two have been treated as essentially equivalent.\n"
-        "But once V_thr is trainable, their failure modes diverge sharply.",
-        fill=LIGHT, outline=RED, font_size=15, font_color=RED)
-add_footer(s, 14)
+page_footer(s, 8)
 
 
-# ─────────────────────────────────────────────────────────────────
-# S15. The Failure Modes — Figure 5.1
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Part B · TrSG  ▸  The Failure Modes",
-              "Window width × gradient magnitude — both must scale correctly")
+# ════════════════════════════════════════════════════════════════════
+# S9 — Two SG families
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Part II · TrSG")
+slide_title(s, "Two Surrogate-Gradient Families",
+            "AS-SG and RS-SG — same idea, two parameterizations")
 
-# second_main has aspect 0.87 (taller than wide).  Size by height to fit slide.
-# Height 4.9 → width ≈ 4.26.  Center it.
-add_image(s, ASSETS + "/second_main.png", 4.55, 1.4, h=4.9)
+card(s, 0.5, 2.5, 6.0, 4.0, fill=CREAM, border=NAVY, border_w=1.5)
+text(s, 0.7, 2.65, 5.6, 0.4, "AS-SG  ·  Absolute-Scale",
+     font=SANS, size=14, bold=True, color=NAVY)
+text(s, 0.7, 3.1, 5.6, 0.5,
+     "x = M[t] − V_thr",
+     font="Cambria Math", size=18, color=NAVY)
+bullets(s, 0.7, 3.85, 5.6, 2.5, [
+    "Window width fixed at γ — ignores V_thr",
+    "Magnitude independent of V_thr",
+    "Used by tdBN, TET, PLIF, LTMD, …",
+], size=12, color=INK, bullet="▸")
 
-add_text(s, 0.5, 6.4, 12.5, 0.4,
-         "Each colored box = active gradient region.   Width = where gradient flows.   Height = gradient magnitude.",
-         size=12, color=GRAY, align=PP_ALIGN.CENTER)
-add_text(s, 0.5, 6.8, 12.5, 0.4,
-         "AS-SG ⇒ flooding / starvation   ·   RS-SG ⇒ explosion / vanishing   ·   TrSG ⇒ both balanced",
-         size=14, bold=True, color=RED, align=PP_ALIGN.CENTER)
-add_footer(s, 15)
+card(s, 6.85, 2.5, 6.0, 4.0, fill=CREAM, border=NAVY, border_w=1.5)
+text(s, 7.05, 2.65, 5.6, 0.4, "RS-SG  ·  Relative-Scale",
+     font=SANS, size=14, bold=True, color=NAVY)
+text(s, 7.05, 3.1, 5.6, 0.5,
+     "x = M[t] / V_thr − 1",
+     font="Cambria Math", size=18, color=NAVY)
+bullets(s, 7.05, 3.85, 5.6, 2.5, [
+    "Window scales with V_thr  ✓",
+    "But chain rule introduces a 1/V_thr factor in magnitude  ✗",
+    "Used by Meng 2023, DIET-SNN",
+], size=12, color=INK, bullet="▸")
 
+callout_box(s, 0.5, 6.65, 12.3, 0.45,
+            fill=NAVY, accent=CORAL,
+            title="Treated as essentially equivalent. Once V_thr is trainable, they break in opposite ways.",
+            title_color=AMBER, title_size=12, body_size=10)
 
-# ─────────────────────────────────────────────────────────────────
-# S16. TrSG — One-Line Fix
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Part B · TrSG  ▸  One-Line Fix",
-              "A forward-path multiplication that exactly cancels the bad factor")
-
-# Center: the trick
-add_text(s, 0.5, 1.4, 12.5, 0.5,
-         "Keep relative-scale window, multiply threshold on forward path:",
-         size=18, bold=True, color=NAVY)
-
-add_box(s, 0.5, 2.0, 12.5, 1.4,
-        "x  =  M[t] / V_thr  −  1                                    \n"
-        "O[t]  =  V_thr  ·  S[t]                  ← only difference vs RS-SG",
-        fill=LIGHT, outline=NAVY, font_size=16, font_color=NAVY, bold=False)
-
-# Chain rule cancellation
-add_text(s, 0.5, 3.6, 12.5, 0.5,
-         "Chain rule:", size=18, bold=True, color=NAVY)
-add_box(s, 0.5, 4.1, 12.5, 1.2,
-        "∂O / ∂M  =  V_thr  ·  ∂S / ∂M  ≈  V_thr  ·  (1/V_thr) f'(x)  =  f'(x)",
-        fill=LIGHT, outline=GREEN, font_size=18, font_color=GREEN, bold=False)
-
-# Conclusion
-add_box(s, 0.5, 5.6, 12.5, 1.4,
-        "Window adapts with V_thr   ✓\n"
-        "Magnitude is threshold-invariant   ✓",
-        fill=GREEN, outline=GREEN, font_size=20, font_color=RGBColor(0xFF,0xFF,0xFF))
-add_footer(s, 16)
+page_footer(s, 9)
 
 
-# ─────────────────────────────────────────────────────────────────
-# S17. Inference Stays Binary
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Part B · TrSG  ▸  Inference Stays Binary",
-              "The trick is training-only — neuromorphic HW never sees it")
+# ════════════════════════════════════════════════════════════════════
+# S10 — Failure modes (table-style)
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Part II · TrSG")
+slide_title(s, "Four Failure Modes — and One Fix")
 
-add_text(s, 0.5, 1.5, 12.5, 0.5,
-         "Training", size=18, bold=True, color=NAVY)
-add_box(s, 0.5, 2.0, 12.5, 0.9,
-        "Forward:    O[t]  =  V_thr · S[t]              (S ∈ {0,1}, output is real-valued)",
-        fill=LIGHT, outline=NAVY, font_size=14, font_color=NAVY, bold=False)
+text(s, 0.5, 2.4, 12.3, 0.4,
+     "Window width × gradient magnitude — both must scale correctly with V_thr.",
+     font=SANS, size=12, italic=True, color=GRAY)
 
-add_text(s, 0.5, 3.2, 12.5, 0.5,
-         "Inference", size=18, bold=True, color=NAVY)
-add_box(s, 0.5, 3.7, 12.5, 0.9,
-        "Absorb V_thr into the next layer:    W'_{l→l+1}  =  V_thr · W_{l→l+1}",
-        fill=LIGHT, outline=NAVY, font_size=14, font_color=NAVY, bold=False)
-add_box(s, 0.5, 4.7, 12.5, 0.9,
-        "Forward at test time:    O[t]  =  S[t] ∈ {0,1}                   (standard LIF)",
-        fill=LIGHT, outline=GREEN, font_size=14, font_color=GREEN, bold=False)
+# Header columns labels
+text(s, 1.7, 2.85, 5.5, 0.3, "V_thr ≪ 1",
+     font=SANS, size=11, bold=True, color=NAVY, align=PP_ALIGN.CENTER, spacing=200)
+text(s, 7.4, 2.85, 5.5, 0.3, "V_thr ≫ 1",
+     font=SANS, size=11, bold=True, color=NAVY, align=PP_ALIGN.CENTER, spacing=200)
 
-add_box(s, 0.5, 6.0, 12.5, 1.0,
-        "Net effect: TrSG is purely a training-time optimization aid.\n"
-        "Deployment uses identical operators as ordinary LIF SNNs.",
-        fill=GREEN, outline=GREEN, font_size=15, font_color=RGBColor(0xFF,0xFF,0xFF))
-add_footer(s, 17)
+# Row 1: AS-SG (coral)
+ry = 3.2; rh = 1.0
+card(s, 0.5, ry, 1.1, rh, fill=CORAL, border=CORAL, border_w=0)
+text(s, 0.5, ry + 0.32, 1.1, 0.4, "AS-SG",
+     font=SANS, size=12, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+card(s, 1.7, ry, 5.5, rh, fill=CORAL_LT, border=CORAL_LT, border_w=0.5)
+text(s, 1.85, ry + 0.13, 5.2, 0.35, "✗  Flooding",
+     font=SANS, size=12, bold=True, color=CORAL)
+text(s, 1.85, ry + 0.5, 5.2, 0.5,
+     "fixed window covers most of the distribution",
+     font=SANS, size=11, color=INK)
+card(s, 7.4, ry, 5.5, rh, fill=CORAL_LT, border=CORAL_LT, border_w=0.5)
+text(s, 7.55, ry + 0.13, 5.2, 0.35, "✗  Starvation",
+     font=SANS, size=12, bold=True, color=CORAL)
+text(s, 7.55, ry + 0.5, 5.2, 0.5,
+     "fixed window misses the distribution",
+     font=SANS, size=11, color=INK)
+
+# Row 2: RS-SG (amber)
+ry2 = ry + rh + 0.15
+card(s, 0.5, ry2, 1.1, rh, fill=AMBER, border=AMBER, border_w=0)
+text(s, 0.5, ry2 + 0.32, 1.1, 0.4, "RS-SG",
+     font=SANS, size=12, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
+card(s, 1.7, ry2, 5.5, rh, fill=AMBER_LT, border=AMBER_LT, border_w=0.5)
+text(s, 1.85, ry2 + 0.13, 5.2, 0.35, "✗  Explosion",
+     font=SANS, size=12, bold=True, color=CORAL)
+text(s, 1.85, ry2 + 0.5, 5.2, 0.5,
+     "1/V_thr blows the magnitude up",
+     font=SANS, size=11, color=INK)
+card(s, 7.4, ry2, 5.5, rh, fill=AMBER_LT, border=AMBER_LT, border_w=0.5)
+text(s, 7.55, ry2 + 0.13, 5.2, 0.35, "✗  Vanishing",
+     font=SANS, size=12, bold=True, color=CORAL)
+text(s, 7.55, ry2 + 0.5, 5.2, 0.5,
+     "1/V_thr shrinks the magnitude",
+     font=SANS, size=11, color=INK)
+
+# Row 3: TrSG (teal)
+ry3 = ry2 + rh + 0.15
+card(s, 0.5, ry3, 1.1, rh, fill=TEAL, border=TEAL, border_w=0)
+text(s, 0.5, ry3 + 0.32, 1.1, 0.4, "TrSG",
+     font=SANS, size=12, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+card(s, 1.7, ry3, 5.5, rh, fill=TEAL_LT, border=TEAL_LT, border_w=0.5)
+text(s, 1.85, ry3 + 0.13, 5.2, 0.35, "✓  Balanced",
+     font=SANS, size=12, bold=True, color=TEAL)
+text(s, 1.85, ry3 + 0.5, 5.2, 0.5,
+     "window scales with V_thr,  magnitude stays 1",
+     font=SANS, size=11, color=INK)
+card(s, 7.4, ry3, 5.5, rh, fill=TEAL_LT, border=TEAL_LT, border_w=0.5)
+text(s, 7.55, ry3 + 0.13, 5.2, 0.35, "✓  Balanced",
+     font=SANS, size=12, bold=True, color=TEAL)
+text(s, 7.55, ry3 + 0.5, 5.2, 0.5,
+     "window scales with V_thr,  magnitude stays 1",
+     font=SANS, size=11, color=INK)
+
+text(s, 0.5, 6.8, 12.3, 0.3,
+     "(Geometric picture in the thesis Figure 5.1.)",
+     font=SANS, size=9, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
+
+page_footer(s, 10)
 
 
-# ─────────────────────────────────────────────────────────────────
-# S18. Stress Tests
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Part B · TrSG  ▸  Stress Tests",
-              "What happens at extreme thresholds during real training?")
+# ════════════════════════════════════════════════════════════════════
+# S11 — One-line fix
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Part II · TrSG")
+slide_title(s, "TrSG — One-Line Fix",
+            "Multiply the threshold on the forward path; the chain rule cancels the bad factor")
 
-# Tables
-add_text(s, 0.5, 1.3, 6.0, 0.4,
-         "V_thr = 0.1  (low)", size=14, bold=True, color=NAVY)
-add_box(s, 0.5, 1.7, 6.0, 1.5,
-        "                    AbsStr      RatioAG    GradCV\n"
-        "AS-SG (ep100)    0.0145    90.20%      1.22 \n"
-        "RS-SG (ep100)         NaN       0%          NaN \n"
-        "TrSG  (ep100)    0.0153    21.45%      0.87",
-        fill=LIGHT, outline=GRAY, font_size=11, font_color=NAVY, bold=False)
+# Step 1
+text(s, 0.5, 2.4, 12.3, 0.4,
+     "Step 1.  Use the relative-scale window (RS-SG style):",
+     font=SANS, size=13, bold=True, color=NAVY)
+callout_box(s, 0.5, 2.9, 12.3, 0.7,
+            fill=CREAM, accent=TEAL,
+            body="x  =  M[t] / V_thr   −   1",
+            body_color=INK, body_size=14)
 
-add_text(s, 6.7, 1.3, 6.0, 0.4,
-         "V_thr = 2.0  (high)", size=14, bold=True, color=NAVY)
-add_box(s, 6.7, 1.7, 6.0, 1.5,
-        "                    AbsStr      RatioAG    GradCV\n"
-        "AS-SG (ep100)    0.0000     0.00%       0.00 \n"
-        "RS-SG (ep100)    0.0021     0.10%       2.25 \n"
-        "TrSG  (ep100)    0.0323     6.90%       0.73",
-        fill=LIGHT, outline=GRAY, font_size=11, font_color=NAVY, bold=False)
+# Step 2
+text(s, 0.5, 3.85, 12.3, 0.4,
+     "Step 2.  Multiply V_thr on the forward path  (this is the only change):",
+     font=SANS, size=13, bold=True, color=NAVY)
+callout_box(s, 0.5, 4.35, 12.3, 0.7,
+            fill=CREAM, accent=AMBER,
+            body="O[t]  =  V_thr  ·  S[t]",
+            body_color=INK, body_size=14)
 
-# Threshold trajectories
-add_text(s, 0.5, 3.45, 12.5, 0.4,
-         "Real trainings actually visit these regions",
-         size=14, bold=True, color=RED)
-add_image(s, ASSETS + "/threshold_training_cifar100.png", 0.5, 3.85, w=6.0, h=2.6)
-add_image(s, ASSETS + "/threshold_training_imagenet.png", 6.8, 3.85, w=6.0, h=2.6)
-add_text(s, 0.5, 6.5, 6.0, 0.3, "CIFAR-100", size=10, color=GRAY, align=PP_ALIGN.CENTER)
-add_text(s, 6.8, 6.5, 6.0, 0.3, "ImageNet", size=10, color=GRAY, align=PP_ALIGN.CENTER)
+# Step 3 — chain rule
+text(s, 0.5, 5.3, 12.3, 0.4,
+     "Step 3.  The chain rule cancels the 1/V_thr factor exactly:",
+     font=SANS, size=13, bold=True, color=NAVY)
+callout_box(s, 0.5, 5.8, 12.3, 0.85,
+            fill=NAVY, accent=AMBER,
+            body="∂O / ∂M   =   V_thr  ·  ∂S/∂M   ≈   V_thr · (1/V_thr) f'(x)   =   f'(x)",
+            body_color=WHITE, body_size=15)
 
-add_text(s, 0.5, 6.85, 12.5, 0.3,
-         "→ Threshold-robustness is a practical necessity, not a corner case.",
-         size=13, bold=True, color=RED, align=PP_ALIGN.CENTER)
-add_footer(s, 18)
+text(s, 0.5, 6.8, 12.3, 0.3,
+     "Window adapts with V_thr   ·   gradient magnitude is threshold-invariant.",
+     font=SANS, size=12, bold=True, italic=True, color=TEAL, align=PP_ALIGN.CENTER)
+
+page_footer(s, 11)
 
 
-# ─────────────────────────────────────────────────────────────────
-# S19. Main Results
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Part C · Experiments  ▸  Main Results",
-              "State-of-the-art on every benchmark we evaluate")
+# ════════════════════════════════════════════════════════════════════
+# S12 — Inference stays binary
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Part II · TrSG")
+slide_title(s, "Inference Stays Binary",
+            "TrSG is a training-only trick — neuromorphic hardware never sees it")
 
-# Big results table
-add_box(s, 0.5, 1.5, 12.5, 0.5,
-        "Static and dynamic image datasets — standard LIF, no architectural changes",
-        outline=NAVY, font_size=12, font_color=NAVY, bold=False)
+# Training row
+text(s, 0.5, 2.5, 12.3, 0.4,
+     "Training",
+     font=SANS, size=14, bold=True, color=NAVY)
+callout_box(s, 0.5, 3.0, 12.3, 0.7,
+            fill=CREAM, accent=AMBER,
+            body="Forward:    O[t]  =  V_thr · S[t]    (real-valued — gradient flows cleanly through V_thr)",
+            body_color=INK, body_size=12)
+
+# Inference rows
+text(s, 0.5, 3.95, 12.3, 0.4,
+     "At deployment, absorb V_thr into the next layer's weights",
+     font=SANS, size=14, bold=True, color=NAVY)
+callout_box(s, 0.5, 4.45, 12.3, 0.7,
+            fill=CREAM, accent=AMBER,
+            body="W'_{l→l+1}   =   V_thr  ·  W_{l→l+1}    (one-time rescaling)",
+            body_color=INK, body_size=12)
+callout_box(s, 0.5, 5.25, 12.3, 0.7,
+            fill=TEAL_LT, accent=TEAL,
+            body="Forward at test time:    O[t]  =  S[t]  ∈  {0, 1}      (standard LIF — back to binary spikes)",
+            body_color=NAVY, body_size=12)
+
+# Bottom emphasis
+callout_box(s, 0.5, 6.2, 12.3, 0.7,
+            fill=TEAL, accent=AMBER,
+            title="Standard LIF operators at inference. Hardware compatibility preserved.",
+            title_color=WHITE, title_size=13)
+
+page_footer(s, 12)
+
+
+# ════════════════════════════════════════════════════════════════════
+# S13 — TrSG: Result + Mechanism
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Part II · TrSG")
+slide_title(s, "TrSG Holds Up — Stress Tests + Real Trajectories")
+
+# Left: stability metrics tables
+text(s, 0.5, 2.4, 6.5, 0.4,
+     "Gradient-stability metrics at extreme thresholds  (CIFAR-100, T=4, ep 100)",
+     font=SANS, size=11, italic=True, color=GRAY)
+
+# Two table cards side by side
+def metric_card(slide, x, y, title, rows):
+    card(slide, x, y, 3.05, 2.4, fill=CREAM, border=GRAY_LT, border_w=0.5)
+    text(slide, x + 0.15, y + 0.08, 2.85, 0.3,
+         title, font=SANS, size=11, bold=True, color=NAVY)
+    tx = slide.shapes.add_textbox(Inches(x + 0.15), Inches(y + 0.4),
+                                   Inches(2.85), Inches(2.0))
+    tf = tx.text_frame; tf.word_wrap = True
+    for i, (label, val, color) in enumerate(rows):
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        p.text = f"{label:<8s} {val}"
+        p.font.name = "Consolas"; p.font.size = Pt(10); p.font.color.rgb = color
+        if i > 0: p.space_before = Pt(2)
+
+metric_card(s, 0.5, 2.85,
+            "V_thr = 0.1   (low)",
+            [("AS-SG", "AbsStr 0.0145  · 90% active", CORAL),
+             ("RS-SG", "diverged (NaN)", CORAL),
+             ("TrSG",  "AbsStr 0.0153  · 21% · CV 0.87", TEAL)])
+metric_card(s, 3.7, 2.85,
+            "V_thr = 2.0   (high)",
+            [("AS-SG", "0%  active  (zero gradient)", CORAL),
+             ("RS-SG", "0.10% active · CV 2.25", CORAL),
+             ("TrSG",  "AbsStr 0.0323  · 7% · CV 0.73", TEAL)])
+
+# Right: threshold trajectory image
+text(s, 7.3, 2.4, 5.6, 0.4,
+     "Real trainings actually visit these regions",
+     font=SANS, size=11, italic=True, color=GRAY)
+img(s, ASSETS + "/threshold_training_imagenet.png", 7.3, 2.85, w=5.6, h=2.4)
+
+# Bottom message
+callout_box(s, 0.5, 5.5, 12.3, 1.4,
+            fill=NAVY, accent=AMBER,
+            title="Threshold-robustness is a practical necessity",
+            body="Across CIFAR-100, DVS-CIFAR10, and ImageNet, trainable V_thr drifts well below 1\n"
+                 "or above 2 in some layers — exactly the regimes where AS-SG and RS-SG fail.",
+            title_color=AMBER, body_color=WHITE,
+            title_size=14, body_size=11)
+
+page_footer(s, 13)
+
+
+# ════════════════════════════════════════════════════════════════════
+# S14 — Main Results
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Experiments · 1/3")
+slide_title(s, "Main Results — SOTA Across the Board")
+
+text(s, 0.5, 2.4, 12.3, 0.4,
+     "Standard LIF neurons.  No AutoAugment / Cutout.  Three trials each.",
+     font=SANS, size=11, italic=True, color=GRAY)
+
+# Bar chart area on left + key gain cards on right
+# Replace bar chart with a table-like card showing all numbers
+chart_card_x, chart_card_y, chart_card_w, chart_card_h = 0.5, 2.85, 8.0, 4.1
+card(s, chart_card_x, chart_card_y, chart_card_w, chart_card_h,
+     fill=CREAM, border=GRAY_LT, border_w=0.5)
+text(s, chart_card_x + 0.25, chart_card_y + 0.2, chart_card_w - 0.5, 0.4,
+     "Top-1 accuracy (%) — Ours vs. previous best",
+     font=SANS, size=12, bold=True, color=TEAL)
+
+# Result table inside
+res_lines = [
+    ("CIFAR-10  (R-19, T=6)",      "TAB 94.81",  "95.50",   "+0.69"),
+    ("CIFAR-100 (R-19, T=6)",      "TAB 76.82",  "77.91",   "+1.09"),
+    ("ImageNet  (R-34, T=6)",      "TAB 67.78",  "68.73",   "+0.95"),
+    ("ImageNet  (SEW-R34, T=4)",   "MPS 69.03",  "69.67",   "+0.64"),
+    ("DVS-CIFAR10 (R-19, T=10)",   "RMP 76.20",  "81.43",   "+5.23"),
+    ("DVS-CIFAR10 (7-CNN, T=4)",   "TAB 76.70",  "79.27",   "+2.57"),
+]
+ctx = s.shapes.add_textbox(Inches(chart_card_x + 0.3), Inches(chart_card_y + 0.7),
+                            Inches(chart_card_w - 0.6), Inches(chart_card_h - 0.9))
+tf = ctx.text_frame; tf.word_wrap = True
+for i, (dset, prev, ours, delta) in enumerate(res_lines):
+    p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+    p.text = f"{dset:<26s}{prev:<14s}→  {ours:<8s}{delta:>6s}"
+    p.font.name = "Consolas"; p.font.size = Pt(11); p.font.color.rgb = INK
+    if i > 0: p.space_before = Pt(4)
+
+# Right: 3 gain cards
+def gain_card(slide, x, y, value, label, color):
+    card(slide, x, y, 4.4, 1.25, fill=CREAM, border=color, border_w=1.5)
+    text(slide, x + 0.2, y + 0.15, 2.5, 0.55, value,
+         font=SERIF, size=26, bold=True, color=color)
+    text(slide, x + 2.7, y + 0.27, 1.5, 0.4, "%pt",
+         font=SANS, size=11, color=color)
+    text(slide, x + 0.2, y + 0.75, 4.0, 0.45, label,
+         font=SANS, size=10, color=INK)
+
+gain_card(s, 8.7, 2.85, "+1.09", "CIFAR-100 over TAB", TEAL)
+gain_card(s, 8.7, 4.25, "+0.64", "ImageNet (SEW-R34) over MPS", TEAL)
+gain_card(s, 8.7, 5.65, "+5.23", "DVS-CIFAR10 over RMP-Loss", AMBER)
+
+page_footer(s, 14)
+
+
+# ════════════════════════════════════════════════════════════════════
+# S15 — Ablation
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Experiments · 2/3")
+slide_title(s, "Ablation — Independent and Complementary",
+            "Each method helps alone; together they compound (especially on event-based data)")
+
+# Two ablation tables side by side
+text(s, 0.5, 2.5, 6.0, 0.4,
+     "CIFAR-100   (T = 4)",
+     font=SANS, size=12, bold=True, color=NAVY)
+card(s, 0.5, 2.95, 6.0, 3.1, fill=CREAM, border=GRAY_LT, border_w=0.5)
+
+cifar_rows = [
+    ("✗", "✗", "75.55"),
+    ("✓", "✗", "76.09"),
+    ("✗", "✓", "77.15"),
+    ("✓", "✓", "77.66"),
+]
+ctx = s.shapes.add_textbox(Inches(0.7), Inches(3.1), Inches(5.8), Inches(2.8))
+tf = ctx.text_frame; tf.word_wrap = True
+p = tf.paragraphs[0]
+p.text = "MP-Init    TrSG       Acc (%)"
+p.font.name = "Consolas"; p.font.size = Pt(12); p.font.bold = True; p.font.color.rgb = TEAL
+p.space_after = Pt(8)
+for i, (a, b, v) in enumerate(cifar_rows):
+    p = tf.add_paragraph()
+    bold = (i == len(cifar_rows) - 1)
+    p.text = f"   {a}        {b}         {v}"
+    p.font.name = "Consolas"; p.font.size = Pt(13); p.font.bold = bold
+    p.font.color.rgb = TEAL if bold else INK
+    p.space_before = Pt(4)
+
+text(s, 6.85, 2.5, 6.0, 0.4,
+     "DVS-CIFAR10   (T = 10)",
+     font=SANS, size=12, bold=True, color=NAVY)
+card(s, 6.85, 2.95, 6.0, 3.1, fill=CREAM, border=GRAY_LT, border_w=0.5)
+
+dvs_rows = [
+    ("✗", "✗", "76.60"),
+    ("✓", "✗", "77.37"),
+    ("✗", "✓", "80.83"),
+    ("✓", "✓", "81.43"),
+]
+ctx = s.shapes.add_textbox(Inches(7.05), Inches(3.1), Inches(5.8), Inches(2.8))
+tf = ctx.text_frame; tf.word_wrap = True
+p = tf.paragraphs[0]
+p.text = "MP-Init    TrSG       Acc (%)"
+p.font.name = "Consolas"; p.font.size = Pt(12); p.font.bold = True; p.font.color.rgb = TEAL
+p.space_after = Pt(8)
+for i, (a, b, v) in enumerate(dvs_rows):
+    p = tf.add_paragraph()
+    bold = (i == len(dvs_rows) - 1)
+    p.text = f"   {a}        {b}         {v}"
+    p.font.name = "Consolas"; p.font.size = Pt(13); p.font.bold = bold
+    p.font.color.rgb = AMBER if bold else INK
+    p.space_before = Pt(4)
+
+# Bottom message
+callout_box(s, 0.5, 6.2, 12.3, 0.75,
+            fill=TEAL, accent=AMBER,
+            title="MP-Init alone +0.5 ~ 0.8.  TrSG alone +1.6 ~ 4.2.  Together +2.1 ~ 4.8.",
+            title_color=WHITE, title_size=12)
+
+page_footer(s, 15)
+
+
+# ════════════════════════════════════════════════════════════════════
+# S16 — Generalization
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Experiments · 3/3")
+slide_title(s, "Beyond Classification",
+            "Transformer SNNs · object detection · energy preserved")
 
 # Three cards
-def result_card(slide, x, y, w, h, name, prev_best, ours, color):
-    add_box(slide, x, y, w, 0.7, name,
-            fill=color, outline=color, font_size=18,
-            font_color=RGBColor(0xFF,0xFF,0xFF))
-    add_text(slide, x, y+0.8, w, 0.4,
-             "Previous best", size=12, color=GRAY, align=PP_ALIGN.CENTER)
-    add_text(slide, x, y+1.2, w, 0.5,
-             prev_best, size=20, bold=True, color=GRAY, align=PP_ALIGN.CENTER)
-    add_text(slide, x, y+1.85, w, 0.4,
-             "Ours", size=12, color=color, align=PP_ALIGN.CENTER)
-    add_text(slide, x, y+2.25, w, 0.6,
-             ours, size=24, bold=True, color=color, align=PP_ALIGN.CENTER)
+def gen_card(slide, x, y, w, h, header, body):
+    card(slide, x, y, w, h, fill=CREAM, border=TEAL, border_w=1.2)
+    text(slide, x + 0.2, y + 0.15, w - 0.4, 0.4,
+         header, font=SANS, size=12, bold=True, color=TEAL)
+    text(slide, x + 0.2, y + 0.55, w - 0.4, h - 0.7, body,
+         font=SANS, size=11, color=INK)
 
-result_card(s, 0.5, 2.3, 4.0, 2.9, "CIFAR-100", "76.82", "77.91", NAVY)
-result_card(s, 4.7, 2.3, 4.0, 2.9, "ImageNet (SEW-R34)", "69.03", "69.67", RED)
-result_card(s, 8.9, 2.3, 4.0, 2.9, "DVS-CIFAR10", "76.20", "81.43", GREEN)
+gen_card(s, 0.5, 2.5, 6.0, 1.7,
+         "Transformer SNN  (QKFormer, ImageNet, T=4)",
+         "Baseline 78.80    →    + ours 79.90    (+1.10 %pt)\n"
+         "AS-SG    77.09    →    RS-SG  78.70    →    TrSG  79.90\n"
+         "Drop-in SG swap on a state-of-the-art Transformer SNN.")
 
-add_text(s, 0.5, 5.4, 12.5, 0.4,
-         "All entries: top-1 accuracy (%).   Baselines: TAB / MPS / RMP-Loss respectively.",
-         size=12, color=GRAY, align=PP_ALIGN.CENTER)
+gen_card(s, 6.85, 2.5, 6.0, 1.7,
+         "Object detection  (COCO-2017, EMS-ResNet10, T=3)",
+         "mAP@0.5         0.291  →  0.305    (+0.014)\n"
+         "mAP@0.5:0.95    0.138  →  0.147    (+0.009)\n"
+         "First evidence the principles transfer beyond classification.")
 
-add_box(s, 0.5, 6.0, 12.5, 1.0,
-        "DVS-CIFAR10 +5.23 %pt — biggest gain on the most challenging (event-based) dataset.",
-        fill=LIGHT, outline=GREEN, font_size=15, font_color=GREEN)
-add_footer(s, 19)
+gen_card(s, 0.5, 4.4, 6.0, 1.7,
+         "Energy at matched firing rate  (CIFAR-100)",
+         "Baseline   1.57 mJ   ·   75.58 %\n"
+         "+ MP-Init + TrSG    1.67 mJ   ·   77.68 %\n"
+         "+2.10 %pt at +6 % energy — gains aren't from spiking more.")
 
+gen_card(s, 6.85, 4.4, 6.0, 1.7,
+         "All four surrogate shapes",
+         "Rectangular · Triangular · Arctan · Sigmoid\n"
+         "TrSG remains the best across initial V_thr, initial τ,\n"
+         "and surrogate shape — never tied for second.")
 
-# ─────────────────────────────────────────────────────────────────
-# S20. Ablation & Generalization
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Part C · Experiments  ▸  Ablation & Generalization",
-              "Independent + complementary;  classification-only is not the full story")
+# Bottom emphasis
+callout_box(s, 0.5, 6.25, 12.3, 0.75,
+            fill=NAVY, accent=AMBER,
+            title="No architectural changes, no extra losses, no per-timestep parameters — just drop in.",
+            title_color=AMBER, title_size=13)
 
-# Left: ablation table
-add_text(s, 0.5, 1.4, 6.0, 0.4,
-         "Ablation (DVS-CIFAR10, T=10)", size=14, bold=True, color=NAVY)
-add_box(s, 0.5, 1.85, 6.0, 2.5,
-        "MP-Init   TrSG       Acc (%)\n"
-        "   ✗         ✗            76.60\n"
-        "   ✓         ✗            77.37    +0.77\n"
-        "   ✗         ✓            80.83    +4.23\n"
-        "   ✓         ✓            81.43    +4.83",
-        fill=LIGHT, outline=NAVY, font_size=13, font_color=NAVY, bold=False)
-
-# Right: generalization
-add_text(s, 7.0, 1.4, 6.0, 0.4,
-         "Beyond classification", size=14, bold=True, color=NAVY)
-add_box(s, 7.0, 1.85, 6.0, 1.1,
-        "Transformer SNN (QKFormer, ImageNet T=4)\n"
-        "  baseline  78.80    →    + ours  79.90    (+1.10)",
-        fill=LIGHT, outline=RED, font_size=12, font_color=RED, bold=False)
-add_box(s, 7.0, 3.05, 6.0, 1.3,
-        "Object detection (COCO-2017, EMS-ResNet10 T=3)\n"
-        "  mAP@0.5       0.291  →  0.305    (+0.014)\n"
-        "  mAP@0.5:0.95  0.138  →  0.147    (+0.009)",
-        fill=LIGHT, outline=RED, font_size=12, font_color=RED, bold=False)
-
-add_box(s, 0.5, 4.6, 12.5, 0.9,
-        "MP-Init and TrSG are independently helpful, and together fully complementary.",
-        fill=LIGHT, outline=GREEN, font_size=15, font_color=GREEN)
-
-add_text(s, 0.5, 5.7, 12.5, 1.4,
-         "Drop-in replacements: no architecture changes, no extra training pipeline,\n"
-         "no new losses, no per-timestep parameters.",
-         size=14, color=GRAY, align=PP_ALIGN.CENTER)
-add_footer(s, 20)
+page_footer(s, 16)
 
 
-# ─────────────────────────────────────────────────────────────────
-# S21. Why It Works
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Part C · Experiments  ▸  Why It Works",
-              "Mechanistic evidence beyond accuracy numbers")
+# ════════════════════════════════════════════════════════════════════
+# S17 — Recap
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Conclusion")
+slide_title(s, "What This Talk Was About")
 
-# Left: gradient cosine sim
-add_image(s, ASSETS + "/grad_collision.png", 0.5, 1.5, w=6.0)
-add_text(s, 0.5, 4.6, 6.0, 0.4,
-         "Gradient cosine similarity across timesteps",
-         size=12, color=GRAY, align=PP_ALIGN.CENTER, bold=True)
-add_bullets(s, 0.5, 5.0, 6.0, 1.6,
-            ["Without MP-Init: gradients at t=1 fight later steps",
-             "With MP-Init: temporal ensemble realigned",
-             "Stable optimization — not just stable inference"],
-            size=12)
+# Top: one-line story
+callout_box(s, 0.5, 2.4, 12.3, 1.0,
+            fill=NAVY, accent=AMBER,
+            title="Two long-standing instabilities of direct SNN training, traced and fixed.",
+            body="Both fixes are minimal, principled, and preserve standard inference.",
+            title_color=AMBER, body_color=WHITE,
+            title_size=15, body_size=11)
 
-# Right: pareto frontier
-add_image(s, ASSETS + "/firing_rate_vs_accuracy.png", 7.0, 1.5, w=6.0)
-add_text(s, 7.0, 4.6, 6.0, 0.4,
-         "Accuracy vs firing rate",
-         size=12, color=GRAY, align=PP_ALIGN.CENTER, bold=True)
-add_bullets(s, 7.0, 5.0, 6.0, 1.6,
-            ["MP-Init dominates baseline at every firing rate",
-             "Even at 0.06 firing rate, beats all baselines",
-             "Gains are not from spiking more — from spiking better"],
-            size=12)
+# Three cards: MP-Init, TrSG, Validated
+def takeaway_card(slide, x, y, w, h, header, header_color, body):
+    card(slide, x, y, w, h, fill=CREAM, border=header_color, border_w=1.5)
+    text(slide, x + 0.2, y + 0.15, w - 0.4, 0.5,
+         header, font=SERIF, size=18, bold=True, color=header_color)
+    text(slide, x + 0.2, y + 0.7, w - 0.4, h - 0.8,
+         body, font=SANS, size=11, color=INK)
 
-add_text(s, 0.5, 6.85, 12.5, 0.4,
-         "→ Efficiency-preserving improvements, not accuracy-via-spend.",
-         size=13, bold=True, color=GREEN, align=PP_ALIGN.CENTER)
-add_footer(s, 21)
+takeaway_card(s, 0.5, 3.7, 4.0, 3.0,
+              "MP-Init", TEAL,
+              "TCS originates in the membrane potential — fix the initial state.\n\n"
+              "Per-layer running mean of U[T].\n\n"
+              "Zero overhead, standard LIF inference.")
 
+takeaway_card(s, 4.7, 3.7, 4.0, 3.0,
+              "TrSG", AMBER,
+              "Threshold-induced gradient pathology — fix it with one forward-path multiplication.\n\n"
+              "Window adapts, magnitude is invariant.\n\n"
+              "Standard LIF after training.")
 
-# ─────────────────────────────────────────────────────────────────
-# S22. Conclusion + Q&A
-# ─────────────────────────────────────────────────────────────────
-s = add_blank_slide()
-add_title_bar(s, "Conclusion",
-              "Two diagnoses, two minimal fixes, broad gains")
+takeaway_card(s, 8.9, 3.7, 4.0, 3.0,
+              "Validated", TEAL,
+              "SOTA on CIFAR-10/100, ImageNet, DVS-CIFAR10.\n\n"
+              "Generalizes to Transformer SNNs (QKFormer +1.10) and detection (COCO +0.014 mAP).\n\n"
+              "All without architectural changes.")
 
-# One-line summary
-add_box(s, 0.5, 1.5, 12.5, 1.4,
-        "TCS is a problem of the membrane potential — fixed at the initial state.\n"
-        "Threshold-invariance is achieved by one forward-path multiplication.",
-        fill=NAVY, outline=NAVY, font_size=18,
-        font_color=RGBColor(0xFF,0xFF,0xFF))
-
-# Three columns
-add_text(s, 0.5, 3.1, 4.0, 0.4, "Contributions",
-         size=16, bold=True, color=NAVY)
-add_bullets(s, 0.5, 3.5, 4.0, 3.0,
-            ["MP-Init: align M[0] with stationary mean",
-             "TrSG: cancel 1/V_thr factor exactly",
-             "SOTA on 4 datasets",
-             "Generalizes to Transformer SNN, detection"],
-            size=12)
-
-add_text(s, 4.7, 3.1, 4.0, 0.4, "Limitations",
-         size=16, bold=True, color=ORANGE)
-add_bullets(s, 4.7, 3.5, 4.0, 3.0,
-            ["Per-layer constant — richer parametrization possible",
-             "Trainable LIF params may need quantization for fixed-param HW",
-             "i.i.d. assumption needs untrained-network analysis"],
-            size=12, color=ORANGE)
-
-add_text(s, 8.9, 3.1, 4.0, 0.4, "Future Work",
-         size=16, bold=True, color=GREEN)
-add_bullets(s, 8.9, 3.5, 4.0, 3.0,
-            ["Hardware-aware adaptation (Loihi, TrueNorth)",
-             "Beyond LIF: adaptive LIF, Izhikevich",
-             "Foundation-scale SNNs"],
-            size=12, color=GREEN)
-
-# Thanks
-add_text(s, 0.5, 6.6, 12.5, 0.5,
-         "Thank you.   Questions?",
-         size=24, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
-add_footer(s, 22)
+page_footer(s, 17)
 
 
-# Save
+# ════════════════════════════════════════════════════════════════════
+# S18 — Limitations + Future + Thanks
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+fill_bg(s, NAVY)
+add_circle(s, 9.0, -1.5, 4.0, NAVY_DK)
+add_circle(s, -2.0, 5.0, 5.5, NAVY_DK)
+
+text(s, 0.7, 0.7, 10, 0.4, "CONCLUSION",
+     font=SANS, size=12, bold=True, color=AMBER, spacing=400)
+text(s, 0.7, 1.4, 12, 0.7,
+     "Two instabilities, two principled fixes,",
+     font=SERIF, size=32, bold=True, color=WHITE)
+text(s, 0.7, 2.1, 12, 0.7,
+     "one cohesive story.",
+     font=SERIF, size=32, bold=True, color=WHITE)
+
+# Three summary boxes
+def cl_box(slide, x, y, w, h, title, body, accent_color):
+    box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+        Inches(x), Inches(y), Inches(w), Inches(h))
+    box.fill.solid(); box.fill.fore_color.rgb = NAVY
+    box.line.color.rgb = accent_color; box.line.width = Pt(1.2)
+    text(slide, x + 0.25, y + 0.2, w - 0.5, 0.4, title,
+         font=SERIF, size=18, bold=True, color=accent_color)
+    text(slide, x + 0.25, y + 0.75, w - 0.5, h - 0.95, body,
+         font=SANS, size=10, color=RGBColor(0xCB, 0xD8, 0xE0))
+
+cl_box(s, 0.5, 3.1, 4.0, 1.85,
+       "MP-Init",
+       "TCS originates in the membrane potential. A per-layer running mean closes the gap to the stationary distribution. No overhead, standard inference.",
+       TEAL)
+cl_box(s, 4.7, 3.1, 4.0, 1.85,
+       "TrSG",
+       "Threshold-induced gradient pathology cancelled by a one-line forward-path fix. Window adapts, magnitude is invariant. Inference reverts to binary spikes.",
+       AMBER)
+cl_box(s, 8.9, 3.1, 4.0, 1.85,
+       "Validated",
+       "SOTA on CIFAR-10/100, ImageNet, DVS-CIFAR10. Generalizes to Transformer SNNs and event-based detection without modification.",
+       TEAL)
+
+# Limitations + future
+text(s, 0.5, 5.25, 11, 0.3, "LIMITATIONS  &  FUTURE  WORK",
+     font=SANS, size=10, bold=True, color=AMBER, spacing=400)
+text(s, 0.5, 5.6, 12.3, 1.0,
+     "Per-layer constant approximates π only at the mean — richer parameterizations are open.\n"
+     "Hardware with fixed neuron parameters needs quantization-aware adaptation.\n"
+     "Beyond LIF: extending the principles to adaptive LIF, Izhikevich, and large foundation-scale SNNs.",
+     font=SANS, size=11, color=RGBColor(0xCB, 0xD8, 0xE0))
+
+# Amber underline + Thank you
+amber_underline(s, 0.7, 6.85, w=1.0)
+text(s, 0.7, 7.0, 12, 0.4,
+     "Thank you.   Questions?",
+     font=SERIF, size=20, bold=True, italic=True, color=AMBER)
+text(s, 11.0, 7.10, 1.8, 0.3, "18 / 18",
+     font=SANS, size=10, color=RGBColor(0x80, 0x95, 0xA8), align=PP_ALIGN.RIGHT)
+
+
+# ─── Save ──────────────────────────────────────────────────────────
 out = "Hyunho_Kook_Master_Defense.pptx"
 prs.save(out)
-print(f"Saved: {out}  ({prs.slide_width}x{prs.slide_height} EMU = 16:9)")
-print(f"Slides: {len(prs.slides)}")
+print(f"Saved: {out}    Slides: {len(prs.slides)}")
