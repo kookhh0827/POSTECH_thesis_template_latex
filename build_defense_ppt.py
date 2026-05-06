@@ -424,7 +424,7 @@ callout_box(s, 0.5, 5.4, 12.3, 1.4,
             fill=NAVY, accent=AMBER,
             title="These are not corner cases.",
             body="Trainable V_thr in practice drifts well below 1 in early layers and above 2 in deep ones —\n"
-                 "exactly the regimes where AS-SG and RS-SG both fail. We'll quantify on slide 13.",
+                 "exactly the regimes where AS-SG and RS-SG both fail. We'll quantify in Part II.",
             title_color=AMBER, body_color=WHITE,
             title_size=14, body_size=11)
 
@@ -688,17 +688,16 @@ text(s, 7.05, 4.25, 5.6, 0.3,
      "Used by Meng 2023, DIET-SNN",
      font=SANS, size=10, italic=True, color=GRAY)
 
-# Window visualization — fitted height, centered
-text(s, 0.5, 4.75, 12.3, 0.3,
+# Window visualization — fitted height, centered.  Aspect 8:3 → h ≈ w/2.67
+text(s, 0.5, 4.6, 12.3, 0.3,
      "How the gradient window looks against the membrane-potential distribution",
      font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
-# 8:3 aspect → h = w/2.67.  Need final y < 6.6 (callout) so h ≈ 1.55, w ≈ 4.15
-img(s, GEN + "/sg_windows.png", 4.5, 5.05, w=4.3)
+img(s, GEN + "/sg_windows.png", 4.7, 4.9, w=3.9)
 
-# Bottom strip
-callout_box(s, 0.5, 6.7, 12.3, 0.4,
+# Bottom strip — fits comfortably above page footer
+callout_box(s, 0.5, 6.6, 12.3, 0.4,
             fill=NAVY, accent=CORAL,
-            title="Same when V_thr is fixed.  Once V_thr trains, AS-SG breaks one way, RS-SG breaks the opposite way.",
+            title="Same when V_thr is fixed.  Once V_thr trains, AS-SG breaks one way, RS-SG the opposite.",
             title_color=AMBER, title_size=11)
 
 page_footer(s, 10)
@@ -1043,51 +1042,36 @@ add_circle(s, -2.0, 5.0, 5.5, NAVY_DK)
 
 text(s, 0.7, 0.7, 10, 0.4, "CONCLUSION",
      font=SANS, size=12, bold=True, color=AMBER, spacing=400)
-text(s, 0.7, 1.4, 12, 0.7,
+
+# Big closing message — different from S18's recap card
+text(s, 0.7, 1.6, 12, 0.9,
      "Two instabilities, two principled fixes,",
-     font=SERIF, size=32, bold=True, color=WHITE)
-text(s, 0.7, 2.1, 12, 0.7,
+     font=SERIF, size=36, bold=True, color=WHITE)
+text(s, 0.7, 2.5, 12, 0.9,
      "one cohesive story.",
-     font=SERIF, size=32, bold=True, color=WHITE)
+     font=SERIF, size=36, bold=True, color=AMBER)
 
-# Three summary boxes
-def cl_box(slide, x, y, w, h, title, body, accent_color):
-    box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
-        Inches(x), Inches(y), Inches(w), Inches(h))
-    box.fill.solid(); box.fill.fore_color.rgb = NAVY
-    box.line.color.rgb = accent_color; box.line.width = Pt(1.2)
-    text(slide, x + 0.25, y + 0.2, w - 0.5, 0.4, title,
-         font=SERIF, size=18, bold=True, color=accent_color)
-    text(slide, x + 0.25, y + 0.75, w - 0.5, h - 0.95, body,
-         font=SANS, size=10, color=RGBColor(0xCB, 0xD8, 0xE0))
+# Limitations + future — main content of this slide (not duplicate cards)
+text(s, 0.7, 4.0, 11, 0.3, "LIMITATIONS",
+     font=SANS, size=11, bold=True, color=AMBER, spacing=400)
+text(s, 0.7, 4.35, 12.0, 1.1,
+     "▸  Per-layer constant approximates π only at the mean — richer parameterizations are open.\n"
+     "▸  Hardware with fixed neuron parameters needs quantization-aware adaptation.\n"
+     "▸  i.i.d. assumption empirically supported, but tighter bounds welcome.",
+     font=SANS, size=12, color=RGBColor(0xCB, 0xD8, 0xE0))
 
-cl_box(s, 0.5, 3.1, 4.0, 1.85,
-       "MP-Init",
-       "TCS originates in the membrane potential. A per-layer running mean closes the gap to the stationary distribution. No overhead, standard inference.",
-       TEAL)
-cl_box(s, 4.7, 3.1, 4.0, 1.85,
-       "TrSG",
-       "Threshold-induced gradient pathology cancelled by a one-line forward-path fix. Window adapts, magnitude is invariant. Inference reverts to binary spikes.",
-       AMBER)
-cl_box(s, 8.9, 3.1, 4.0, 1.85,
-       "Validated",
-       "SOTA on CIFAR-10/100, ImageNet, DVS-CIFAR10. Generalizes to Transformer SNNs and event-based detection without modification.",
-       TEAL)
+text(s, 0.7, 5.55, 11, 0.3, "FUTURE  WORK",
+     font=SANS, size=11, bold=True, color=AMBER, spacing=400)
+text(s, 0.7, 5.9, 12.0, 0.9,
+     "▸  Hardware-aware adaptation:  Loihi, Akida, TrueNorth\n"
+     "▸  Beyond LIF:  adaptive LIF, Izhikevich, foundation-scale SNNs",
+     font=SANS, size=12, color=RGBColor(0xCB, 0xD8, 0xE0))
 
-# Limitations + future
-text(s, 0.5, 5.25, 11, 0.3, "LIMITATIONS  &  FUTURE  WORK",
-     font=SANS, size=10, bold=True, color=AMBER, spacing=400)
-text(s, 0.5, 5.6, 12.3, 1.0,
-     "Per-layer constant approximates π only at the mean — richer parameterizations are open.\n"
-     "Hardware with fixed neuron parameters needs quantization-aware adaptation.\n"
-     "Beyond LIF: extending the principles to adaptive LIF, Izhikevich, and large foundation-scale SNNs.",
-     font=SANS, size=11, color=RGBColor(0xCB, 0xD8, 0xE0))
-
-# Amber underline + Thank you
+# Amber underline + Thank you (positioned to fit above 7.5" slide bottom)
 amber_underline(s, 0.7, 6.85, w=1.0)
-text(s, 0.7, 7.0, 12, 0.4,
+text(s, 0.7, 6.97, 12, 0.4,
      "Thank you.   Questions?",
-     font=SERIF, size=20, bold=True, italic=True, color=AMBER)
+     font=SERIF, size=22, bold=True, italic=True, color=AMBER)
 text(s, 11.0, 7.10, 1.8, 0.3, "19 / 19",
      font=SANS, size=10, color=RGBColor(0x80, 0x95, 0xA8), align=PP_ALIGN.RIGHT)
 
