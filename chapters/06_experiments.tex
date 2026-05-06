@@ -1,0 +1,287 @@
+\chapter{Experiments}
+\label{ch:experiments}
+
+We evaluate \textbf{MP-Init} and \textbf{TrSG} on both static and event-based vision benchmarks: CIFAR-10, CIFAR-100~\cite{cifar}, ImageNet~\cite{imagenet}, and DVS-CIFAR10~\cite{dvscifar10}, with a variety of backbones (ResNet-19~\cite{zheng:2021}, a 7-layer CNN~\cite{tebn:2022,tab:2024}, ResNet-34~\cite{resnet}, SEW-ResNet-34~\cite{fang:2021_2}). Following tdBN~\cite{zheng:2021}, batch normalization is applied across both temporal and batch dimensions. Baselines are trained under their original configurations, and we strictly follow their reported preprocessing pipelines for fairness. We avoid strong augmentations such as AutoAugment~\cite{autoaug} or Cutout~\cite{cutout} so that the observed gains come solely from our proposed methods. Each configuration is repeated three times and we report mean$\pm$standard deviation.
+
+\section{Experimental Setup}
+\label{sec:exp_setup}
+
+\paragraph{Architectures.}
+For CIFAR-10/100~\cite{cifar} and ImageNet~\cite{imagenet} we use ResNet-19~\cite{zheng:2021} and ResNet-34~\cite{resnet}. On DVS-CIFAR10~\cite{dvscifar10} we additionally use a 7-layer CNN (64C3-AP2-128C3-128C3-AP2-256C3-256C3-AP2-1024FC-10FC) following~\cite{tebn:2022, tab:2024}. We integrate the temporal dimension into the batch dimension to ensure proper normalization, following tdBN~\cite{zheng:2021}.
+
+In MP-Init and TrSG, the running mean of the membrane potential $\mathbb{E}[U[T]]$, the threshold $V_{\text{thr}}$, and the time-decay constant $\tau$ are layer-wise parameters. We also experimented with channel-wise versions but observed only a small difference in performance. We initialize $\mathbb{E}[U[T]]$ to $0.0$, $V_{\text{thr}}$ to $1.0$, and $\tau$ to $2.0$, following common SNN practice~\cite{deng:2022,tebn:2022,fang:2021_2,fang:2021,meng:2023,shen:2024,zhou:2024_2,shi:2024}; we do not retune these per dataset for fair comparison. The first layer acts as the stem layer that generates spikes from the input, while the final layer does not generate spikes~\cite{deng:2022}. On CIFAR-10/100 and DVS-CIFAR10, dropout is added before each fully connected layer, consistent with TEBN/TAB~\cite{tebn:2022,tab:2024}.
+
+\paragraph{Training configuration.}
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+    \item \textbf{CIFAR-10/100.} ResNet-19 with timesteps $\{2,4,6\}$ on a single RTX-3090. SGD with weight decay $5\times10^{-4}$, CosineAnnealing, initial learning rate $0.02$, batch size $64$. Standard random-crop, horizontal flip, and normalization.
+    \item \textbf{DVS-CIFAR10.} 7-layer CNN and ResNet-19 with timesteps $4$ and $10$. Same optimizer/scheduler as above; images cropped to $48\times 48$ and horizontally flipped, following~\cite{tebn:2022, tab:2024}.
+    \item \textbf{ImageNet.} ResNet-34 trained with $T=6$, evaluated at multiple inference timesteps without fine-tuning. SGD with weight decay $4\times10^{-5}$, CosineAnnealing starting at $0.10$, batch size $512$ across $8\times$ A100-80GB with synchronized BN. SEW-ResNet-34 follows the same procedure.
+\end{itemize}
+
+\section{Effectiveness of MP-Init}
+\label{sec:exp_mpinit}
+
+We first evaluate whether MP-Init enhances final performance. \Cref{tab:mpinit_acc_impr} reports ResNet-19 accuracies on CIFAR-100 and DVS-CIFAR10 with and without MP-Init across three baselines. We observe consistent gains, not only in tdBN—which does not account for TCS—but also in TCS-aware methods (TEBN, TAB). This confirms that prior approaches address TCS only partially, while MP-Init provides a more fundamental remedy.
+
+\begin{table}[t]
+\small
+\centering
+\begin{tabular}{cccc}
+\toprule
+\textbf{Dataset}     & \textbf{Method}    & \textbf{Timestep} & \textbf{Accuracy (\%)} \\
+\toprule
+\multirow{6}{*}{CIFAR-100}    & tdBN      & \multirow{2}{*}{4} & 75.55 $\pm$ 0.06 \\
+                             & + MP-Init &                    & \textbf{76.09 $\pm$ 0.04}    \\
+\cline{2-4}
+                             & TEBN      & \multirow{2}{*}{4} & 75.96 $\pm$ 0.68    \\
+                             & + MP-Init &                    & \textbf{76.45 $\pm$ 0.24}    \\
+\cline{2-4}
+                             & TAB       & \multirow{2}{*}{4} & 76.25 $\pm$ 0.49    \\
+                             & + MP-Init &                    & \textbf{77.24 $\pm$ 0.12}    \\
+\hline
+\multirow{6}{*}{DVS-CIFAR10} & tdBN      & \multirow{2}{*}{10} & 76.60 $\pm$ 0.20    \\
+                             & + MP-Init &                     & \textbf{77.37 $\pm$ 0.38}    \\
+\cline{2-4}
+                             & TEBN      & \multirow{2}{*}{10} & 75.17 $\pm$ 0.50    \\
+                             & + MP-Init &                     & \textbf{76.70 $\pm$ 0.78}    \\
+\cline{2-4}
+                             & TAB       & \multirow{2}{*}{4} & 76.43 $\pm$ 0.25    \\
+                             & + MP-Init &                     & \textbf{76.93 $\pm$ 0.38}    \\
+\bottomrule
+\end{tabular}
+\caption{Performance gains from MP-Init using ResNet-19 on CIFAR-100 and DVS-CIFAR10.}
+\label{tab:mpinit_acc_impr}
+\end{table}
+
+\subsection{Impact of TCS and Role of MP-Init}
+\label{subsec:exp_pca}
+
+To visualize the effect of TCS we project the final logits of four randomly chosen classes onto two principal components. \Cref{fig:feature_split_wo_mpinit} shows that without MP-Init, classes remain entangled in early steps and only gradually separate, reflecting TCS-induced output bias. With MP-Init (\cref{fig:feature_split_w_mpinit}), class separation emerges from the very first timestep.
+
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}{0.32\linewidth}\centering\includegraphics[width=0.995\linewidth]{fig/feature_map_not_mp_init_0.pdf}\caption{$t=1$}\end{subfigure}
+  \begin{subfigure}{0.32\linewidth}\centering\includegraphics[width=0.995\linewidth]{fig/feature_map_not_mp_init_1.pdf}\caption{$t=2$}\end{subfigure}
+  \begin{subfigure}{0.32\linewidth}\centering\includegraphics[width=0.995\linewidth]{fig/feature_map_not_mp_init_3.pdf}\caption{$t=4$}\end{subfigure}
+  \caption{PCA of logits without MP-Init. Class clusters stay mixed in early timesteps, reflecting strong TCS.}
+  \label{fig:feature_split_wo_mpinit}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}{0.32\linewidth}\centering\includegraphics[width=0.995\linewidth]{fig/feature_map_mp_init_0.pdf}\caption{$t=1$}\end{subfigure}
+  \begin{subfigure}{0.32\linewidth}\centering\includegraphics[width=0.995\linewidth]{fig/feature_map_mp_init_1.pdf}\caption{$t=2$}\end{subfigure}
+  \begin{subfigure}{0.32\linewidth}\centering\includegraphics[width=0.995\linewidth]{fig/feature_map_mp_init_3.pdf}\caption{$t=4$}\end{subfigure}
+  \caption{PCA of logits with MP-Init. Clear class separation emerges from $t=1$.}
+  \label{fig:feature_split_w_mpinit}
+\end{figure}
+
+This is consistent with the firing-rate dynamics in \cref{fig:firing_rate_at_timestep}: MP-Init stabilizes neuron activations across timesteps, whereas the baseline accumulates activity over time. The class-prediction histograms in \cref{fig:classification} reinforce the picture: without MP-Init, early-step predictions collapse to a single dominant class; with MP-Init, the distribution is balanced from $t=1$.
+
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}{0.49\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/firing_rate_not_mp_init.pdf}\caption{w/o MP-Init}\end{subfigure}
+  \hfill
+  \begin{subfigure}{0.49\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/firing_rate_mp_init.pdf}\caption{w/ MP-Init}\end{subfigure}
+  \caption{Firing rate at each timestep across six layers of ResNet-19 on CIFAR-10.}
+  \label{fig:firing_rate_at_timestep}
+\end{figure}
+
+\begin{figure}[t!]
+  \centering
+  \begin{subfigure}{0.49\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/not_mp_init_output_rate.pdf}\caption{w/o MP-Init}\end{subfigure}
+  \hfill
+  \begin{subfigure}{0.49\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/mp_init_output_rate.pdf}\caption{w/ MP-Init}\end{subfigure}
+  \caption{Class-prediction distributions over timesteps for ResNet-19 on CIFAR-10.}
+  \label{fig:classification}
+\end{figure}
+
+\subsection{Firing Rate vs.\ Accuracy}
+\label{subsec:exp_pareto}
+
+A natural concern is whether MP-Init merely increases firing and thereby harms efficiency. To test this we apply the spike-sparsity regularizer of~\cite{yan:2022} for ResNet-19 on CIFAR-100 and evaluate performance across firing rates (\cref{fig:firing_rate_vs_accuracy_mpinit}). MP-Init does not rely on excessive spiking: it forms a Pareto frontier above the baseline, achieving higher accuracy at matched or lower firing rates. Even at a firing rate of $0.06$, MP-Init outperforms all baseline settings—indicating that MP-Init enables more energy-efficient SNN operation in addition to higher accuracy.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.7\linewidth]{fig/firing_rate_vs_accuracy.pdf}
+  \caption{Accuracy vs.\ firing rate. MP-Init forms a strict Pareto frontier.}
+  \label{fig:firing_rate_vs_accuracy_mpinit}
+\end{figure}
+
+\section{Effectiveness of TrSG}
+\label{sec:exp_trsg}
+
+We compare three SG approaches—\textbf{AS-SG}, \textbf{RS-SG}, and \textbf{TrSG}—when training both $V_{\text{thr}}$ and $\tau$. To ensure fair evaluation, we use the same training recipes across all methods. To assess initialization sensitivity, we sweep the initial values of $V_{\text{thr}}$ and $\tau$.
+
+We evaluate each configuration using both \textit{soft} and \textit{hard} reset LIF neurons and two widely adopted surrogate-derivative shapes:
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+    \item \textbf{Rectangular}~\cite{zheng:2021,rathi:2023,wang:2022}: $f'_{sr}(x)=\tfrac{1}{\gamma}\,\mathds{1}\bigl(|x|<\tfrac{\gamma}{2}\bigr)$
+    \item \textbf{Triangular}~\cite{meng:2023,deng:2022,tab:2024}: $f'_{sr}(x)=\tfrac{1}{\gamma^{2}}\max(0,\gamma-|x|)$
+\end{itemize}
+
+\Cref{fig:unified_fig}(a)--(b) (top row) shows final accuracies on CIFAR-100 with ResNet-19 across various initial $V_{\text{thr}}$. Across all conditions, \textbf{TrSG} consistently outperforms AS-SG and RS-SG, exhibiting robustness to the initial threshold. The bottom row of \cref{fig:unified_fig} shows training-loss and validation-accuracy curves: for both reset regimes, TrSG converges faster and reaches higher final accuracy. A similar trend holds when varying initial $\tau$ and when using different surrogate shapes (Arctan, Sigmoid).
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}\centering\includegraphics[width=\linewidth]{fig/acc_different_thr_rect.pdf}\caption{Rectangular}\label{fig:acc_rect}\end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}\centering\includegraphics[width=\linewidth]{fig/acc_different_thr_tri.pdf}\caption{Triangular}\label{fig:acc_tri}\end{subfigure}
+    \par\medskip
+    \begin{subfigure}[b]{0.24\textwidth}\centering\includegraphics[width=\linewidth]{fig/loss_acc_rect_soft.pdf}\caption{Rect (soft)}\end{subfigure}
+    \begin{subfigure}[b]{0.24\textwidth}\centering\includegraphics[width=\linewidth]{fig/loss_acc_rect_hard.pdf}\caption{Rect (hard)}\end{subfigure}
+    \begin{subfigure}[b]{0.24\textwidth}\centering\includegraphics[width=\linewidth]{fig/loss_acc_tri_soft.pdf}\caption{Tri (soft)}\end{subfigure}
+    \begin{subfigure}[b]{0.24\textwidth}\centering\includegraphics[width=\linewidth]{fig/loss_acc_tri_hard.pdf}\caption{Tri (hard)}\end{subfigure}
+    \caption{\textbf{SG approaches under different surrogate shapes (rectangular vs.\ triangular) and reset types (soft vs.\ hard).}
+    \emph{Top row:} final CIFAR-100 accuracy (ResNet-19, $T=4$) for initial $V_{\text{thr}}\in\{0.5,1.0,2.0\}$ and $\tau=2.0$.
+    \emph{Bottom row:} training loss / validation accuracy curves with $\tau=2.0$, $V_{\text{thr}}=1.0$.
+    TrSG consistently outperforms AS-SG and RS-SG, demonstrating robustness to initial values.}
+    \label{fig:unified_fig}
+\end{figure}
+
+\section{Ablation Study}
+\label{sec:exp_ablation}
+
+\Cref{tab:ablation_table} ablates MP-Init and TrSG on ResNet-19. Both methods independently improve over the baseline; their combination yields the best result, confirming complementary contributions.
+
+\begin{table}[h]
+\small
+\centering
+\begin{tabular}{cccc}
+\toprule
+\textbf{Dataset} & \textbf{MP-Init} & \textbf{TrSG} & \textbf{Accuracy (\%)} \\
+\toprule
+\multirowcell{4}[0pt][c]{CIFAR-100\\(T=4)}
+ & \ding{55} & \ding{55} & 75.55 $\pm$ 0.06 \\
+ & \ding{51} & \ding{55} & 76.09 $\pm$ 0.04 \\
+ & \ding{55} & \ding{51} & 77.15 $\pm$ 0.06 \\
+ & \ding{51} & \ding{51} & \textbf{77.66 $\pm$ 0.15} \\
+\midrule
+\multirowcell{4}[0pt][c]{DVS-CIFAR10\\(T=10)}
+ & \ding{55} & \ding{55} & 76.60 $\pm$ 0.20 \\
+ & \ding{51} & \ding{55} & 77.37 $\pm$ 0.20 \\
+ & \ding{55} & \ding{51} & 80.83 $\pm$ 0.64 \\
+ & \ding{51} & \ding{51} & \textbf{81.43 $\pm$ 0.40} \\
+\bottomrule
+\end{tabular}
+\caption{Ablation of MP-Init and TrSG on ResNet-19.}
+\label{tab:ablation_table}
+\end{table}
+
+Building on these findings—and given their superior quality and stability—we adopt the \textbf{rectangular} surrogate function and \textbf{soft reset} as the default configuration in subsequent comparisons.
+
+\section{Comparison with State-of-the-Art}
+\label{sec:exp_sota}
+
+We compare \textbf{MP-Init + TrSG} (referred to as ``Ours'') against state-of-the-art methods on static datasets (CIFAR-10/100, ImageNet) and the dynamic dataset DVS-CIFAR10, using standard LIF neurons and various backbones. \Cref{tab:comprehensive_results} summarizes the results.
+
+\begin{table}[t!]
+\centering
+\small
+\begin{tabular}{ccccc}
+\toprule
+\textbf{Dataset} & \textbf{Method} & \textbf{Network} & \textbf{Timestep} & \textbf{Accuracy (\%)} \\
+\toprule
+\multirow{5}{*}{CIFAR-10} & tdBN~\cite{zheng:2021} & \multirow{5}{*}{ResNet-19} & 2 / 4 / 6 & 92.34 / 92.92 / 93.16 \\
+& TET~\cite{deng:2022} & & 2 / 4 / 6 & 94.16 / 94.44 / 94.50 \\
+& TEBN~\cite{tebn:2022} & & 2 / 4 / 6 & 94.57 / 94.70 / 94.71 \\
+& TAB~\cite{tab:2024} & & 2 / 4 / 6 & 94.73 / 94.76 / 94.81 \\
+& \textbf{Ours} & & 2 / 4 / 6 & \textbf{95.05 $\pm$ 0.15 / 95.34 $\pm$ 0.06 / 95.50 $\pm$ 0.16} \\
+\midrule
+\multirow{4}{*}{CIFAR-100} & TET~\cite{deng:2022} & \multirow{4}{*}{ResNet-19} & 2 / 4 / 6 & 72.87 / 74.47 / 74.72 \\
+& TEBN~\cite{tebn:2022} & & 2 / 4 / 6 & 75.86 / 76.13 / 76.41 \\
+& TAB~\cite{tab:2024} & & 2 / 4 / 6 & 76.31 / 76.81 / 76.82 \\
+& \textbf{Ours} & & 2 / 4 / 6 & \textbf{76.87 $\pm$ 0.16 / 77.66 $\pm$ 0.15 / 77.91 $\pm$ 0.32} \\
+\midrule
+\multirow{12}{*}{ImageNet} & tdBN~\cite{zheng:2021} & \multirow{4}{*}{ResNet-34} & 6 & 63.72 \\
+& Dspike~\cite{li:2021} & & 6 & 68.19 \\
+& TEBN~\cite{tebn:2022} & & 4 & 64.29 \\
+& TAB~\cite{tab:2024} & & 4 & 67.78 \\
+\cline{2-5}
+& SEW-ResNet~\cite{fang:2021_2} & \multirow{6}{*}{SEW-ResNet-34} & 4 & 67.04 \\
+& TET~\cite{deng:2022} & & 4 & 68.00 \\
+& TEBN~\cite{tebn:2022} & & 4 & 68.28 \\
+& IMP+LTS~\cite{shen:2024} & & 4 & 68.90 \\
+& MPS~\cite{ding:2025} & & 4 & 69.03 \\
+& EAGD~\cite{yang:2025} & & 4 & 68.12 \\
+\cline{2-5}
+& \multirow{2}{*}{\textbf{Ours}} & ResNet-34 & 4 / 6 & 67.15 $\pm$ 0.03 / \textbf{68.73 $\pm$ 0.09} \\
+& & SEW-ResNet-34 & 4 & \textbf{69.67 $\pm$ 0.08} \\
+\midrule
+\multirow{8}{*}{DVS-CIFAR10} & tdBN~\cite{zheng:2021} & \multirow{3}{*}{ResNet-19} & 10 & 67.80 \\
+& MPBN~\cite{guo:2023_2} & & 10 & 74.40 $\pm$ 0.20 \\
+& RMP-Loss~\cite{guo:2023} & & 10 & 76.20 $\pm$ 0.20 \\
+\cline{2-5}
+& BNTT~\cite{bntt:2020} & \multirow{3}{*}{7-layer CNN} & 20 & 63.20 \\
+& TEBN~\cite{tebn:2022} & & 10 & 75.10 \\
+& TAB~\cite{tab:2024} & & 4 & 76.70 \\
+\cline{2-5}
+& \multirow{2}{*}{\textbf{Ours}} & ResNet-19 & 10 & \textbf{81.43 $\pm$ 0.40} \\
+&  & 7-layer CNN & 4 & \textbf{79.27 $\pm$ 0.75} \\
+\bottomrule
+\end{tabular}
+\caption{Comprehensive comparison of our methods on static and dynamic datasets.}
+\label{tab:comprehensive_results}
+\end{table}
+
+\paragraph{CIFAR-10/100.} Ours achieves the best accuracy across all evaluated timesteps. On CIFAR-10 we reach $95.50\%$ at $T=6$, improving over the previous best (TAB at $94.81\%$) by $0.69$\%pt. On CIFAR-100 we obtain $77.91\%$ at $T=6$, surpassing the strongest baseline (TAB at $76.82\%$) by $1.09$\%pt. Our results at fewer timesteps already outperform baselines at larger timesteps, highlighting improved efficiency.
+
+\paragraph{ImageNet.} With ResNet-34, our method reaches $68.73\%$ top-1 accuracy at $T=6$. With SEW-ResNet-34 we further reach $69.67\%$ at $T=4$, outperforming IMP+LTS~\cite{shen:2024} ($68.90\%$) and MPS~\cite{ding:2025} ($69.03\%$). Unlike those approaches, ours adds negligible overhead and does not require neuron-specific extra parameters or complex optimization.
+
+\paragraph{DVS-CIFAR10.} With ResNet-19 at $T=10$ we obtain $81.43\%$, exceeding the previous best (RMP-Loss at $76.20\%$). With a lightweight 7-layer CNN we still reach $79.27\%$ at $T=4$.
+
+\section{Extensions to Advanced Architectures and Tasks}
+\label{sec:exp_extensions}
+
+We further evaluate MP-Init and TrSG on \textbf{Transformer-based SNNs}. On DVS-CIFAR10 (10 timesteps) our method improves SpikeFormer2 from $78.90\%$ to \textbf{$80.10\%$} and QKFormer from $83.80\%$ to \textbf{$84.80\%$}. On ImageNet (4 timesteps) SpikingResformer rises from $74.34\%$ to \textbf{$75.62\%$}, and QKFormer from $78.80\%$ to \textbf{$79.90\%$} (\cref{tab:advanced_snn}). The +$1.0$--$1.3$\%pt gains indicate that MP-Init and TrSG transfer cleanly to advanced Transformer backbones without architectural changes.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llc}
+\toprule
+\textbf{Dataset} & \textbf{Architecture} & \textbf{Accuracy (\%)} \\
+\midrule
+\multirow{7}{*}{DVS-CIFAR10}
+& Spikformer~\cite{zhou2023spikformer} & 80.90 \\
+& Spikingformer~\cite{zhou2023spikingformer} & 81.30 \\
+& S-Transformer~\cite{yao2023stransformer} & 80.00 \\
+& SpikeFormer2~\cite{zhou:2024} & 78.90 \\
+& \quad + \textbf{Ours} & \textbf{80.10} \\
+& QKFormer~\cite{zhou:2024_2} & 83.80 \\
+& \quad + \textbf{Ours} & \textbf{84.80} \\
+\midrule
+\multirow{7}{*}{ImageNet}
+& Spikformer~\cite{zhou2023spikformer} & 70.24 \\
+& Spikingformer~\cite{zhou2023spikingformer} & 72.45 \\
+& S-Transformer~\cite{yao2023stransformer} & 72.28 \\
+& SpikingResformer~\cite{shi:2024} & 74.34 \\
+& \quad + \textbf{Ours} & \textbf{75.62} \\
+& QKFormer~\cite{zhou:2024_2} & 78.80 \\
+& \quad + \textbf{Ours} & \textbf{79.90} \\
+\bottomrule
+\end{tabular}
+\caption{Transformer-based SNNs with and without our method. DVS-CIFAR10 is evaluated at 10 timesteps; ImageNet at 4 timesteps. Baselines are matched in parameter budget.}
+\label{tab:advanced_snn}
+\end{table}
+
+Beyond classification, we validate task generality on COCO-2017 detection with EMS-ResNet10~\cite{su:2023}. With identical training configurations (100 epochs) for the baseline and ours, MP-Init + TrSG improves mAP from $0.291$ to \textbf{$0.305$} (mAP@0.5) and from $0.138$ to \textbf{$0.147$} (mAP@0.5:0.95), as summarized in \cref{tab:object_detection}.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lc}
+\toprule
+\textbf{Architecture} & \textbf{COCO2017 (mAP@0.5 / mAP@0.5:0.95)} \\
+\midrule
+EMS-ResNet10~\cite{su:2023} & 0.291 / 0.138 \\
+\quad + \textbf{Ours} & \textbf{0.305 / 0.147} \\
+\bottomrule
+\end{tabular}
+\caption{Object detection on COCO-2017 with EMS-ResNet10 ($T=3$).}
+\label{tab:object_detection}
+\end{table}
+
+\section{Discussion}
+\label{sec:exp_discussion}
+
+The empirical results corroborate the analytical claims of \cref{ch:mpinit,ch:trsg}: MP-Init removes the residual TCS that prior normalization-based remedies miss, and TrSG removes the threshold-induced gradient pathologies that prior surrogate-gradient designs suffer from. Their effects are complementary—as evidenced by the $2\sim5$\%pt cumulative gain on DVS-CIFAR10—and they generalize cleanly across architectures, datasets, and downstream tasks while preserving the standard LIF inference pipeline.

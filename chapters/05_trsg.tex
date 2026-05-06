@@ -1,0 +1,184 @@
+\chapter{Threshold-Robust Surrogate Gradient (TrSG)}
+\label{ch:trsg}
+
+This chapter presents the second contribution of the thesis: \textbf{TrSG}, a surrogate-gradient (SG) formulation whose gradient magnitude is invariant to the threshold scale and whose active region adapts naturally with $V_{\text{thr}}$. \Cref{sec:trsg_background} reviews surrogate-gradient descent. \Cref{sec:trsg_two_families} dissects two existing families—Absolute-Scale (AS-SG) and Relative-Scale (RS-SG)—and shows how each becomes unstable when $V_{\text{thr}}$ is trainable. \Cref{sec:trsg_method} derives TrSG, and \Cref{sec:trsg_grad_analysis,sec:trsg_compatibility} provide a detailed gradient analysis with respect to $V_{\text{thr}}$ and $\tau$ together with compatibility checks across surrogate shapes.
+
+\begin{figure}[t!]
+    \centering
+    \includegraphics[width=0.99\linewidth]{fig/second_main.pdf}
+    \caption{\textbf{AS-SG vs.\ RS-SG vs.\ TrSG with a rectangular surrogate gradient ($\gamma=1$).}
+    The curve depicts the membrane-potential distribution; colored boxes represent the surrogate-gradient region (horizontal extent: active gradient window; vertical extent: gradient magnitude).
+    Panels (a) and (b) compare small ($V_{\text{thr}}^{l}\!\ll\!1$) and large ($V_{\text{thr}}^{l}\!\gg\!1$) thresholds.
+    \emph{AS-SG} uses a fixed window of width $\gamma$, leading to \textit{gradient flooding} or \textit{starvation}.
+    \emph{RS-SG} normalizes the window by $V_{\text{thr}}^{l}$ but scales the magnitude as $1/V_{\text{thr}}^{l}$, causing \textit{explosion} or \textit{vanishing}.
+    \textbf{TrSG} multiplies the threshold on the forward path during training, canceling the $1/V_{\text{thr}}^{l}$ factor and keeping both window and magnitude balanced.}
+    \label{fig:second_main}
+\end{figure}
+
+\section{Motivation}
+\label{sec:trsg_motivation}
+
+Surrogate-gradient (SG) descent~\cite{wu:2018} enables gradient-based optimization of SNNs by replacing the non-differentiable spiking function with a differentiable surrogate near the threshold. This permits effective gradient descent and often improves performance at early timesteps. However, our analysis shows that SG used for internal neuronal parameters~\cite{fang:2021,wang:2022,rathi:2023}—particularly $V_{\text{thr}}$—makes training highly sensitive to the \emph{scale} of $V_{\text{thr}}$. While careful tuning can yield strong accuracy, this dependency exposes a fundamental limitation of current SG-based training.
+
+In this chapter, we identify—\emph{to our knowledge for the first time}—that prior SG designs exhibit strong sensitivity of gradient flow to $V_{\text{thr}}$. To address it, we introduce \textbf{TrSG (Threshold-Robust SG)}, which maintains stable gradients regardless of the threshold value. TrSG is simple to implement, adds negligible overhead, and is compatible with a wide range of surrogate functions.
+
+\section{Background: Surrogate Gradient Descent}
+\label{sec:trsg_background}
+
+By \cref{eq:lif_discrete_firing}, an LIF neuron emits a spike when the membrane potential crosses the threshold. Let $H(x)$ denote the Heaviside step. The spike can be written as
+\[
+S^{l}[t] \;=\; H\!\bigl(x(M^{l}[t],V^{l}_{\text{thr}})\bigr),
+\]
+where the \emph{argument} $x(\cdot)$ encodes how the membrane potential $M^{l}[t]$ and the threshold $V^{l}_{\text{thr}}$ are combined (e.g., $x = M^{l}[t]-V^{l}_{\text{thr}}$). Because $H(\cdot)$ is non-differentiable and $H'(\cdot)$ is a Dirac delta, SG training replaces $H$ with a smooth surrogate $f$ whose derivative locally approximates $H'$:
+\[
+H'(x)\;\approx\; f'(x)\quad\text{near }x=0.
+\]
+Applying the chain rule yields the working gradient
+\begin{equation}
+\label{eq:def_of_srgd}
+\frac{\partial S^{l}[t]}{\partial M^{l}[t]}
+\;=\;
+H'\!\bigl(x\bigr)\,\frac{\partial x}{\partial M^{l}[t]}
+\;\approx\;
+f'\!\bigl(x\bigr)\,\frac{\partial x}{\partial M^{l}[t]}.
+\end{equation}
+The \emph{choice} of $x(\cdot)$ is crucial—especially when $V^{l}_{\text{thr}}$ is learnable—because it determines both the active region of nonzero gradients and the scaling of their magnitudes.
+
+Reviewing the literature, SG-based methods fall into two families based on how they define $x(M^{l}[t],V^{l}_{\text{thr}})$: \emph{Absolute-Scale} (AS-SG) and \emph{Relative-Scale} (RS-SG). The distinction becomes significant once the threshold is trained.
+
+\section{Two Families of Surrogate Gradients}
+\label{sec:trsg_two_families}
+
+To make the scaling effects explicit, we analyze a representative surrogate with a rectangular derivative
+\[
+f'(x) \;=\; \frac{1}{\gamma}\,\mathds{1}\!\Bigl(|x|<\tfrac{\gamma}{2}\Bigr),
+\]
+where $\gamma>0$ controls the width of the region where gradients flow. The phenomena described below are \emph{not} specific to this choice; any surrogate exhibits the same issues. \Cref{fig:second_main} visualizes the membrane-potential distribution under two different threshold scales: small ($V_{\text{thr}}^{l}\!\ll\!1$) and large ($V_{\text{thr}}^{l}\!\gg\!1$).
+
+\subsection{AS-SG: Absolute-Scale Surrogate Gradient}
+\label{subsec:trsg_assg}
+
+Many works~\cite{zheng:2021, deng:2022, fang:2021, wang:2022} take
+\begin{equation}
+\label{eq:abs_diff_x}
+x \;=\; M^{l}[t] - V^{l}_{\text{thr}},
+\end{equation}
+which gives
+\begin{equation}
+\label{eq:abs_diff_grad}
+f'\!\bigl(M^{l}[t]-V^{l}_{\text{thr}}\bigr)
+\;=\;
+\frac{1}{\gamma}\,\mathds{1}\!\Bigl(\bigl|M^{l}[t]-V^{l}_{\text{thr}}\bigr|<\tfrac{\gamma}{2}\Bigr),
+\end{equation}
+and thus
+\begin{equation}
+\label{eq:abs_diff_sgrad}
+\frac{\partial S^{l}[t]}{\partial M^{l}[t]}
+\;\approx\;
+f'\!\bigl(M^{l}[t]-V^{l}_{\text{thr}}\bigr).
+\end{equation}
+Here the active window $\{M^{l}[t]\in(V^{l}_{\text{thr}}-\tfrac{\gamma}{2},\,V^{l}_{\text{thr}}+\tfrac{\gamma}{2})\}$ has a \emph{fixed} width $\gamma$, with magnitude independent of $V^{l}_{\text{thr}}$. When $V^{l}_{\text{thr}}$ is small, the window is excessively wide relative to the membrane-potential spread, so gradients keep flowing far from the true firing boundary—a regime we term \emph{gradient flooding}. Conversely, when $V^{l}_{\text{thr}}$ is large, the fixed-width window covers only a tiny fraction of the distribution, and most gradients vanish—\emph{gradient starvation}.
+
+\subsection{RS-SG: Relative-Scale Surrogate Gradient}
+\label{subsec:trsg_rssg}
+
+Other works normalize by the threshold, either by setting $\gamma = V^{l}_{\text{thr}}$~\cite{meng:2023} or by defining
+\(
+x \;=\; \tfrac{M^{l}[t]}{V^{l}_{\text{thr}}} - 1
+\)
+as in~\cite{rathi:2023}. In this case,
+\begin{equation}
+\label{eq:rel_diff_grad}
+f'\!\Bigl(\tfrac{M^{l}[t]}{V^{l}_{\text{thr}}}-1\Bigr)
+\;=\;
+\frac{1}{\gamma}\,\mathds{1}\!\Bigl(\Bigl|\tfrac{M^{l}[t]}{V^{l}_{\text{thr}}}-1\Bigr|<\tfrac{\gamma}{2}\Bigr),
+\end{equation}
+so the active window $\{M^{l}[t]\in((1-\tfrac{\gamma}{2})V^{l}_{\text{thr}},\,(1+\tfrac{\gamma}{2})V^{l}_{\text{thr}})\}$ scales with $V^{l}_{\text{thr}}$. However, the chain rule introduces a sensitivity of the gradient magnitude to the threshold:
+\begin{equation}
+\label{eq:rel_diff_sgrad}
+\frac{\partial S^{l}[t]}{\partial M^{l}[t]}
+\;\approx\;
+\frac{1}{V^{l}_{\text{thr}}}\,
+f'\!\Bigl(\tfrac{M^{l}[t]}{V^{l}_{\text{thr}}}-1\Bigr).
+\end{equation}
+Thus, small thresholds amplify gradients excessively (\emph{gradient explosion}), whereas large thresholds suppress them severely (\emph{gradient vanishing}).
+
+\section{Threshold-Robust Surrogate Gradient}
+\label{sec:trsg_method}
+
+We propose \textbf{TrSG}, a simple modification that preserves the desirable \emph{relative} window while canceling the problematic $1/V^{l}_{\text{thr}}$ factor in the gradient. During training we (i) keep the relative-scale argument,
+\[
+x \;=\; \frac{M^{l}[t]}{V^{l}_{\text{thr}}} - 1,
+\]
+and (ii) multiply the spike by the threshold on the forward path:
+\begin{equation}
+\label{eq:ta_srgd_core}
+O^{l}[t] \;=\; V^{l}_{\text{thr}}\cdot S^{l}[t].
+\end{equation}
+Then,
+\begin{equation}
+\label{eq:ta_srgd_chainrule}
+\frac{\partial O^{l}[t]}{\partial M^{l}[t]}
+\;=\;
+V^{l}_{\text{thr}}\;\frac{\partial S^{l}[t]}{\partial M^{l}[t]}
+\;\approx\;
+V^{l}_{\text{thr}}\cdot
+\Bigl(\frac{1}{V^{l}_{\text{thr}}} f'(x)\Bigr)
+\;=\;
+f'(x),
+\end{equation}
+so the gradient magnitude becomes \emph{threshold-invariant} while the active window still adapts with $V^{l}_{\text{thr}}$.
+
+\subsection{Inference Remains Binary}
+\label{subsec:trsg_inference}
+
+The threshold scaling in \cref{eq:ta_srgd_core} is training-only. At test time we revert to $S^{l}[t]\in\{0,1\}$ and absorb $V^{l}_{\text{thr}}$ into the next layer through a simple weight rescaling
+\(
+W^{l+1}_{l}\leftarrow V^{l}_{\text{thr}}\,W^{l+1}_{l}.
+\)
+Inference therefore uses standard binary spikes and a standard LIF neuron, preserving compatibility with existing neuromorphic hardware.
+
+\paragraph{Summary.}
+TrSG unifies a relative-scale argument with threshold multiplication on the forward path, ensuring stable gradients across thresholds. This design eliminates both the flooding/starvation issue of AS-SG and the vanishing/explosion problem of RS-SG.
+
+\section{Detailed Gradient Analysis}
+\label{sec:trsg_grad_analysis}
+
+We now derive the gradients of the loss with respect to the trainable internal parameters $V^{l}_{\text{thr}}$ and $\tau^{l}$ under TrSG. Let $\mathcal{L}$ denote the loss; for clarity we omit the layer/time index where unambiguous.
+
+\paragraph{Gradient with respect to $V^{l}_{\text{thr}}$.}
+With $x = M/V_{\text{thr}}-1$ and $O = V_{\text{thr}}\cdot S$, the chain rule yields
+\[
+\frac{\partial \mathcal{L}}{\partial V_{\text{thr}}}
+\;=\;
+\frac{\partial \mathcal{L}}{\partial O}
+\Bigl(S \;+\; V_{\text{thr}}\,\frac{\partial S}{\partial V_{\text{thr}}}\Bigr).
+\]
+The $\partial S/\partial V_{\text{thr}}$ term contributes $-\tfrac{M}{V_{\text{thr}}^{2}} f'(x)$, which after multiplication by $V_{\text{thr}}$ becomes $-\tfrac{M}{V_{\text{thr}}}\,f'(x)$. Crucially, this magnitude does not blow up when $V_{\text{thr}}$ is small.
+
+\paragraph{Gradient with respect to $\tau^{l}$.}
+Recall that $\tau$ enters $M$ through \cref{eq:lif_discrete_potential}. Because TrSG affects only the spike-firing path, the gradient w.r.t.\ $\tau$ inherits the standard chain through $\partial M/\partial \tau$, multiplied by $\partial O/\partial M = f'(x)$. The threshold-invariant factor $f'(x)$ stabilizes this gradient as well, so $\tau$ updates remain well-behaved across thresholds.
+
+\section{Compatibility Across Surrogate Shapes}
+\label{sec:trsg_compatibility}
+
+The TrSG construction is independent of the specific surrogate-derivative shape $f'(\cdot)$. We highlight four common choices and confirm that the threshold-invariance property of \cref{eq:ta_srgd_chainrule} carries through.
+
+\paragraph{Rectangular.}
+$f'(x) = \tfrac{1}{\gamma}\,\mathds{1}(|x|<\tfrac{\gamma}{2})$.
+
+\paragraph{Triangular.}
+$f'(x) = \tfrac{1}{\gamma^{2}}\,\max(0,\gamma-|x|)$.
+
+\paragraph{Arctan.}
+$f'(x) = \tfrac{1}{\pi}\,\tfrac{1}{1+(\pi x)^{2}}$.
+
+\paragraph{Sigmoid.}
+$f'(x) = \alpha\,\sigma(\alpha x)\,(1-\sigma(\alpha x))$.
+
+For all four, the chain-rule cancellation in \cref{eq:ta_srgd_chainrule} eliminates the $1/V_{\text{thr}}$ factor; \cref{ch:experiments} verifies that empirical training behavior aligns with this prediction.
+
+\section{Summary}
+\label{sec:trsg_summary}
+
+This chapter classified existing SG methods into AS-SG and RS-SG, exposed the threshold-induced gradient pathologies of each, and introduced TrSG, which restores threshold invariance with a single forward-path modification. The technique is shape-agnostic, training-only, and inference-compatible with standard LIF neurons.

@@ -1,0 +1,39 @@
+\chapter{Background and Related Work}
+\label{ch:background}
+
+This chapter situates the contributions of the thesis within the broader literature. We first review the biological motivation and hardware platforms that have made spiking neural networks (SNNs) attractive (\cref{sec:bg_snn}). We then survey direct-training methodologies (\cref{sec:bg_direct}), existing approaches to temporal covariate shift (\cref{sec:bg_tcs}), and prior work on learning the internal parameters of LIF neurons (\cref{sec:bg_internal}).
+
+\section{Spiking Neural Networks}
+\label{sec:bg_snn}
+
+\subsection{Biological Motivation}
+\label{subsec:bg_bio}
+Biological neurons communicate through asynchronous, all-or-none electrical events called \emph{spikes}. The leaky integrate-and-fire (LIF) abstraction captures the essential dynamics: a neuron integrates incoming current onto its membrane potential, leaks toward a resting value, and emits a spike whenever the membrane potential crosses a threshold. Notably, recent neuroscience evidence~\cite{yoo:2023} indicates that resting membrane potentials differ across distinct cortical regions: neurons in the prefrontal cortex (PFC) exhibit approximately 10~mV higher resting potentials than those in the posterior parietal cortex (PPC), driven by region-specific recurrent synaptic strengths mediated by NMDA receptors. This regional variability in resting potentials motivates the per-layer initialization strategy adopted in this thesis (\cref{ch:mpinit}).
+
+\subsection{Neuromorphic Hardware}
+\label{subsec:bg_hw}
+Several specialized accelerators exploit the event-driven nature of spiking computation: TrueNorth~\cite{merolla:2014, akopyan:2015}, Loihi~\cite{davies:2018}, and emerging digital/mixed-signal designs all process spikes asynchronously and skip computation for inactive neurons, yielding orders-of-magnitude lower energy than dense matrix-multiplication accelerators. A practical consequence is that SNN training methods that introduce extra timestep-dependent state, or that depart from the canonical LIF inference pipeline, can be difficult to deploy. The methods in this thesis preserve the standard LIF inference pipeline so that hardware compatibility is unaffected (cf.~\cref{subsec:trsg_inference}).
+
+\section{Direct Training of SNNs}
+\label{sec:bg_direct}
+
+Surrogate gradient (SG) descent enables end-to-end training of SNNs by approximating the non-differentiable firing function~\cite{lee:2016, wu:2018, wu:2019}. Some studies focus on the impact of hyperparameters and the shape of surrogate derivatives~\cite{zenke:2021, li:2021}, while more recent advances introduce differentiable surrogate gradient functions~\cite{li:2021} and Temporal Efficient Training (TET) losses~\cite{deng:2022}. Other approaches regulate the membrane potential through additional loss terms~\cite{guo:2022, guo:2023} or through batch-normalization variants~\cite{guo:2023_2}. Methods that modify LIF dynamics themselves~\cite{fang:2023, yao:2022, huang:2024} have also been explored, although they may be incompatible with existing neuromorphic hardware~\cite{hunsberger:2015, review_guo:2023}.
+
+\section{Temporal Covariate Shift}
+\label{sec:bg_tcs}
+
+The TCS problem was first identified in BNTT~\cite{bntt:2020} and later addressed by methods such as TEBN~\cite{tebn:2022} and TAB~\cite{tab:2024}, which adapt normalization layers on a per-timestep basis. While these methods alleviate TCS in activations, they increase model complexity with additional parameters and, more critically, overlook the persistent shift in membrane potential, a primary source of TCS during inference (see \cref{sec:mpinit_root}).
+
+IMP+LTS~\cite{shen:2024} proposed training the initial membrane potential for every neuron to enhance representational power. However, it does not directly address TCS and incurs a large parameter overhead scaling with the number of neurons $\mathcal{O}(N)$. By contrast, our approach initializes membrane potentials at the layer level $\mathcal{O}(L)$ ($L \ll N$), directly targeting TCS while remaining lightweight.
+
+More recently, MPS~\cite{ding:2025} reinterpreted SNNs from an ensemble-learning perspective, arguing that excessive differences in membrane potential distributions across timesteps destabilize subnetworks. Their smoothing and guidance strategies improve temporal consistency and yield accuracy gains; however, these methods modify the LIF update rule itself and require additional smoothing coefficients and guidance losses. Both training and inference therefore diverge from the standard LIF neuron model. In contrast, our approach preserves the original inference pipeline: MP-Init adds negligible overhead during training while inference remains compatible with neuromorphic hardware~\cite{davies:2018}.
+
+\section{Learning Internal Parameters of LIF Neurons}
+\label{sec:bg_internal}
+
+Recent studies have explored training internal parameters such as the threshold voltage and the leakage term via gradient descent~\cite{fang:2021, wang:2022, rathi:2023}. PLIF~\cite{fang:2021} optimizes the leakage term, LTMD~\cite{wang:2022} adjusts the threshold voltage, and DIET-SNN~\cite{rathi:2023} learns both. However, these works provide limited analysis of the gradient flow associated with learnable parameters, leaving questions about training stability unanswered. In contrast, we find that when the threshold voltage becomes trainable, surrogate-gradient methods can exhibit instability—producing misaligned, exploding, or vanishing gradients (\cref{sec:trsg_two_families}). To overcome these issues we propose, in \cref{ch:trsg}, a novel surrogate-gradient formulation that remains stable when learning the threshold voltage and ensures robust convergence.
+
+\section{Summary}
+\label{sec:bg_summary}
+
+Existing methods either (i) address TCS only at the activation level while ignoring its origin in the membrane potential, or (ii) train the threshold voltage without a principled treatment of the resulting gradient pathology. The remainder of this thesis closes both gaps.

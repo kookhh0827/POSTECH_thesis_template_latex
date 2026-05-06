@@ -1010,7 +1010,7 @@
     \@starttoc{lot}%
     \if@restonecol\twocolumn\fi
     \newpage \setcounter{pagemarker}{\value{page}}% pagemarker에 다시 저장
-%    \pagenumbering{arabic}                        % arabic 페이지번호로 재시작
+    \pagenumbering{arabic}                        % arabic 페이지번호로 재시작
 }
 
 %%

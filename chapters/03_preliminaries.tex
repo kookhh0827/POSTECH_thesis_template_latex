@@ -1,0 +1,76 @@
+\chapter{Preliminaries}
+\label{ch:preliminaries}
+
+This chapter fixes the notation used throughout the thesis. We introduce the discrete-time leaky integrate-and-fire (LIF) neuron model (\cref{sec:prelim_lif}) and clarify the convention by which silent neurons are excluded from our statistical analyses (\cref{sec:prelim_active}).
+
+\section{The LIF Neuron Model}
+\label{sec:prelim_lif}
+
+The LIF model~\cite{eshraghian:2021} is a widely used spiking neural model that captures key behaviors of biological neurons, including spike firing and membrane-potential decay. In discrete time $t \in \mathbb{N}$, the LIF neuron's behavior is described by the following three equations.
+
+\noindent\textbf{Membrane integration.}
+\begin{equation}
+\label{eq:lif_discrete_potential}
+    M^{l}[t] \;=\; \left( 1 - \frac{1}{\tau^{l}} \right) U^{l}[t-1] + \frac{1}{\tau^{l}} I^{l}_{\text{in}}[t],
+\end{equation}
+
+\noindent\textbf{Spike generation.}
+\begin{equation}
+\label{eq:lif_discrete_firing}
+    S^{l}[t] \;=\; \mathcal{H}\!\left( M^{l}[t] - V^{l}_{\text{thr}} \right),
+\end{equation}
+
+\noindent\textbf{Reset.}
+\begin{equation}
+\label{eq:lif_discrete_reset}
+    U^{l}[t] \;=\; \begin{cases}
+        M^{l}[t] - V^{l}_{\text{thr}} \cdot S^{l}[t], & \text{(soft reset)} \\
+        M^{l}[t] \cdot (1 - S^{l}[t]). & \text{(hard reset)}
+\end{cases}
+\end{equation}
+
+\noindent
+Here $l$ is the layer index, $\mathcal{H}(\cdot)$ is the Heaviside step function, $M^{l}[t]$ is the post-integration membrane potential, $U^{l}[t]$ is the post-reset membrane potential, $S^{l}[t]\in\{0,1\}$ is the spike output, $V^{l}_{\text{thr}}$ is the threshold voltage, and $\tau^{l}$ is the leakage time constant. The presynaptic input current is
+\[
+I^{l}_{\text{in}}[t] \;=\; W_{l-1}^{l}\,O^{l-1}[t],
+\]
+where $W_{l-1}^{l}$ is the synaptic weight matrix from layer $l-1$ to $l$, and $O^{l-1}[t]$ is the output of the previous layer. In direct training, this output typically equals the binary spike itself, $O^{l}[t] = S^{l}[t]$~\cite{wu:2018}. Following standard practice~\cite{eshraghian:2021}, the leakage constant $\tau^{l}$ can be absorbed into the synaptic weights via the rescaling $W_{l-1}^{l} \!:=\! \tfrac{1}{\tau^{l}} W_{l-1}^{l}$ in \cref{eq:lif_discrete_potential}.
+
+\paragraph{Soft vs.\ hard reset.}
+The choice between soft and hard reset in \cref{eq:lif_discrete_reset} affects post-firing dynamics. Under a soft reset~\cite{rueckauer:2016}, the membrane potential decreases by $V^{l}_{\text{thr}}$ when a spike fires; under a hard reset~\cite{wu:2018}, the membrane potential resets to zero. Both regimes are widely used in the literature, and the methods proposed in this thesis are effective in either case.
+
+\section{Active Neurons and Silent Neurons}
+\label{sec:prelim_active}
+
+In our analysis of TCS we focus only on \emph{active neurons}, i.e., those that fire at least once during each simulation. Prior work~\cite{yin:2022} shows that a substantial fraction of neurons in trained SNNs remain subthreshold throughout a simulation; we refer to these as \emph{silent} neurons. Silent neurons are irrelevant to our statistical analysis: they neither contribute to information propagation nor exhibit statistical properties similar to those of active neurons. Therefore, when computing membrane-potential statistics in this thesis, we exclude silent neurons.
+
+\section{Notation Summary}
+\label{sec:prelim_notation}
+
+\Cref{tab:notation} summarizes the symbols used throughout the thesis.
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{l l}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$l$ & Layer index \\
+$t$ & Discrete time step \\
+$M^{l}[t]$ & Post-integration membrane potential at layer $l$, time $t$ \\
+$U^{l}[t]$ & Post-reset membrane potential \\
+$S^{l}[t]\in\{0,1\}$ & Spike output \\
+$O^{l}[t]$ & Layer output (typically $=S^{l}[t]$ in direct training) \\
+$V^{l}_{\text{thr}}$ & Threshold voltage at layer $l$ \\
+$\tau^{l}$ & Leakage time constant at layer $l$ \\
+$I^{l}_{\text{in}}[t]$ & Presynaptic input current \\
+$W_{l-1}^{l}$ & Synaptic weight matrix from layer $l\!-\!1$ to $l$ \\
+$\mathcal{H}(\cdot)$ & Heaviside step function \\
+$\pi$ & Stationary distribution of $U[t]$ (Markov chain) \\
+$T$ & Total number of timesteps in the simulation window \\
+\bottomrule
+\end{tabular}
+\caption{Notation used throughout this thesis.}
+\label{tab:notation}
+\end{table}

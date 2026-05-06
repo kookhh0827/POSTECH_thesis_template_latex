@@ -1,0 +1,229 @@
+\chapter{Membrane Potential Initialization (MP-Init)}
+\label{ch:mpinit}
+
+This chapter presents \textbf{MP-Init}, the first contribution of this thesis. \Cref{sec:mpinit_motivation} motivates the method by examining why existing TCS remedies are insufficient. \Cref{sec:mpinit_root,sec:mpinit_empirical} empirically and theoretically pinpoint the root cause of TCS in the \emph{membrane potential}, and \cref{sec:mpinit_theorem,sec:mpinit_lemma} establish the convergence properties used to derive the algorithm in \cref{sec:mpinit_algorithm}. \Cref{sec:mpinit_bio} discusses biological plausibility, and \cref{sec:mpinit_summary} closes the chapter.
+
+\section{Motivation}
+\label{sec:mpinit_motivation}
+
+TCS~\cite{bntt:2020, tebn:2022, tab:2024} limits the performance of SNNs during inference, particularly when batch normalization (BN) is employed. Despite BN's capability to normalize activations during training, the fixed normalization statistics used at inference cause activation drift across timesteps and accuracy degradation. Previous methods~\cite{tebn:2022, tab:2024} have tried to address this issue through timestep-dependent normalization, but these approaches remain superficial: they fail to resolve the underlying cause—drift in the membrane potential of LIF neurons.
+
+To tackle this issue, we propose \textbf{MP-Init (Membrane Potential Initialization)}, an efficient method that directly targets TCS in the membrane potential. MP-Init ensures stable activation distributions throughout inference by initializing the membrane potential of spiking neurons in each layer to match its stationary distribution. This eliminates the need for timestep-dependent normalization and improves final performance by aligning training and inference statistics.
+
+\section{Empirical Evidence: TCS in the Membrane Potential}
+\label{sec:mpinit_empirical}
+
+\begin{figure}[t!]
+  \centering
+  \begin{subfigure}{0.495\linewidth}
+    \includegraphics[width=0.95\linewidth]{fig/density_plot_membrane_potential_tdbn.pdf}
+    \caption{tdBN}
+    \label{fig:membrane_potential_a}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.495\linewidth}
+    \includegraphics[width=0.95\linewidth]{fig/density_plot_membrane_potential_tebn.pdf}
+    \caption{TEBN}
+  \end{subfigure}
+  \begin{subfigure}{0.495\linewidth}
+    \includegraphics[width=0.95\linewidth]{fig/density_plot_membrane_potential_tab.pdf}
+    \caption{TAB}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.495\linewidth}
+    \includegraphics[width=0.95\linewidth]{fig/density_plot_membrane_potential_mpinit.pdf}
+    \caption{MP-Init (ours)}
+  \end{subfigure}
+  \caption{Membrane potential distributions across timesteps at the third spiking layer of ResNet-19 on CIFAR-100. Existing TCS-aware normalizations (TEBN, TAB) still leave a temporal drift in the membrane potential, while MP-Init aligns the per-timestep distributions.}
+  \label{fig:combined_membrane}
+\end{figure}
+
+\begin{figure}[t!]
+  \centering
+  \begin{subfigure}{0.495\linewidth}
+    \includegraphics[width=0.95\linewidth]{fig/density_plot_presynaptic_input_tdbn.pdf}
+    \caption{tdBN}
+    \label{fig:presynaptic_input_a}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.495\linewidth}
+    \includegraphics[width=0.95\linewidth]{fig/density_plot_presynaptic_input_tebn.pdf}
+    \caption{TEBN}
+  \end{subfigure}
+  \begin{subfigure}{0.495\linewidth}
+    \includegraphics[width=0.95\linewidth]{fig/density_plot_presynaptic_input_tab.pdf}
+    \caption{TAB}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.495\linewidth}
+    \includegraphics[width=0.95\linewidth]{fig/density_plot_presynaptic_input_mpinit.pdf}
+    \caption{MP-Init (ours)}
+  \end{subfigure}
+  \caption{Activation (presynaptic input) distributions of the convolutional layer following the third spiking layer of ResNet-19 on CIFAR-100. The drift visible in TEBN and TAB collapses under MP-Init.}
+  \label{fig:combined_activation}
+\end{figure}
+
+\section{Root Cause of TCS}
+\label{sec:mpinit_root}
+
+We claim that TCS in activations fundamentally originates from TCS in the membrane potential. By \cref{eq:lif_discrete_firing}, the spike output depends directly on the membrane potential; if the membrane potential drifts significantly over timesteps, the activation distribution shifts correspondingly.
+
+\Cref{fig:combined_membrane} visualizes the membrane potential at each timestep and validates this claim. tdBN, which does not account for TCS, exhibits a clear temporal drift, leading to TCS in the activation distribution (\cref{fig:combined_activation}). While TEBN and TAB attempt to stabilize activations through timestep-dependent normalization, the membrane potential itself continues to drift, preserving TCS in activations.
+
+\section{Convergence of the Membrane Potential}
+\label{sec:mpinit_theorem}
+
+While the empirical evidence above demonstrates the existence of TCS in the membrane potential, a theoretical perspective provides a deeper understanding. In this section we present the core principles explaining \emph{why} the membrane potential drifts.
+
+We prove that the layer-wise distribution of the membrane potential converges to a (possibly non-trivial) stationary distribution. The continuous-time analogue was previously established for stable input statistics~\cite{dumont:2017}; we extend the result to the discrete-time model and show that the same convergence property holds.
+
+\begin{assumption}[i.i.d.\ inputs and bounded membrane potential]
+\label{assum:1}
+Let $\{I_{\text{in}}[t]\}_{t\ge1}$ be a sequence drawn from an i.i.d.\ distribution. Furthermore, suppose there exist real constants $u^- < u^+$ such that the membrane potential $U[t]$ of active neurons in each layer remains within $[u^-, u^+]$ for all $t$.
+\end{assumption}
+
+The i.i.d.\ assumption is reasonable: inputs $\{I_{\text{in}}[t]\}_{t\ge1}$ are drawn repeatedly from a dataset or from a normalized layer. While soft-reset LIF dynamics do not strictly prevent unbounded growth, well-trained SNNs rarely exhibit it in active neurons. An empirical validation of \cref{assum:1} is provided in \cref{sec:mpinit_validation}.
+
+\begin{theorem}[Geometric convergence to a stationary distribution]
+\label{thm:1}
+Under \cref{assum:1}, the sequence $\{U[t]\}_{t \ge 0}$ forms a Markov chain with transition kernel $P$. This chain satisfies Doeblin's minorization condition, and consequently admits a unique stationary distribution $\pi$. Moreover, the total-variation (TV) distance between $U[t]$ and $\pi$ decreases exponentially fast in $t$.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+Doeblin's minorization condition is established by exploiting the bounded support of $U[t]$ together with the stochastic noise injected by the i.i.d.\ inputs. Once the minorization condition holds, classical results on Markov chains imply existence and uniqueness of the stationary distribution as well as exponential decay of TV distance. A complete proof is provided in the supplementary discussion of the underlying paper; the argument adapts the continuous-time treatment of \cite{dumont:2017} to the discrete-time recurrence in \cref{eq:lif_discrete_potential,eq:lif_discrete_reset}.
+\end{proof}
+
+\Cref{thm:1} indicates that TCS in the membrane potential is \emph{inevitable} whenever the initial membrane potential differs from its stationary distribution. Traditionally the membrane potential is initialized to zero, $U[0]=0$; this zero initialization is a primary contributor to TCS. To mitigate TCS, we therefore must reduce the discrepancy between the initial state and the stationary distribution.
+
+\section{Optimal Constant Initialization}
+\label{sec:mpinit_lemma}
+
+Theorem~\ref{thm:1} implies that eliminating the mismatch between the initial state and the stationary distribution is crucial. Directly computing $\pi$ is intractable; we therefore propose a more practical approach—initialize the membrane potential with a \emph{per-layer constant} that approximates the mean of $\pi$.
+
+\begin{lemma}[Mean optimality among constants]
+\label{lemma:1}
+Among all constants $c \in \mathbb{R}$, the choice $c = \mathbb{E}[\pi]$ minimizes the expected square difference $\mathbb{E}[(\pi-c)^{2}]$.
+\end{lemma}
+
+\begin{proof}
+Standard variance decomposition: $\mathbb{E}[(\pi-c)^{2}] = \mathrm{Var}(\pi) + (\mathbb{E}[\pi] - c)^{2}$, which is minimized at $c=\mathbb{E}[\pi]$.
+\end{proof}
+
+\Cref{lemma:1} suggests that initializing the membrane potential to the stationary mean is optimal for eliminating drift while minimizing variance. The remaining challenge is to approximate $\mathbb{E}[\pi]$ in practice.
+
+A simple solution leverages \cref{thm:1}: a membrane-potential distribution converges exponentially to $\pi$, so the membrane potential at the final timestep $U[T]$ is the closest sample to $\pi$. We therefore approximate the per-layer statistic of $\mathbb{E}[\pi]$ using $\mathbb{E}[U[T]]$.
+
+\section{The MP-Init Algorithm}
+\label{sec:mpinit_algorithm}
+
+To implement the idea efficiently, we compute the average membrane potential $U[T]$ at the final timestep for each layer during training. This average is used to update a running mean $r$, initialized to zero at the beginning of training. Before feeding each batch into the network—both during training and at inference—we initialize the membrane potential of every layer to this running mean, $U[0] = r$. The procedure, called \textbf{MP-Init}, requires negligible extra memory or computation. \Cref{alg:mpinit} summarizes the steps.
+
+\begin{algorithm}[h]
+\caption{MP-Init: per-layer running-mean initialization}
+\label{alg:mpinit}
+\begin{algorithmic}[1]
+\State Initialize per-layer running mean $\mu^{l}\!\leftarrow\!0$ for each layer $l$
+\State \textbf{Training phase:}
+\For{each batch with simulation window of length $T$}
+  \State Set initial membrane potential $U^{l}[0] \leftarrow \mu^{l}$
+  \State Initialize activity mask $\texttt{mask}^{l}\leftarrow 0$
+  \For{$t=1$ to $T$}
+    \State Update $M^{l}[t]$ via \cref{eq:lif_discrete_potential}
+    \State Compute spikes $S^{l}[t]$ via \cref{eq:lif_discrete_firing}
+    \State Reset $U^{l}[t]$ via \cref{eq:lif_discrete_reset}
+    \State $\texttt{mask}^{l}\leftarrow \texttt{mask}^{l}\;\textsc{or}\;(S^{l}[t]>0)$
+  \EndFor
+  \State $\bar{U}^{l}\leftarrow \mathrm{mean}\{U^{l}[T] : \texttt{mask}^{l}=1\}$ \Comment{active neurons only}
+  \State $\mu^{l}\leftarrow \beta\,\mu^{l} + (1-\beta)\,\bar{U}^{l}$ \Comment{EMA update, $\beta=0.9$}
+\EndFor
+\State \textbf{Inference phase:} keep $\mu^{l}$ fixed; initialize $U^{l}[0]\leftarrow \mu^{l}$ at every batch.
+\end{algorithmic}
+\end{algorithm}
+
+As illustrated in \cref{fig:combined_membrane,fig:combined_activation}, MP-Init effectively resolves both TCS in the membrane potential and TCS in activations, yielding consistent distributions across timesteps. Importantly, MP-Init is straightforward to implement, does not modify BN layers, and does not introduce complex training pipelines—unlike TEBN~\cite{tebn:2022} or TAB~\cite{tab:2024}. This simplicity significantly enhances usability across applications without altering existing recipes.
+
+\section{Empirical Validation of \texorpdfstring{\Cref{assum:1}}{Assumption 1}}
+\label{sec:mpinit_validation}
+
+We provide three checks of \cref{assum:1} in our trained networks: (i) the i.i.d.\ behavior of presynaptic inputs, (ii) the boundedness of $U[t]$, and (iii) the geometric TV decay implied by \cref{thm:1}.
+
+\paragraph{(i) Independence of inputs.}
+We perform a Ljung--Box test at lag~1 on the per-timestep presynaptic-input statistics. The test fails to reject the null hypothesis of zero serial correlation in the vast majority of layers on both CIFAR-100 (\cref{fig:ljung_static}) and DVS-CIFAR10 (\cref{fig:ljung_dvs}), supporting the i.i.d.\ assumption.
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}{0.49\linewidth}
+    \includegraphics[width=\linewidth]{fig/ljung_box_lag1.pdf}
+    \caption{CIFAR-100, ResNet-19}
+    \label{fig:ljung_static}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.49\linewidth}
+    \includegraphics[width=\linewidth]{fig/ljung_box_lag1_dvs.pdf}
+    \caption{DVS-CIFAR10, ResNet-19}
+    \label{fig:ljung_dvs}
+  \end{subfigure}
+  \caption{Ljung--Box test (lag~1) for the presynaptic input across layers and timesteps.}
+  \label{fig:ljung}
+\end{figure}
+
+\paragraph{(ii) Bounded membrane potential.}
+We measure the empirical ratio of $|U^{l}[t]|$ to a per-layer bound across active neurons; \cref{fig:ratio_ut} shows that the ratio remains well within unity throughout training, validating the boundedness portion of \cref{assum:1}.
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}{0.49\linewidth}
+    \includegraphics[width=\linewidth]{fig/ratio_ut.pdf}
+    \caption{CIFAR-100}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.49\linewidth}
+    \includegraphics[width=\linewidth]{fig/ratio_ut_dvs.pdf}
+    \caption{DVS-CIFAR10}
+  \end{subfigure}
+  \caption{Empirical bound on $|U^{l}[t]|$ for active neurons.}
+  \label{fig:ratio_ut}
+\end{figure}
+
+\paragraph{(iii) Geometric TV decay.}
+\Cref{fig:tv_decay} compares the empirical TV distance $\mathrm{TV}(U[t],\pi)$ as $t$ increases against an exponential reference. The decay is clearly geometric, in agreement with the conclusion of \cref{thm:1}.
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}{0.49\linewidth}
+    \includegraphics[width=\linewidth]{fig/tv_distance.pdf}
+    \caption{CIFAR-100}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.49\linewidth}
+    \includegraphics[width=\linewidth]{fig/tv_distance_dvs.pdf}
+    \caption{DVS-CIFAR10}
+  \end{subfigure}
+  \caption{Total-variation distance between $U[t]$ and the stationary distribution $\pi$ as a function of $t$.}
+  \label{fig:tv_decay}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}{0.49\linewidth}
+    \includegraphics[width=\linewidth]{fig/tv_from_input_distribution.pdf}
+    \caption{CIFAR-100}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.49\linewidth}
+    \includegraphics[width=\linewidth]{fig/tv_from_input_distribution_dvs.pdf}
+    \caption{DVS-CIFAR10}
+  \end{subfigure}
+  \caption{TV distance from the input distribution as $t$ increases.}
+  \label{fig:tv_input}
+\end{figure}
+
+\section{Biological Plausibility}
+\label{sec:mpinit_bio}
+
+A neuroscience study~\cite{yoo:2023} reports that resting membrane potentials (RMPs) differ across distinct cortical regions: neurons in the prefrontal cortex (PFC) exhibit $\sim 10$~mV higher RMPs than neurons in the posterior parietal cortex (PPC), driven by region-specific recurrent synaptic strengths mediated by NMDA receptors. These regional differences imply that the stationary membrane-potential distribution may inherently vary across neural populations and brain areas. The layer-wise initialization of MP-Init mirrors this intrinsic regional variability, lending biological plausibility to the proposed scheme.
+
+\section{Summary}
+\label{sec:mpinit_summary}
+
+This chapter identified the membrane potential as the root cause of TCS in SNNs (\cref{sec:mpinit_root,sec:mpinit_empirical}), proved that the membrane potential converges geometrically to a stationary distribution (\cref{sec:mpinit_theorem}), and used this fact to derive a per-layer running-mean initialization, MP-Init, that eliminates TCS at negligible cost (\cref{sec:mpinit_algorithm}).

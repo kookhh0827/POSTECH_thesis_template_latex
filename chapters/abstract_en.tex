@@ -1,0 +1,11 @@
+%% English Abstract — appears immediately after the cover pages.
+%% Within \begin{abstract} ... \end{abstract} environment provided by postech-ucs.cls.
+%% Limit: 1,000 words (지침 1.나.③)
+
+Recent advancements in the direct training of Spiking Neural Networks (SNNs) have demonstrated high-quality outputs even at early timesteps, paving the way for novel energy-efficient AI paradigms. However, the inherent non-linearity and temporal dependencies in SNNs introduce persistent challenges, such as temporal covariate shift (TCS) and unstable gradient flow with learnable neuron thresholds.
+
+In this thesis, we enhance the stability of direct SNN training through two key innovations: \textbf{MP-Init (Membrane Potential Initialization)} and \textbf{TrSG (Threshold-Robust Surrogate Gradient)}. MP-Init addresses TCS by aligning the initial membrane potential with its stationary distribution, while TrSG stabilizes gradient flow with respect to the threshold voltage during training. We provide a rigorous mathematical analysis of both methods, prove the geometric convergence of the membrane potential to a stationary distribution, and characterize the threshold-induced gradient pathologies of existing surrogate-gradient families.
+
+Extensive experiments validate our approach, achieving state-of-the-art accuracy on both static (CIFAR-10/100, ImageNet) and dynamic (DVS-CIFAR10) image datasets, while incurring negligible parameter and computational overhead. The methods further generalize cleanly to Transformer-based SNNs and to event-based object detection, indicating broad applicability beyond the classification setting.
+
+The code for reproducing the results is available at: \href{https://github.com/kookhh0827/SNN-MP-Init-TRSG}{\textcolor{mypink}{https://github.com/kookhh0827/SNN-MP-Init-TRSG}}.

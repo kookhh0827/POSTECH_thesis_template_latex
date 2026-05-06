@@ -1,0 +1,44 @@
+\chapter{Introduction}
+\label{ch:introduction}
+
+\section{Motivation}
+\label{sec:intro_motivation}
+
+Modern deep neural networks (DNNs) have achieved remarkable accuracy across vision, language, and multimodal tasks, but their energy footprint has grown substantially as model scale has increased. Training and serving large foundation models routinely consumes megawatt-scale power, and even moderately sized inference workloads on edge devices remain difficult to deploy under tight energy budgets. This trajectory motivates a search for fundamentally more efficient computation models.
+
+Spiking Neural Networks (SNNs) offer one such alternative. By transmitting information through discrete spikes over time, SNNs enable efficient, event-driven processing~\cite{cao:2015, esser:2016, neftci:2018, roy:2019, cramer:2022, rathi:2023}, especially when paired with neuromorphic hardware~\cite{merolla:2014, akopyan:2015, davies:2018}. Recent advances in direct training~\cite{wu:2018, wu:2019} have significantly improved SNN accuracy with only a handful of timesteps, narrowing the historical efficiency-vs.-accuracy gap. Yet, SNNs still lag behind conventional deep neural networks, and their complex temporal dynamics often hinder performance on large-scale datasets~\cite{review_guo:2023, review_zhou:2024}. Further innovations are therefore crucial to ensure reliability and accuracy for real-world adoption.
+
+\section{Challenges in Direct Training of SNNs}
+\label{sec:intro_challenges}
+
+This thesis identifies and addresses two challenges that, despite extensive prior work, remain insufficiently understood.
+
+\paragraph{Challenge 1: Temporal Covariate Shift (TCS).}
+The first challenge is \textbf{Temporal Covariate Shift (TCS)}~\cite{bntt:2020}, in which internal covariate shifts in activations accumulate over time. Existing remedies such as TEBN~\cite{tebn:2022} and TAB~\cite{tab:2024} introduce timestep-specific normalization parameters, but they disrupt parameter homogeneity across time and increase both model complexity and computational cost. More importantly, our analysis reveals that these methods fail to mitigate TCS in the membrane potential of leaky-integrate-and-fire (LIF) neurons. Since the membrane potential directly determines neuronal output, neglecting TCS in this component leads to significant accuracy degradation.
+
+\paragraph{Challenge 2: Gradient pathology of learnable thresholds.}
+The second challenge concerns \textbf{training the internal parameters}~\cite{fang:2021, wang:2022, rathi:2023} of LIF neurons—chiefly the threshold voltage $V_{\text{thr}}$ and the leakage term $\tau$. Despite their crucial role in LIF neuron behavior, these parameters are typically fixed or updated under strict constraints. We show that existing surrogate-gradient flow heavily depends on the scale of $V_{\text{thr}}$, and that unconstrained updates during training lead to either gradient flooding/starvation or gradient explosion/vanishing. To our knowledge, this issue has not been explicitly recognized prior to this work.
+
+\section{Contributions}
+\label{sec:intro_contributions}
+
+This thesis makes the following contributions:
+
+\begin{itemize}[leftmargin=2em]
+    \item \textbf{MP-Init (Membrane Potential Initialization).} We trace TCS to the mismatch between the initial membrane potential and its stationary distribution. We prove a discrete-time convergence theorem (Markov-chain Doeblin minorization) showing that the layer-wise membrane potential converges geometrically to a unique stationary distribution under mild assumptions. Building on this, we propose a per-layer running-mean initialization that aligns the initial membrane potential with the stationary mean, eliminating TCS while preserving the standard inference pipeline of LIF SNNs.
+
+    \item \textbf{TrSG (Threshold-robust Surrogate Gradient).} We classify existing surrogate gradients into Absolute-Scale (AS-SG) and Relative-Scale (RS-SG) families, and analyze how each becomes unstable when $V_{\text{thr}}$ is trainable. We then propose TrSG, which keeps the relative-scale active window while canceling the destabilizing $1/V_{\text{thr}}$ factor through a threshold-multiplied forward path. The result is a gradient whose magnitude is invariant to the threshold scale and whose active region adapts naturally with $V_{\text{thr}}$.
+
+    \item \textbf{Comprehensive empirical validation.} On CIFAR-10/100, ImageNet, and DVS-CIFAR10, our combined method achieves state-of-the-art accuracy at competitive timesteps. We further demonstrate that MP-Init and TrSG transfer cleanly to Transformer-based SNN backbones and to event-based object detection, indicating broad applicability.
+\end{itemize}
+
+\section{Thesis Organization}
+\label{sec:intro_organization}
+
+The remainder of this thesis is organized as follows.
+\Cref{ch:background} reviews the background and related work in spiking neural networks, including direct-training methodologies, prior approaches to TCS, and existing strategies for learning internal LIF parameters.
+\Cref{ch:preliminaries} fixes notation and formalizes the LIF neuron model, the surrogate gradient framework, and the active-neuron convention used throughout the thesis.
+\Cref{ch:mpinit} introduces \textbf{MP-Init}: it identifies the root cause of TCS in the membrane potential, presents a rigorous convergence theorem, and develops the running-mean initialization algorithm.
+\Cref{ch:trsg} introduces \textbf{TrSG}: it analyzes the threshold sensitivity of existing surrogate gradients, derives the threshold-robust formulation, and provides a detailed gradient analysis with respect to $V_{\text{thr}}$ and $\tau$.
+\Cref{ch:experiments} reports experimental results on static and event-based datasets, ablation studies, comparisons with state-of-the-art methods, and extensions to advanced architectures and downstream tasks.
+\Cref{ch:conclusion} concludes with a discussion of limitations and directions for future work.
