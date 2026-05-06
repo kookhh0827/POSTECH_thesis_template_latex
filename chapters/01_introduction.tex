@@ -29,7 +29,7 @@ This thesis makes the following contributions:
 
     \item \textbf{TrSG (Threshold-robust Surrogate Gradient).} We classify existing surrogate gradients into Absolute-Scale (AS-SG) and Relative-Scale (RS-SG) families, and analyze how each becomes unstable when $V_{\text{thr}}$ is trainable. We then propose TrSG, which keeps the relative-scale active window while canceling the destabilizing $1/V_{\text{thr}}$ factor through a threshold-multiplied forward path. The result is a gradient whose magnitude is invariant to the threshold scale and whose active region adapts naturally with $V_{\text{thr}}$.
 
-    \item \textbf{Comprehensive empirical validation.} On CIFAR-10/100, ImageNet, and DVS-CIFAR10, our combined method achieves state-of-the-art accuracy at competitive timesteps. We further demonstrate that MP-Init and TrSG transfer cleanly to Transformer-based SNN backbones and to event-based object detection, indicating broad applicability.
+    \item \textbf{Comprehensive empirical validation.} On CIFAR-10/100, ImageNet, and DVS-CIFAR10, our combined method achieves state-of-the-art accuracy at competitive timesteps. We further demonstrate that MP-Init and TrSG transfer cleanly to Transformer-based SNN backbones and to event-based object detection, indicating broad applicability.\footnote{The reference implementation that reproduces the results in this thesis is available at \href{https://github.com/kookhh0827/SNN-MP-Init-TRSG}{\texttt{https://github.com/kookhh0827/SNN-MP-Init-TRSG}}.}
 \end{itemize}
 
 \section{Thesis Organization}
