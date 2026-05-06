@@ -281,6 +281,20 @@ EMS-ResNet10~\cite{su:2023} & 0.291 / 0.138 \\
 \label{tab:object_detection}
 \end{table}
 
+\section{How Does MP-Init Impact Training?}
+\label{sec:exp_mpinit_impact}
+
+TEBN~\cite{tebn:2022} and TAB~\cite{tab:2024} have shown that temporal covariate shift indeed occurs, and \cref{ch:mpinit} demonstrated that MP-Init effectively resolves it. Prior studies, however, did not provide direct evidence of \emph{how} TCS impairs training. Inspired by the ensemble interpretation of SNNs in MPS~\cite{ding:2025}, we revisit this question with a gradient-conflict experiment on ResNet-19 with CIFAR-100. We compute the gradients applied to a given layer at each timestep and measure the cosine similarity across timesteps.
+
+As shown in \cref{fig:gradient_conflict_tcs}, without MP-Init (left) the gradients at $t=1$ exhibit strong conflicts with later timesteps, indicating severe inconsistency across the temporal ensemble members. With MP-Init (right), these conflicts are largely alleviated and the overall cosine similarity improves. This provides direct evidence that TCS not only degrades inference consistency but also hinders gradient alignment during training, and confirms that MP-Init effectively stabilizes optimization.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.99\linewidth]{fig/grad_collision.pdf}
+    \caption{\textbf{Gradient conflicts across timesteps with and without MP-Init.} Cosine similarity of gradients across timesteps in ResNet-19 on CIFAR-100. \emph{Left:} Without MP-Init, the gradient from $t=1$ strongly conflicts with later timesteps, reflecting the temporal inconsistency highlighted by MPS~\cite{ding:2025}. \emph{Right:} With MP-Init, conflicts are largely resolved and similarities improve, indicating that MP-Init aligns temporal ensemble members and stabilizes training.}
+    \label{fig:gradient_conflict_tcs}
+\end{figure}
+
 \section{How Does TrSG Impact Training?}
 \label{sec:exp_trsg_impact}
 

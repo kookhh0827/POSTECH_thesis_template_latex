@@ -201,10 +201,28 @@ As illustrated in \cref{fig:combined_membrane,fig:combined_activation}, MP-Init 
 \section{Empirical Validation of \texorpdfstring{\Cref{assum:1}}{Assumption 1}}
 \label{sec:mpinit_validation}
 
-We provide three checks of \cref{assum:1} in our trained networks: (i) the i.i.d.\ behavior of presynaptic inputs, (ii) the boundedness of $U[t]$, and (iii) the geometric TV decay implied by \cref{thm:1}.
+We provide three checks of \cref{assum:1} in our trained networks: (i) the inputs are nearly identically distributed across timesteps, (ii) they are approximately independent, and (iii) the membrane potential of active neurons remains bounded.
 
-\paragraph{(i) Independence of inputs.}
-We perform a Ljung--Box test at lag~1 on the per-timestep presynaptic-input statistics. The test fails to reject the null hypothesis of zero serial correlation in the vast majority of layers on both CIFAR-100 (\cref{fig:ljung_static}) and DVS-CIFAR10 (\cref{fig:ljung_dvs}), supporting the i.i.d.\ assumption.
+\paragraph{(i) Identical distribution.}
+We compute the TV distance between the presynaptic-input distributions at timesteps $t=1,\dots,9$ and the reference distribution at $t=10$. As shown in \cref{fig:tv_input}, distances are consistently small ($<0.1$ after $t=2$) on both CIFAR-100 and DVS-CIFAR10, indicating that the input distribution stabilizes quickly and remains nearly identical across timesteps.
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}{0.49\linewidth}
+    \includegraphics[width=\linewidth]{fig/tv_from_input_distribution.pdf}
+    \caption{CIFAR-100}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.49\linewidth}
+    \includegraphics[width=\linewidth]{fig/tv_from_input_distribution_dvs.pdf}
+    \caption{DVS-CIFAR10}
+  \end{subfigure}
+  \caption{TV distance between the presynaptic-input distribution at each timestep and the reference at $t=10$.}
+  \label{fig:tv_input}
+\end{figure}
+
+\paragraph{(ii) Independence of inputs.}
+We perform a Ljung--Box test at lag~1 on the per-timestep presynaptic-input statistics. The test fails to reject the null hypothesis of zero serial correlation in $80$--$90\%$ of neurons on both CIFAR-100 (\cref{fig:ljung_static}) and DVS-CIFAR10 (\cref{fig:ljung_dvs}), supporting the i.i.d.\ assumption.
 
 \begin{figure}[h]
   \centering
@@ -219,12 +237,12 @@ We perform a Ljung--Box test at lag~1 on the per-timestep presynaptic-input stat
     \caption{DVS-CIFAR10, ResNet-19}
     \label{fig:ljung_dvs}
   \end{subfigure}
-  \caption{Ljung--Box test (lag~1) for the presynaptic input across layers and timesteps.}
+  \caption{Ljung--Box test (lag~1) for the presynaptic input across layers and timesteps. Bars show the percentage of neurons for which independence cannot be rejected.}
   \label{fig:ljung}
 \end{figure}
 
-\paragraph{(ii) Bounded membrane potential.}
-We measure the empirical ratio of $|U^{l}[t]|$ to a per-layer bound across active neurons; \cref{fig:ratio_ut} shows that the ratio remains well within unity throughout training, validating the boundedness portion of \cref{assum:1}.
+\paragraph{(iii) Bounded membrane potential.}
+We measure the empirical fraction of active neurons whose $|U^{l}[t]|$ stays within a per-layer bound. As shown in \cref{fig:ratio_ut}, over $97\%$ of membrane potentials remain within $\pm V_{\text{thr}}$ at all timesteps, and nearly all values lie within $\pm 2 V_{\text{thr}}$, confirming that the dynamics are effectively bounded in practice.
 
 \begin{figure}[h]
   \centering
@@ -237,12 +255,16 @@ We measure the empirical ratio of $|U^{l}[t]|$ to a per-layer bound across activ
     \includegraphics[width=\linewidth]{fig/ratio_ut_dvs.pdf}
     \caption{DVS-CIFAR10}
   \end{subfigure}
-  \caption{Empirical bound on $|U^{l}[t]|$ for active neurons.}
+  \caption{Empirical boundedness ratio of $|U^{l}[t]|$ for active neurons.}
   \label{fig:ratio_ut}
 \end{figure}
 
-\paragraph{(iii) Geometric TV decay.}
-\Cref{fig:tv_decay} compares the empirical TV distance $\mathrm{TV}(U[t],\pi)$ as $t$ increases against an exponential reference. The decay is clearly geometric, in agreement with the conclusion of \cref{thm:1}.
+Together these three diagnostics confirm that \cref{assum:1} holds empirically in our trained networks, validating the theoretical conditions of \cref{thm:1}.
+
+\section{Convergence Speed of the Membrane Potential}
+\label{sec:mpinit_convergence_speed}
+
+\Cref{thm:1} predicts an exponential convergence of $U[t]$ toward the stationary distribution $\pi$. We empirically verify this by computing the TV distance between the membrane-potential distribution at each timestep and the reference distribution at $t=10$. As shown in \cref{fig:tv_decay}, deviations are large at $t=1$ but shrink rapidly, already becoming negligible ($<0.1$) by $t=3$ on both CIFAR-100 and DVS-CIFAR10. This rapid convergence is highly desirable for SNNs, since reducing the number of timesteps directly improves both energy efficiency and latency. The benefit is especially pronounced at very low timesteps: at $T=2$, MP-Init delivers a \textbf{1.66\,\%pt} accuracy improvement over the baseline (\cref{tab:convergence-mpinit}), enabling reliable inference even under aggressive latency constraints.
 
 \begin{figure}[h]
   \centering
@@ -255,44 +277,9 @@ We measure the empirical ratio of $|U^{l}[t]|$ to a per-layer bound across activ
     \includegraphics[width=\linewidth]{fig/tv_distance_dvs.pdf}
     \caption{DVS-CIFAR10}
   \end{subfigure}
-  \caption{Total-variation distance between $U[t]$ and the stationary distribution $\pi$ as a function of $t$.}
+  \caption{Total-variation distance between $U[t]$ and the reference at $t=10$ as a function of $t$. The decay is clearly geometric, in agreement with the conclusion of \cref{thm:1}.}
   \label{fig:tv_decay}
 \end{figure}
-
-\begin{figure}[h]
-  \centering
-  \begin{subfigure}{0.49\linewidth}
-    \includegraphics[width=\linewidth]{fig/tv_from_input_distribution.pdf}
-    \caption{CIFAR-100}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{0.49\linewidth}
-    \includegraphics[width=\linewidth]{fig/tv_from_input_distribution_dvs.pdf}
-    \caption{DVS-CIFAR10}
-  \end{subfigure}
-  \caption{TV distance from the input distribution as $t$ increases.}
-  \label{fig:tv_input}
-\end{figure}
-
-\section{How does MP-Init Impact Training?}
-\label{sec:mpinit_impact_training}
-
-TEBN~\cite{tebn:2022} and TAB~\cite{tab:2024} have shown that temporal covariate shift indeed occurs, and the previous sections have already demonstrated that MP-Init effectively resolves it. However, prior studies did not provide clear evidence of \emph{how} TCS directly impairs training. Inspired by the ensemble interpretation of SNNs in MPS~\cite{ding:2025}, we revisited this question and conducted an experiment on ResNet-19 with CIFAR-100. Specifically, we computed the gradients applied to a given layer at each timestep and measured the cosine similarity across timesteps.
-
-As shown in \cref{fig:gradient_conflict_tcs}, without MP-Init (left), the gradients from $t=1$ exhibit strong conflicts with later timesteps, indicating severe inconsistency across the temporal ensemble members. With MP-Init (right), these conflicts are largely alleviated, and the overall cosine similarity improves. This analysis provides direct evidence that TCS not only degrades inference consistency but also hinders gradient alignment during training, and highlights how MP-Init effectively stabilizes optimization.
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.99\linewidth]{fig/grad_collision.pdf}
-    \caption{\textbf{Gradient conflicts across timesteps with and without MP-Init.}
-    Cosine similarity of gradients across timesteps in ResNet-19 on CIFAR-100. \emph{Left:} Without MP-Init, the gradient from $t=1$ strongly conflicts with later timesteps, reflecting the temporal inconsistency highlighted by MPS~\cite{ding:2025}. \emph{Right:} With MP-Init, conflicts are largely resolved and similarities improve, indicating that MP-Init aligns temporal ensemble members and stabilizes training.}
-    \label{fig:gradient_conflict_tcs}
-\end{figure}
-
-\section{Convergence Speed of the Membrane Potential}
-\label{sec:mpinit_convergence_speed}
-
-As predicted by \cref{thm:1}, the empirical TV distance curves in \cref{fig:tv_decay} clearly exhibit \emph{exponential convergence}: deviations are large at $t=1$ but shrink rapidly, already becoming negligible ($<0.1$) by $t=3$. This rapid convergence is highly desirable for SNNs, since reducing the number of timesteps directly improves both energy efficiency and latency. The benefit is especially pronounced at very low timesteps: at $T=2$, MP-Init delivers a \textbf{1.66\,\%pt} accuracy improvement over the baseline (\cref{tab:convergence-mpinit}), highlighting that our method enables reliable inference even under aggressive latency constraints.
 
 \begin{table}[h]
 \centering
@@ -346,4 +333,4 @@ A neuroscience study~\cite{yoo:2023} reports that resting membrane potentials (R
 \section{Summary}
 \label{sec:mpinit_summary}
 
-This chapter identified the membrane potential as the root cause of TCS in SNNs (\cref{sec:mpinit_root,sec:mpinit_empirical}), proved that the membrane potential converges geometrically to a stationary distribution (\cref{sec:mpinit_theorem}), and used this fact to derive a per-layer running-mean initialization, MP-Init, that eliminates TCS at negligible cost (\cref{sec:mpinit_algorithm}). We further showed that MP-Init aligns temporal gradients during training (\cref{sec:mpinit_impact_training}), accelerates inference at low timesteps (\cref{sec:mpinit_convergence_speed}), and explained how the LIF parameters $\tau$ and $V_{\text{thr}}$ modulate the convergence rate (\cref{sec:mpinit_convergence_rate}).
+This chapter identified the membrane potential as the root cause of TCS in SNNs (\cref{sec:mpinit_root,sec:mpinit_empirical}), proved that the membrane potential converges geometrically to a stationary distribution (\cref{sec:mpinit_theorem}), and used this fact to derive a per-layer running-mean initialization, MP-Init, that eliminates TCS at negligible cost (\cref{sec:mpinit_algorithm}). We further showed that MP-Init accelerates inference at low timesteps (\cref{sec:mpinit_convergence_speed}) and explained how the LIF parameters $\tau$ and $V_{\text{thr}}$ modulate the convergence rate (\cref{sec:mpinit_convergence_rate}). The analysis of how MP-Init affects gradient flow during training is deferred to \cref{sec:exp_mpinit_impact} alongside the parallel analysis for TrSG, where the two methods can be compared directly.
