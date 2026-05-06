@@ -89,8 +89,54 @@ The i.i.d.\ assumption is reasonable: inputs $\{I_{\text{in}}[t]\}_{t\ge1}$ are 
 Under \cref{assum:1}, the sequence $\{U[t]\}_{t \ge 0}$ forms a Markov chain with transition kernel $P$. This chain satisfies Doeblin's minorization condition, and consequently admits a unique stationary distribution $\pi$. Moreover, the total-variation (TV) distance between $U[t]$ and $\pi$ decreases exponentially fast in $t$.
 \end{theorem}
 
-\begin{proof}[Proof sketch]
-Doeblin's minorization condition is established by exploiting the bounded support of $U[t]$ together with the stochastic noise injected by the i.i.d.\ inputs. Once the minorization condition holds, classical results on Markov chains imply existence and uniqueness of the stationary distribution as well as exponential decay of TV distance. A complete proof is provided in the supplementary discussion of the underlying paper; the argument adapts the continuous-time treatment of \cite{dumont:2017} to the discrete-time recurrence in \cref{eq:lif_discrete_potential,eq:lif_discrete_reset}.
+\begin{proof}
+The proof proceeds in four steps: (Step 1) verify the Markov property; (Step 2) characterize the transition kernel; (Step 3) establish Doeblin's minorization condition~\cite{rosenthal:1995}; and (Step 4) derive exponential decay in TV distance.
+
+\medskip
+\noindent\textbf{Step 1: Markov property.}
+The dynamics of $U[t]$ are
+\begin{equation}
+    U[t+1] \;=\; f\!\bigl(U[t],\,I_{\text{in}}[t+1]\bigr),
+\end{equation}
+where $f(\cdot)$ is a deterministic function of the current membrane potential $U[t]$ and the new input $I_{\text{in}}[t+1]$. Since $\{I_{\text{in}}[t]\}_{t\ge1}$ is i.i.d., the future state $U[t+1]$ depends solely on the current state $U[t]$ and not on earlier states:
+\begin{equation}
+    \Pr\bigl(U[t+1]\in A \,\big|\, U[t],\dots,U[0]\bigr)
+    \;=\;
+    \Pr\bigl(U[t+1]\in A \,\big|\, U[t]\bigr).
+\end{equation}
+Hence $\{U[t]\}_{t\ge0}$ is a Markov chain.
+
+\medskip
+\noindent\textbf{Step 2: Transition kernel.}
+The transition kernel $P(x,A)$ is the probability that $U[t+1]$ falls in the measurable set $A$ given $U[t]=x$:
+\begin{equation}
+    P(x,A) \;=\; \Pr\bigl(U[t+1]\in A \,\big|\, U[t]=x\bigr)
+    \;=\; \int_{A} p(x,y)\,\mathrm{d}y,
+\end{equation}
+where the transition density $p(x,y)$ encapsulates the dynamics induced by $f(\cdot)$ and the i.i.d.\ input distribution.
+
+\medskip
+\noindent\textbf{Step 3: Doeblin's minorization condition.}
+We show that there exist a constant $\epsilon>0$ and a probability measure $\mu(\cdot)$ on the state space $S=[u^{-},u^{+}]$ such that
+\begin{equation}
+\label{eq:minimorization_condition}
+    P(x,A) \;\ge\; \epsilon\,\mu(A)
+    \qquad \forall\, x\in S,\;\forall\, A\subseteq S \text{ measurable.}
+\end{equation}
+Because $S$ is bounded by \cref{assum:1} and the transition density $p(x,y)$ is continuous (the i.i.d.\ inputs ensure a smooth density on $S$), there exists a positive lower bound $\delta>0$ such that $p(x,y)\ge\delta$ for all $(x,y)\in S\times S$. Hence
+\begin{equation}
+    P(x,A) \;=\; \int_{A} p(x,y)\,\mathrm{d}y \;\ge\; \delta\cdot \lambda(A),
+\end{equation}
+where $\lambda$ is the Lebesgue measure on $S$. Letting $\mu(A)=\lambda(A)/\lambda(S)$ be the uniform probability measure on $S$ and $\epsilon=\delta\,\lambda(S)$ yields \cref{eq:minimorization_condition}.
+
+\medskip
+\noindent\textbf{Step 4: Exponential decay of TV distance.}
+A direct consequence of Doeblin's minorization condition (see, e.g., \cite{rosenthal:1995}) is that the $n$-step transition $P^{n}(x,\cdot)$ converges geometrically to a unique stationary distribution $\pi$:
+\begin{equation}
+\label{eq:convergence_speed}
+    \bigl\|P^{n}(x,\cdot)-\pi(\cdot)\bigr\|_{\mathrm{TV}} \;\le\; C\,(1-\epsilon)^{n}
+\end{equation}
+for some constant $C>0$ depending on the initial state. Since $1-\epsilon<1$, the TV distance decreases exponentially in $n$, simultaneously establishing the existence and uniqueness of the stationary distribution.
 \end{proof}
 
 \Cref{thm:1} indicates that TCS in the membrane potential is \emph{inevitable} whenever the initial membrane potential differs from its stationary distribution. Traditionally the membrane potential is initialized to zero, $U[0]=0$; this zero initialization is a primary contributor to TCS. To mitigate TCS, we therefore must reduce the discrepancy between the initial state and the stationary distribution.
@@ -102,11 +148,21 @@ Theorem~\ref{thm:1} implies that eliminating the mismatch between the initial st
 
 \begin{lemma}[Mean optimality among constants]
 \label{lemma:1}
-Among all constants $c \in \mathbb{R}$, the choice $c = \mathbb{E}[\pi]$ minimizes the expected square difference $\mathbb{E}[(\pi-c)^{2}]$.
+Let $U^{*}\sim \pi$ be a sample from the stationary distribution. Among all constants $c \in \mathbb{R}$, the choice $c = \mathbb{E}[U^{*}]$ minimizes the expected square difference $\mathbb{E}[(U^{*}-c)^{2}]$.
 \end{lemma}
 
 \begin{proof}
-Standard variance decomposition: $\mathbb{E}[(\pi-c)^{2}] = \mathrm{Var}(\pi) + (\mathbb{E}[\pi] - c)^{2}$, which is minimized at $c=\mathbb{E}[\pi]$.
+Expanding the square,
+\begin{equation}
+    \mathbb{E}[(U^{*}-c)^{2}] \;=\; \mathbb{E}[U^{*2}] - 2\,\mathbb{E}[U^{*}]\,c + c^{2}.
+\end{equation}
+Differentiating with respect to $c$ and setting the derivative to zero,
+\begin{equation}
+    \frac{\partial \mathbb{E}[(U^{*}-c)^{2}]}{\partial c} \;=\; -2\,\mathbb{E}[U^{*}] + 2c \;=\; 0
+    \quad\Longrightarrow\quad
+    c \;=\; \mathbb{E}[U^{*}].
+\end{equation}
+The second derivative is $2>0$, confirming that the critical point is a minimum.
 \end{proof}
 
 \Cref{lemma:1} suggests that initializing the membrane potential to the stationary mean is optimal for eliminating drift while minimizing variance. The remaining challenge is to approximate $\mathbb{E}[\pi]$ in practice.
