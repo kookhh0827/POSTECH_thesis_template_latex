@@ -847,52 +847,25 @@ page_footer(s, 13)
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Part II · TrSG")
-slide_title(s, "TrSG Holds Up — Stress Tests + Real Trajectories")
+slide_title(s, "Why TrSG Works — A Closer Look",
+            "Stable gradient across thresholds  ·  real trainings actually visit those regimes")
 
-# Left: stability metrics tables
-text(s, 0.5, 2.4, 6.5, 0.4,
-     "Gradient-stability metrics at extreme thresholds  (CIFAR-100, T=4, ep 100)",
-     font=SANS, size=11, italic=True, color=GRAY)
+# Hero: no_training_acc bar chart, sized to fit
+# Chart aspect 2.5 (7.5x3).  h=2.6 → w=6.5.  Center horizontally.
+img(s, GEN + "/no_training_acc.png", 3.4, 2.4, w=6.5)
 
-# Two table cards side by side
-def metric_card(slide, x, y, title, rows):
-    card(slide, x, y, 3.05, 2.4, fill=CREAM, border=GRAY_LT, border_w=0.5)
-    text(slide, x + 0.15, y + 0.08, 2.85, 0.3,
-         title, font=SANS, size=11, bold=True, color=NAVY)
-    tx = slide.shapes.add_textbox(Inches(x + 0.15), Inches(y + 0.4),
-                                   Inches(2.85), Inches(2.0))
-    tf = tx.text_frame; tf.word_wrap = True
-    for i, (label, val, color) in enumerate(rows):
-        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-        p.text = f"{label:<8s} {val}"
-        p.font.name = "Consolas"; p.font.size = Pt(10); p.font.color.rgb = color
-        if i > 0: p.space_before = Pt(2)
+# Bullets summarizing the mechanism
+bullets(s, 0.5, 5.25, 12.3, 1.4, [
+    "TrSG wins at every V_thr — most dramatically at the extremes (74.0 vs 61.6 / div. at V_thr=0.1; 64.3 vs 18.1 / 5.4 at V_thr=2.0)",
+    "AS-SG and RS-SG only work in a narrow band around V_thr=1.0",
+    "Real trainings DO visit V_thr ≪ 1 (early layers) and V_thr ≫ 1 (deep layers)",
+], size=12, color=INK, bullet="▸")
 
-metric_card(s, 0.5, 2.85,
-            "V_thr = 0.1   (low)",
-            [("AS-SG", "AbsStr 0.0145  · 90% active", CORAL),
-             ("RS-SG", "diverged (NaN)", CORAL),
-             ("TrSG",  "AbsStr 0.0153  · 21% · CV 0.87", TEAL)])
-metric_card(s, 3.7, 2.85,
-            "V_thr = 2.0   (high)",
-            [("AS-SG", "0%  active  (zero gradient)", CORAL),
-             ("RS-SG", "0.10% active · CV 2.25", CORAL),
-             ("TrSG",  "AbsStr 0.0323  · 7% · CV 0.73", TEAL)])
-
-# Right: threshold trajectory image
-text(s, 7.3, 2.4, 5.6, 0.4,
-     "Real trainings actually visit these regions",
-     font=SANS, size=11, italic=True, color=GRAY)
-img(s, ASSETS + "/threshold_training_imagenet.png", 7.3, 2.85, w=5.6, h=2.4)
-
-# Bottom message
-callout_box(s, 0.5, 5.5, 12.3, 1.4,
+# Bottom strip
+callout_box(s, 0.5, 6.65, 12.3, 0.45,
             fill=NAVY, accent=AMBER,
-            title="Threshold-robustness is a practical necessity",
-            body="Across CIFAR-100, DVS-CIFAR10, and ImageNet, trainable V_thr drifts well below 1\n"
-                 "or above 2 in some layers — exactly the regimes where AS-SG and RS-SG fail.",
-            title_color=AMBER, body_color=WHITE,
-            title_size=14, body_size=11)
+            title="Threshold-robustness is a practical necessity, not a theoretical edge case.",
+            title_color=AMBER, title_size=12)
 
 page_footer(s, 14)
 

@@ -272,3 +272,51 @@ print("Saved chain_rule.png")
 print("\nAll generated:")
 for f in os.listdir("ppt_assets/gen"):
     print(f"  ppt_assets/gen/{f}")
+
+
+# ─── 7. No-training V_thr accuracy — for "Why TrSG Works" S14 ──────
+fig, ax = plt.subplots(figsize=(7.5, 3.0), dpi=200)
+v_thrs = ["0.1", "0.5", "1.0", "1.5", "2.0"]
+ax_vals = [61.59, 75.96, np.nan, 69.97, 18.09]   # AS-SG
+rs_vals = [np.nan, 76.12, np.nan, 71.43,  5.43]   # RS-SG (div. at 0.1)
+tr_vals = [73.99, 76.82, 75.56, 71.97, 64.27]     # TrSG
+
+x = np.arange(len(v_thrs))
+w = 0.27
+b1 = ax.bar(x - w, ax_vals, w, color=CORAL, label="AS-SG", edgecolor="white")
+b2 = ax.bar(x,     rs_vals, w, color=AMBER, label="RS-SG", edgecolor="white")
+b3 = ax.bar(x + w, tr_vals, w, color=TEAL,  label="TrSG",  edgecolor="white")
+
+# Mark NaNs / divergences
+for xi, val in zip(x, ax_vals):
+    if np.isnan(val):
+        ax.text(xi - w, 5, "—", ha="center", color=GRAY, fontsize=11)
+for xi, val in zip(x, rs_vals):
+    if np.isnan(val):
+        ax.text(xi, 5, "div.", ha="center", color=CORAL, fontsize=9, fontweight="bold")
+for bar, val in zip(b3, tr_vals):
+    ax.text(bar.get_x() + bar.get_width()/2, val + 1, f"{val:.1f}",
+            ha="center", color=TEAL, fontsize=8.5, fontweight="bold")
+for bar, val in zip(b1, ax_vals):
+    if not np.isnan(val):
+        ax.text(bar.get_x() + bar.get_width()/2, val + 1, f"{val:.0f}",
+                ha="center", color=GRAY, fontsize=8)
+for bar, val in zip(b2, rs_vals):
+    if not np.isnan(val):
+        ax.text(bar.get_x() + bar.get_width()/2, val + 1, f"{val:.0f}",
+                ha="center", color=GRAY, fontsize=8)
+
+ax.set_xticks(x); ax.set_xticklabels([f"$V_{{\\rm thr}}={v}$" for v in v_thrs], fontsize=10)
+ax.set_ylabel("Accuracy (%)", fontsize=10)
+ax.set_ylim(0, 90)
+ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
+ax.tick_params(axis="y", labelsize=9, colors=GRAY)
+ax.legend(loc="upper right", fontsize=10, frameon=False)
+ax.set_title("CIFAR-100, ResNet-19, $\\tau=2.0$ frozen — $V_{\\rm thr}$ frozen at varying values",
+             fontsize=11, color=NAVY)
+
+plt.tight_layout()
+plt.savefig("ppt_assets/gen/no_training_acc.png", bbox_inches="tight",
+            facecolor="white")
+plt.close()
+print("Saved no_training_acc.png")
