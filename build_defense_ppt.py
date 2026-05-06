@@ -19,6 +19,7 @@ from copy import deepcopy
 import os
 
 ASSETS = "ppt_assets"
+GEN    = "ppt_assets/gen"
 
 # 16:9 widescreen
 prs = Presentation()
@@ -287,9 +288,9 @@ page_footer(s, 2)
 s = add_blank()
 section_label(s, "Background · 1/2")
 slide_title(s, "Spiking Neurons in 60 Seconds",
-            "How information flows, and how we get gradients through it")
+            "Three discrete-time updates, plus one trick to get gradients through them")
 
-# Left: LIF
+# Left: LIF equations
 text(s, 0.5, 2.5, 6.2, 0.4,
      "Leaky Integrate-and-Fire neuron",
      font=SANS, size=14, bold=True, color=NAVY)
@@ -306,39 +307,34 @@ def equation_box(slide, x, y, w, h, label, eq):
          font="Cambria Math", size=12, color=INK,
          anchor=MSO_ANCHOR.MIDDLE)
 
-equation_box(s, 0.5, eq_y,        6.2, 0.6,
+equation_box(s, 0.5, eq_y,        6.2, 0.55,
              "Integrate", "M[t] = (1−1/τ)·U[t−1]  +  (1/τ)·I_in[t]")
-equation_box(s, 0.5, eq_y + 0.75, 6.2, 0.6,
-             "Fire",      "S[t] = H( M[t] − V_thr )       (1 if exceeds, else 0)")
-equation_box(s, 0.5, eq_y + 1.5,  6.2, 0.6,
+equation_box(s, 0.5, eq_y + 0.65, 6.2, 0.55,
+             "Fire",      "S[t] = H( M[t] − V_thr ) ∈ {0, 1}")
+equation_box(s, 0.5, eq_y + 1.30, 6.2, 0.55,
              "Reset",     "U[t] = M[t] − V_thr · S[t]   (soft reset)")
 
-text(s, 0.5, eq_y + 2.2, 6.2, 0.5,
-     "Two key learnable parameters:  τ  (leakage)  and  V_thr  (threshold).",
+text(s, 0.5, eq_y + 1.95, 6.2, 0.4,
+     "Two learnable parameters:  τ (leakage)  ·  V_thr (threshold).",
      font=SANS, size=11, italic=True, color=GRAY)
 
-# Right: Surrogate gradient
-text(s, 7.2, 2.5, 5.6, 0.4,
-     "Heaviside is non-differentiable",
-     font=SANS, size=14, bold=True, color=NAVY)
-text(s, 7.2, 2.95, 5.6, 0.5,
-     "S = H(M − V_thr)   ⇒   H'(x) = δ(x)   ⇒   no gradient flow",
-     font="Cambria Math", size=12, color=INK)
+# Right: LIF dynamics chart + surrogate gradient
+img(s, GEN + "/lif_dynamics.png", 7.0, 2.5, w=5.9)
+text(s, 7.0, 5.05, 5.9, 0.3,
+     "M[t] integrates inputs, fires at V_thr, resets — repeat.",
+     font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
 
-text(s, 7.2, 3.7, 5.6, 0.4,
-     "Surrogate gradient (SG)",
-     font=SANS, size=14, bold=True, color=NAVY)
-text(s, 7.2, 4.15, 5.6, 1.5,
-     "Replace H with a smooth surrogate f near the threshold.\n"
-     "Use f'(x) ≈ H'(x) only in backward pass — forward pass\n"
-     "still emits binary spikes.",
-     font=SANS, size=12, color=INK)
+text(s, 7.0, 5.45, 5.9, 0.4,
+     "Heaviside H is not differentiable",
+     font=SANS, size=12, bold=True, color=CORAL)
+text(s, 7.0, 5.85, 5.9, 0.45,
+     "Surrogate gradient: backward pass uses smooth f'(x) ≈ H'(x).",
+     font=SANS, size=11, color=INK)
 
-# Bottom callout
-callout_box(s, 0.5, 6.05, 12.3, 0.85,
-            title="Everything in this thesis turns on M[t] and V_thr.",
-            body="The membrane potential drives TCS;  the threshold drives the gradient pathology.",
-            title_size=13, body_size=11)
+# Bottom callout (single-line title only — keep tight)
+callout_box(s, 0.5, 6.55, 12.3, 0.45,
+            title="Everything in this thesis turns on M[t] and V_thr  ·  TCS at M[t]  ·  pathology at V_thr",
+            title_size=12)
 
 page_footer(s, 3)
 
@@ -388,47 +384,49 @@ page_footer(s, 4)
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Setup")
-slide_title(s, "Diagnosis ②: Trainable V_thr Breaks the Gradient")
-
-text(s, 0.5, 2.5, 12.3, 0.5,
-     "V_thr controls when a neuron fires — we want it to learn.",
-     font=SANS, size=15, bold=True, color=NAVY)
-text(s, 0.5, 3.05, 12.3, 0.6,
-     "Modern methods (PLIF, LTMD, DIET-SNN) all make V_thr trainable. But the surrogate gradient flowing\n"
-     "through V_thr is highly sensitive to its scale.",
-     font=SANS, size=12, color=INK)
+slide_title(s, "Diagnosis ②: Trainable V_thr Breaks the Gradient",
+            "PLIF, LTMD, DIET-SNN all let V_thr learn — but the surrogate gradient is scale-sensitive")
 
 # Two failure scenarios
-fy = 4.1
+fy = 2.5
 
 # Left scenario
-left_x, right_x, w, h = 0.5, 6.95, 5.85, 2.0
+left_x, right_x, w, h = 0.5, 6.95, 5.85, 2.6
 rect_l = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
     Inches(left_x), Inches(fy), Inches(w), Inches(h))
 rect_l.fill.solid(); rect_l.fill.fore_color.rgb = CORAL_LT
 rect_l.line.color.rgb = CORAL; rect_l.line.width = Pt(1.2)
-text(s, left_x + 0.3, fy + 0.2, 1.3, 0.3,
-     "V_thr ≪ 1", font=SANS, size=12, bold=True, color=CORAL)
-text(s, left_x + 0.3, fy + 0.6, w - 0.5, 1.4,
-     "AS-SG floods the layer (window covers most of the distribution).\n"
-     "RS-SG explodes through the 1/V_thr factor in the chain rule.",
-     font=SANS, size=12, color=INK)
+text(s, left_x + 0.3, fy + 0.2, w - 0.5, 0.4,
+     "V_thr ≪ 1   (small threshold)",
+     font=SANS, size=14, bold=True, color=CORAL)
+bullets(s, left_x + 0.3, fy + 0.7, w - 0.5, 1.8, [
+    "AS-SG floods — fixed window covers almost the entire distribution",
+    "RS-SG explodes — the 1/V_thr factor blows the magnitude up",
+    "Real example: at V_thr = 0.1, RS-SG diverges to NaN within 100 epochs",
+], size=11, color=INK, bullet="▸")
 
 # Right scenario
 rect_r = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
     Inches(right_x), Inches(fy), Inches(w), Inches(h))
 rect_r.fill.solid(); rect_r.fill.fore_color.rgb = CORAL_LT
 rect_r.line.color.rgb = CORAL; rect_r.line.width = Pt(1.2)
-text(s, right_x + 0.3, fy + 0.2, 1.3, 0.3,
-     "V_thr ≫ 1", font=SANS, size=12, bold=True, color=CORAL)
-text(s, right_x + 0.3, fy + 0.6, w - 0.5, 1.4,
-     "AS-SG starves (window misses most of the distribution).\n"
-     "RS-SG vanishes through the same 1/V_thr factor.",
-     font=SANS, size=12, color=INK)
+text(s, right_x + 0.3, fy + 0.2, w - 0.5, 0.4,
+     "V_thr ≫ 1   (large threshold)",
+     font=SANS, size=14, bold=True, color=CORAL)
+bullets(s, right_x + 0.3, fy + 0.7, w - 0.5, 1.8, [
+    "AS-SG starves — fixed window covers a tiny tail of the distribution",
+    "RS-SG vanishes — the same 1/V_thr factor shrinks the magnitude",
+    "Real example: at V_thr = 2.0, AS-SG hits 0% active neurons by epoch 100",
+], size=11, color=INK, bullet="▸")
 
-text(s, 0.5, 6.4, 12.3, 0.5,
-     "These are not corner cases — real trainings visit them.",
-     font=SANS, size=13, italic=True, color=NAVY, align=PP_ALIGN.CENTER)
+# Bottom: real-world emphasis
+callout_box(s, 0.5, 5.4, 12.3, 1.4,
+            fill=NAVY, accent=AMBER,
+            title="These are not corner cases.",
+            body="Trainable V_thr in practice drifts well below 1 in early layers and above 2 in deep ones —\n"
+                 "exactly the regimes where AS-SG and RS-SG both fail. We'll quantify on slide 13.",
+            title_color=AMBER, body_color=WHITE,
+            title_size=14, body_size=11)
 
 page_footer(s, 5)
 
@@ -441,33 +439,42 @@ section_label(s, "Part I · MP-Init")
 slide_title(s, "Why Does the Membrane Potential Drift?",
             "Because it's a Markov chain pulled toward a unique distribution")
 
-# Recurrence
-callout_box(s, 0.5, 2.4, 12.3, 0.9,
+# Left: theorem + recurrence (more compact)
+callout_box(s, 0.5, 2.5, 7.2, 0.7,
             fill=CREAM, accent=TEAL,
             title="The recurrence is a Markov chain",
-            body="U[t+1]  =  f( U[t],  I_in[t+1] )         — i.i.d. inputs ⇒ Markov chain",
+            body="U[t+1] = f( U[t], I_in[t+1] ) — i.i.d. ⇒ Markov chain",
             title_color=TEAL, body_color=INK,
-            title_size=14, body_size=14)
+            title_size=12, body_size=11)
 
-# Theorem
-callout_box(s, 0.5, 3.5, 12.3, 1.6,
+callout_box(s, 0.5, 3.4, 7.2, 1.6,
             fill=NAVY, accent=AMBER,
             title="Theorem  (Doeblin minorization)",
-            body="Under (i.i.d. inputs) + (bounded U[t]),  the chain has a unique stationary "
-                 "distribution π.  Moreover,\n\n"
-                 "      ‖ Pⁿ(x, ·)  −  π(·) ‖_TV   ≤   C · (1 − ε)ⁿ        (geometric convergence)",
+            body="Under (i.i.d. inputs) + (bounded U[t]),\n"
+                 "the chain has a unique stationary π.  Moreover,\n\n"
+                 "‖ Pⁿ(x, ·) − π(·) ‖_TV   ≤   C · (1 − ε)ⁿ",
             title_color=AMBER, body_color=WHITE,
-            title_size=14, body_size=12)
+            title_size=12, body_size=11)
 
 # Implications
-text(s, 0.5, 5.4, 12.3, 0.5,
+text(s, 0.5, 5.2, 7.2, 0.4,
      "Implications",
-     font=SANS, size=14, bold=True, color=CORAL)
-bullets(s, 0.5, 5.85, 12.3, 1.5, [
-    "Initial state ≠ π   ⇒   TCS is mathematically inevitable",
-    "Standard practice  U[0] = 0  is almost always far from π",
-    "Don't fix the normalization layer — fix the initial state",
-], size=13, color=INK, bullet="▸")
+     font=SANS, size=13, bold=True, color=CORAL)
+bullets(s, 0.5, 5.6, 7.2, 1.4, [
+    "Initial state ≠ π  ⇒  drift is inevitable",
+    "Standard U[0] = 0 is far from π",
+    "Don't fix BN — fix the initial state",
+], size=11, color=INK, bullet="▸")
+
+# Right: convergence visualization
+img(s, GEN + "/convergence.png", 8.0, 2.5, w=5.0)
+text(s, 8.0, 5.4, 5.0, 0.4,
+     "Distribution of U[t] for t = 0, 1, 2, 3, 4, 5, 8, 12",
+     font=SANS, size=11, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
+text(s, 8.0, 5.8, 5.0, 0.7,
+     "Starting from U[0]=0 (sharp red), the distribution exponentially "
+     "approaches the stationary π (dashed navy).",
+     font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
 
 page_footer(s, 6)
 
@@ -602,36 +609,40 @@ page_footer(s, 8)
 s = add_blank()
 section_label(s, "Part II · TrSG")
 slide_title(s, "Two Surrogate-Gradient Families",
-            "AS-SG and RS-SG — same idea, two parameterizations")
+            "AS-SG and RS-SG — look similar, behave very differently when V_thr is trainable")
 
-card(s, 0.5, 2.5, 6.0, 4.0, fill=CREAM, border=NAVY, border_w=1.5)
-text(s, 0.7, 2.65, 5.6, 0.4, "AS-SG  ·  Absolute-Scale",
-     font=SANS, size=14, bold=True, color=NAVY)
-text(s, 0.7, 3.1, 5.6, 0.5,
+# Top row: two cards with definitions
+card(s, 0.5, 2.5, 6.0, 1.5, fill=CREAM, border=NAVY, border_w=1.5)
+text(s, 0.7, 2.6, 5.6, 0.35, "AS-SG  ·  Absolute-Scale",
+     font=SANS, size=13, bold=True, color=NAVY)
+text(s, 0.7, 3.0, 5.6, 0.45,
      "x = M[t] − V_thr",
      font="Cambria Math", size=18, color=NAVY)
-bullets(s, 0.7, 3.85, 5.6, 2.5, [
-    "Window width fixed at γ — ignores V_thr",
-    "Magnitude independent of V_thr",
-    "Used by tdBN, TET, PLIF, LTMD, …",
-], size=12, color=INK, bullet="▸")
+text(s, 0.7, 3.55, 5.6, 0.4,
+     "Used by tdBN, TET, PLIF, LTMD, …",
+     font=SANS, size=10, italic=True, color=GRAY)
 
-card(s, 6.85, 2.5, 6.0, 4.0, fill=CREAM, border=NAVY, border_w=1.5)
-text(s, 7.05, 2.65, 5.6, 0.4, "RS-SG  ·  Relative-Scale",
-     font=SANS, size=14, bold=True, color=NAVY)
-text(s, 7.05, 3.1, 5.6, 0.5,
+card(s, 6.85, 2.5, 6.0, 1.5, fill=CREAM, border=NAVY, border_w=1.5)
+text(s, 7.05, 2.6, 5.6, 0.35, "RS-SG  ·  Relative-Scale",
+     font=SANS, size=13, bold=True, color=NAVY)
+text(s, 7.05, 3.0, 5.6, 0.45,
      "x = M[t] / V_thr − 1",
      font="Cambria Math", size=18, color=NAVY)
-bullets(s, 7.05, 3.85, 5.6, 2.5, [
-    "Window scales with V_thr  ✓",
-    "But chain rule introduces a 1/V_thr factor in magnitude  ✗",
-    "Used by Meng 2023, DIET-SNN",
-], size=12, color=INK, bullet="▸")
+text(s, 7.05, 3.55, 5.6, 0.4,
+     "Used by Meng 2023, DIET-SNN",
+     font=SANS, size=10, italic=True, color=GRAY)
 
-callout_box(s, 0.5, 6.65, 12.3, 0.45,
+# Bottom: visual comparison
+text(s, 0.5, 4.15, 12.3, 0.3,
+     "How the gradient window looks against the membrane-potential distribution",
+     font=SANS, size=11, italic=True, color=GRAY)
+img(s, GEN + "/sg_windows.png", 3.4, 4.4, w=6.5)
+
+# Bottom strip
+callout_box(s, 0.5, 6.7, 12.3, 0.4,
             fill=NAVY, accent=CORAL,
-            title="Treated as essentially equivalent. Once V_thr is trainable, they break in opposite ways.",
-            title_color=AMBER, title_size=12, body_size=10)
+            title="Same when V_thr is fixed.  Once V_thr trains, AS-SG breaks one way, RS-SG breaks the opposite way.",
+            title_color=AMBER, title_size=11, body_size=10)
 
 page_footer(s, 9)
 
@@ -641,74 +652,68 @@ page_footer(s, 9)
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Part II · TrSG")
-slide_title(s, "Four Failure Modes — and One Fix")
+slide_title(s, "Four Failure Modes — and One Fix",
+            "Both window width and gradient magnitude must scale correctly with V_thr")
 
-text(s, 0.5, 2.4, 12.3, 0.4,
-     "Window width × gradient magnitude — both must scale correctly with V_thr.",
-     font=SANS, size=12, italic=True, color=GRAY)
+# Hero figure (second_main has aspect 0.87, set by height)
+img(s, ASSETS + "/second_main.png", 4.7, 1.95, h=4.6)
 
-# Header columns labels
-text(s, 1.7, 2.85, 5.5, 0.3, "V_thr ≪ 1",
-     font=SANS, size=11, bold=True, color=NAVY, align=PP_ALIGN.CENTER, spacing=200)
-text(s, 7.4, 2.85, 5.5, 0.3, "V_thr ≫ 1",
-     font=SANS, size=11, bold=True, color=NAVY, align=PP_ALIGN.CENTER, spacing=200)
+# Left side: AS-SG / RS-SG / TrSG row labels with failure mode summaries
+left_x = 0.5
+text(s, left_x, 2.05, 4.0, 0.3, "By V_thr:",
+     font=SANS, size=10, italic=True, color=GRAY)
+text(s, left_x, 2.4, 1.6, 0.3, "V_thr ≪ 1",
+     font=SANS, size=10, bold=True, color=NAVY, spacing=150)
+text(s, left_x + 1.7, 2.4, 2.0, 0.3, "V_thr ≫ 1",
+     font=SANS, size=10, bold=True, color=NAVY, spacing=150)
 
-# Row 1: AS-SG (coral)
-ry = 3.2; rh = 1.0
-card(s, 0.5, ry, 1.1, rh, fill=CORAL, border=CORAL, border_w=0)
-text(s, 0.5, ry + 0.32, 1.1, 0.4, "AS-SG",
-     font=SANS, size=12, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
-card(s, 1.7, ry, 5.5, rh, fill=CORAL_LT, border=CORAL_LT, border_w=0.5)
-text(s, 1.85, ry + 0.13, 5.2, 0.35, "✗  Flooding",
-     font=SANS, size=12, bold=True, color=CORAL)
-text(s, 1.85, ry + 0.5, 5.2, 0.5,
-     "fixed window covers most of the distribution",
-     font=SANS, size=11, color=INK)
-card(s, 7.4, ry, 5.5, rh, fill=CORAL_LT, border=CORAL_LT, border_w=0.5)
-text(s, 7.55, ry + 0.13, 5.2, 0.35, "✗  Starvation",
-     font=SANS, size=12, bold=True, color=CORAL)
-text(s, 7.55, ry + 0.5, 5.2, 0.5,
-     "fixed window misses the distribution",
-     font=SANS, size=11, color=INK)
+# AS-SG row
+card(s, left_x, 2.8, 0.85, 1.3, fill=CORAL, border=CORAL, border_w=0)
+text(s, left_x, 3.25, 0.85, 0.4, "AS-SG",
+     font=SANS, size=11, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+card(s, left_x + 0.95, 2.8, 1.6, 1.3, fill=CORAL_LT, border=CORAL, border_w=0.8)
+text(s, left_x + 1.05, 2.9, 1.4, 0.3, "✗  Flood",
+     font=SANS, size=10, bold=True, color=CORAL)
+text(s, left_x + 1.05, 3.25, 1.4, 0.85,
+     "fixed window\ncovers most of\ndistribution",
+     font=SANS, size=8, color=INK)
+card(s, left_x + 2.6, 2.8, 1.6, 1.3, fill=CORAL_LT, border=CORAL, border_w=0.8)
+text(s, left_x + 2.7, 2.9, 1.4, 0.3, "✗  Starve",
+     font=SANS, size=10, bold=True, color=CORAL)
+text(s, left_x + 2.7, 3.25, 1.4, 0.85,
+     "fixed window\nmisses the\ndistribution",
+     font=SANS, size=8, color=INK)
 
-# Row 2: RS-SG (amber)
-ry2 = ry + rh + 0.15
-card(s, 0.5, ry2, 1.1, rh, fill=AMBER, border=AMBER, border_w=0)
-text(s, 0.5, ry2 + 0.32, 1.1, 0.4, "RS-SG",
-     font=SANS, size=12, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
-card(s, 1.7, ry2, 5.5, rh, fill=AMBER_LT, border=AMBER_LT, border_w=0.5)
-text(s, 1.85, ry2 + 0.13, 5.2, 0.35, "✗  Explosion",
-     font=SANS, size=12, bold=True, color=CORAL)
-text(s, 1.85, ry2 + 0.5, 5.2, 0.5,
-     "1/V_thr blows the magnitude up",
-     font=SANS, size=11, color=INK)
-card(s, 7.4, ry2, 5.5, rh, fill=AMBER_LT, border=AMBER_LT, border_w=0.5)
-text(s, 7.55, ry2 + 0.13, 5.2, 0.35, "✗  Vanishing",
-     font=SANS, size=12, bold=True, color=CORAL)
-text(s, 7.55, ry2 + 0.5, 5.2, 0.5,
-     "1/V_thr shrinks the magnitude",
-     font=SANS, size=11, color=INK)
+# RS-SG row
+ry = 4.2
+card(s, left_x, ry, 0.85, 1.3, fill=AMBER, border=AMBER, border_w=0)
+text(s, left_x, ry + 0.45, 0.85, 0.4, "RS-SG",
+     font=SANS, size=11, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
+card(s, left_x + 0.95, ry, 1.6, 1.3, fill=AMBER_LT, border=AMBER, border_w=0.8)
+text(s, left_x + 1.05, ry + 0.1, 1.4, 0.3, "✗  Explode",
+     font=SANS, size=10, bold=True, color=CORAL)
+text(s, left_x + 1.05, ry + 0.45, 1.4, 0.85,
+     "1/V_thr\nblows the\nmagnitude up",
+     font=SANS, size=8, color=INK)
+card(s, left_x + 2.6, ry, 1.6, 1.3, fill=AMBER_LT, border=AMBER, border_w=0.8)
+text(s, left_x + 2.7, ry + 0.1, 1.4, 0.3, "✗  Vanish",
+     font=SANS, size=10, bold=True, color=CORAL)
+text(s, left_x + 2.7, ry + 0.45, 1.4, 0.85,
+     "1/V_thr\nshrinks the\nmagnitude",
+     font=SANS, size=8, color=INK)
 
-# Row 3: TrSG (teal)
-ry3 = ry2 + rh + 0.15
-card(s, 0.5, ry3, 1.1, rh, fill=TEAL, border=TEAL, border_w=0)
-text(s, 0.5, ry3 + 0.32, 1.1, 0.4, "TrSG",
-     font=SANS, size=12, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
-card(s, 1.7, ry3, 5.5, rh, fill=TEAL_LT, border=TEAL_LT, border_w=0.5)
-text(s, 1.85, ry3 + 0.13, 5.2, 0.35, "✓  Balanced",
-     font=SANS, size=12, bold=True, color=TEAL)
-text(s, 1.85, ry3 + 0.5, 5.2, 0.5,
-     "window scales with V_thr,  magnitude stays 1",
-     font=SANS, size=11, color=INK)
-card(s, 7.4, ry3, 5.5, rh, fill=TEAL_LT, border=TEAL_LT, border_w=0.5)
-text(s, 7.55, ry3 + 0.13, 5.2, 0.35, "✓  Balanced",
-     font=SANS, size=12, bold=True, color=TEAL)
-text(s, 7.55, ry3 + 0.5, 5.2, 0.5,
-     "window scales with V_thr,  magnitude stays 1",
-     font=SANS, size=11, color=INK)
+# TrSG row
+ry2 = 5.6
+card(s, left_x, ry2, 4.2, 0.95, fill=TEAL, border=TEAL, border_w=0)
+text(s, left_x + 0.15, ry2 + 0.1, 1.0, 0.3, "TrSG",
+     font=SANS, size=11, bold=True, color=WHITE)
+text(s, left_x + 0.15, ry2 + 0.45, 4.0, 0.45,
+     "✓  window scales with V_thr · magnitude stays 1",
+     font=SANS, size=10, bold=True, color=WHITE)
 
-text(s, 0.5, 6.8, 12.3, 0.3,
-     "(Geometric picture in the thesis Figure 5.1.)",
+# Right of figure: short caption
+text(s, 4.7, 6.6, 8.0, 0.3,
+     "Each colored box = active gradient region.  Width = window where gradient flows.  Height = magnitude.",
      font=SANS, size=9, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
 
 page_footer(s, 10)
@@ -720,38 +725,42 @@ page_footer(s, 10)
 s = add_blank()
 section_label(s, "Part II · TrSG")
 slide_title(s, "TrSG — One-Line Fix",
-            "Multiply the threshold on the forward path; the chain rule cancels the bad factor")
+            "Multiply the threshold on the forward path; chain rule cancels the bad factor")
 
-# Step 1
+# Top — three step recipe
 text(s, 0.5, 2.4, 12.3, 0.4,
-     "Step 1.  Use the relative-scale window (RS-SG style):",
+     "The recipe",
      font=SANS, size=13, bold=True, color=NAVY)
-callout_box(s, 0.5, 2.9, 12.3, 0.7,
-            fill=CREAM, accent=TEAL,
-            body="x  =  M[t] / V_thr   −   1",
-            body_color=INK, body_size=14)
 
-# Step 2
-text(s, 0.5, 3.85, 12.3, 0.4,
-     "Step 2.  Multiply V_thr on the forward path  (this is the only change):",
-     font=SANS, size=13, bold=True, color=NAVY)
-callout_box(s, 0.5, 4.35, 12.3, 0.7,
-            fill=CREAM, accent=AMBER,
-            body="O[t]  =  V_thr  ·  S[t]",
-            body_color=INK, body_size=14)
+# Step boxes side by side
+y0 = 2.9
+def step(slide, x, y, w, h, num, head, eq):
+    box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+        Inches(x), Inches(y), Inches(w), Inches(h))
+    box.fill.solid(); box.fill.fore_color.rgb = CREAM
+    box.line.color.rgb = TEAL; box.line.width = Pt(1.0)
+    text(slide, x + 0.2, y + 0.1, 0.4, 0.4, num,
+         font=SANS, size=18, bold=True, color=AMBER)
+    text(slide, x + 0.65, y + 0.15, w - 0.7, 0.3, head,
+         font=SANS, size=11, bold=True, color=NAVY)
+    text(slide, x + 0.65, y + 0.5, w - 0.7, 0.5, eq,
+         font="Cambria Math", size=14, color=INK)
 
-# Step 3 — chain rule
-text(s, 0.5, 5.3, 12.3, 0.4,
-     "Step 3.  The chain rule cancels the 1/V_thr factor exactly:",
-     font=SANS, size=13, bold=True, color=NAVY)
-callout_box(s, 0.5, 5.8, 12.3, 0.85,
-            fill=NAVY, accent=AMBER,
-            body="∂O / ∂M   =   V_thr  ·  ∂S/∂M   ≈   V_thr · (1/V_thr) f'(x)   =   f'(x)",
-            body_color=WHITE, body_size=15)
+step(s, 0.5,  y0, 4.05, 1.05, "1",
+     "Relative-scale window", "x = M / V_thr − 1")
+step(s, 4.65, y0, 4.05, 1.05, "2",
+     "Multiply on forward", "O[t] = V_thr · S[t]")
+step(s, 8.8, y0, 4.05, 1.05, "3",
+     "Chain rule cancels", "∂O/∂M = f'(x)")
 
-text(s, 0.5, 6.8, 12.3, 0.3,
-     "Window adapts with V_thr   ·   gradient magnitude is threshold-invariant.",
-     font=SANS, size=12, bold=True, italic=True, color=TEAL, align=PP_ALIGN.CENTER)
+# Chain rule visual
+img(s, GEN + "/chain_rule.png", 1.5, 4.3, w=10.3)
+
+# Bottom emphasis
+callout_box(s, 0.5, 6.4, 12.3, 0.6,
+            fill=TEAL, accent=AMBER,
+            title="Window adapts with V_thr  ·  gradient magnitude is threshold-invariant.",
+            title_color=WHITE, title_size=13)
 
 page_footer(s, 11)
 
@@ -855,52 +864,31 @@ page_footer(s, 13)
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Experiments · 1/3")
-slide_title(s, "Main Results — SOTA Across the Board")
+slide_title(s, "Main Results — SOTA Across the Board",
+            "Standard LIF neurons · no AutoAugment / Cutout · three trials")
 
-text(s, 0.5, 2.4, 12.3, 0.4,
-     "Standard LIF neurons.  No AutoAugment / Cutout.  Three trials each.",
-     font=SANS, size=11, italic=True, color=GRAY)
+# Bar chart on the left
+img(s, GEN + "/main_results_bars.png", 0.4, 2.4, w=8.5)
 
-# Bar chart area on left + key gain cards on right
-# Replace bar chart with a table-like card showing all numbers
-chart_card_x, chart_card_y, chart_card_w, chart_card_h = 0.5, 2.85, 8.0, 4.1
-card(s, chart_card_x, chart_card_y, chart_card_w, chart_card_h,
-     fill=CREAM, border=GRAY_LT, border_w=0.5)
-text(s, chart_card_x + 0.25, chart_card_y + 0.2, chart_card_w - 0.5, 0.4,
-     "Top-1 accuracy (%) — Ours vs. previous best",
-     font=SANS, size=12, bold=True, color=TEAL)
-
-# Result table inside
-res_lines = [
-    ("CIFAR-10  (R-19, T=6)",      "TAB 94.81",  "95.50",   "+0.69"),
-    ("CIFAR-100 (R-19, T=6)",      "TAB 76.82",  "77.91",   "+1.09"),
-    ("ImageNet  (R-34, T=6)",      "TAB 67.78",  "68.73",   "+0.95"),
-    ("ImageNet  (SEW-R34, T=4)",   "MPS 69.03",  "69.67",   "+0.64"),
-    ("DVS-CIFAR10 (R-19, T=10)",   "RMP 76.20",  "81.43",   "+5.23"),
-    ("DVS-CIFAR10 (7-CNN, T=4)",   "TAB 76.70",  "79.27",   "+2.57"),
-]
-ctx = s.shapes.add_textbox(Inches(chart_card_x + 0.3), Inches(chart_card_y + 0.7),
-                            Inches(chart_card_w - 0.6), Inches(chart_card_h - 0.9))
-tf = ctx.text_frame; tf.word_wrap = True
-for i, (dset, prev, ours, delta) in enumerate(res_lines):
-    p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-    p.text = f"{dset:<26s}{prev:<14s}→  {ours:<8s}{delta:>6s}"
-    p.font.name = "Consolas"; p.font.size = Pt(11); p.font.color.rgb = INK
-    if i > 0: p.space_before = Pt(4)
-
-# Right: 3 gain cards
+# Three gain cards on right — vertical column
 def gain_card(slide, x, y, value, label, color):
-    card(slide, x, y, 4.4, 1.25, fill=CREAM, border=color, border_w=1.5)
-    text(slide, x + 0.2, y + 0.15, 2.5, 0.55, value,
+    card(slide, x, y, 4.0, 1.4, fill=CREAM, border=color, border_w=1.8)
+    text(slide, x + 0.2, y + 0.2, 2.4, 0.6, value,
          font=SERIF, size=26, bold=True, color=color)
-    text(slide, x + 2.7, y + 0.27, 1.5, 0.4, "%pt",
+    text(slide, x + 2.4, y + 0.32, 1.2, 0.4, "%pt",
          font=SANS, size=11, color=color)
-    text(slide, x + 0.2, y + 0.75, 4.0, 0.45, label,
+    text(slide, x + 0.2, y + 0.85, 3.7, 0.5, label,
          font=SANS, size=10, color=INK)
 
-gain_card(s, 8.7, 2.85, "+1.09", "CIFAR-100 over TAB", TEAL)
-gain_card(s, 8.7, 4.25, "+0.64", "ImageNet (SEW-R34) over MPS", TEAL)
-gain_card(s, 8.7, 5.65, "+5.23", "DVS-CIFAR10 over RMP-Loss", AMBER)
+gain_card(s, 9.0, 2.4, "+1.09", "CIFAR-100  ·  beats TAB", TEAL)
+gain_card(s, 9.0, 3.95, "+0.64", "ImageNet  ·  beats MPS",   TEAL)
+gain_card(s, 9.0, 5.5,  "+5.23", "DVS-CIFAR10  ·  beats RMP", AMBER)
+
+# Bottom emphasis
+callout_box(s, 0.5, 6.7, 12.3, 0.4,
+            fill=NAVY, accent=AMBER,
+            title="Biggest gain on the most challenging (event-based) dataset — DVS-CIFAR10 +5.23 %pt",
+            title_color=AMBER, title_size=11)
 
 page_footer(s, 14)
 
@@ -913,62 +901,30 @@ section_label(s, "Experiments · 2/3")
 slide_title(s, "Ablation — Independent and Complementary",
             "Each method helps alone; together they compound (especially on event-based data)")
 
-# Two ablation tables side by side
-text(s, 0.5, 2.5, 6.0, 0.4,
-     "CIFAR-100   (T = 4)",
+# Bar chart
+img(s, GEN + "/ablation_bars.png", 0.4, 2.45, w=10.0)
+
+# Right: takeaways
+text(s, 10.8, 2.5, 2.4, 0.4, "Takeaway",
      font=SANS, size=12, bold=True, color=NAVY)
-card(s, 0.5, 2.95, 6.0, 3.1, fill=CREAM, border=GRAY_LT, border_w=0.5)
 
-cifar_rows = [
-    ("✗", "✗", "75.55"),
-    ("✓", "✗", "76.09"),
-    ("✗", "✓", "77.15"),
-    ("✓", "✓", "77.66"),
-]
-ctx = s.shapes.add_textbox(Inches(0.7), Inches(3.1), Inches(5.8), Inches(2.8))
-tf = ctx.text_frame; tf.word_wrap = True
-p = tf.paragraphs[0]
-p.text = "MP-Init    TrSG       Acc (%)"
-p.font.name = "Consolas"; p.font.size = Pt(12); p.font.bold = True; p.font.color.rgb = TEAL
-p.space_after = Pt(8)
-for i, (a, b, v) in enumerate(cifar_rows):
-    p = tf.add_paragraph()
-    bold = (i == len(cifar_rows) - 1)
-    p.text = f"   {a}        {b}         {v}"
-    p.font.name = "Consolas"; p.font.size = Pt(13); p.font.bold = bold
-    p.font.color.rgb = TEAL if bold else INK
-    p.space_before = Pt(4)
+# Three pill takeaways
+def pill(slide, x, y, w, h, lab, val, color):
+    card(slide, x, y, w, h, fill=CREAM, border=color, border_w=1.3)
+    text(slide, x + 0.15, y + 0.1, w - 0.3, 0.3, lab,
+         font=SANS, size=10, color=GRAY)
+    text(slide, x + 0.15, y + 0.4, w - 0.3, 0.5, val,
+         font=SERIF, size=18, bold=True, color=color)
 
-text(s, 6.85, 2.5, 6.0, 0.4,
-     "DVS-CIFAR10   (T = 10)",
-     font=SANS, size=12, bold=True, color=NAVY)
-card(s, 6.85, 2.95, 6.0, 3.1, fill=CREAM, border=GRAY_LT, border_w=0.5)
-
-dvs_rows = [
-    ("✗", "✗", "76.60"),
-    ("✓", "✗", "77.37"),
-    ("✗", "✓", "80.83"),
-    ("✓", "✓", "81.43"),
-]
-ctx = s.shapes.add_textbox(Inches(7.05), Inches(3.1), Inches(5.8), Inches(2.8))
-tf = ctx.text_frame; tf.word_wrap = True
-p = tf.paragraphs[0]
-p.text = "MP-Init    TrSG       Acc (%)"
-p.font.name = "Consolas"; p.font.size = Pt(12); p.font.bold = True; p.font.color.rgb = TEAL
-p.space_after = Pt(8)
-for i, (a, b, v) in enumerate(dvs_rows):
-    p = tf.add_paragraph()
-    bold = (i == len(dvs_rows) - 1)
-    p.text = f"   {a}        {b}         {v}"
-    p.font.name = "Consolas"; p.font.size = Pt(13); p.font.bold = bold
-    p.font.color.rgb = AMBER if bold else INK
-    p.space_before = Pt(4)
+pill(s, 10.6, 2.95, 2.5, 1.0, "MP-Init alone",  "+0.5 ~ 0.8", TEAL)
+pill(s, 10.6, 4.05, 2.5, 1.0, "TrSG alone",     "+1.6 ~ 4.2", AMBER)
+pill(s, 10.6, 5.15, 2.5, 1.0, "Both",           "+2.1 ~ 4.8", RGBColor(0x0E, 0x5E, 0x5E))
 
 # Bottom message
-callout_box(s, 0.5, 6.2, 12.3, 0.75,
+callout_box(s, 0.5, 6.55, 12.3, 0.55,
             fill=TEAL, accent=AMBER,
-            title="MP-Init alone +0.5 ~ 0.8.  TrSG alone +1.6 ~ 4.2.  Together +2.1 ~ 4.8.",
-            title_color=WHITE, title_size=12)
+            title="The two fixes are orthogonal — diagnoses aim at different components, not the same problem twice.",
+            title_color=WHITE, title_size=11)
 
 page_footer(s, 15)
 
