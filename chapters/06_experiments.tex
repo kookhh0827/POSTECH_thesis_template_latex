@@ -443,7 +443,7 @@ The discussion above raises a natural question: \emph{do real trainings actually
 \section{Validation on More Surrogate Functions}
 \label{sec:exp_more_surrogates}
 
-In \cref{ch:trsg} we introduced TrSG using the rectangular surrogate as the primary example. \Cref{sec:exp_trsg} extended the experiments to the triangular surrogate. We now demonstrate TrSG's generality by evaluating it with the Arctan-based~\cite{fang:2021} and Sigmoid-based~\cite{wu:2018} surrogates.
+In \cref{ch:trsg} we introduced TrSG using the rectangular surrogate as the primary example. \Cref{sec:exp_trsg} extended the experiments to the triangular surrogate. We now demonstrate TrSG's generality by evaluating it with the Arctan-based~\cite{fang:2021} and Sigmoid-based~\cite{wu:2018} surrogates while varying the initial threshold $V_{\text{thr}}$.
 
 \paragraph{Arctan surrogate.}
 The derivative of the Arctan-based surrogate is
@@ -462,59 +462,61 @@ The derivative of the Sigmoid-based surrogate is
 \end{equation}
 Here $\gamma$ is the steepness parameter. As before, we compare AS-SG, RS-SG, and TrSG under both soft and hard reset.
 
-\Cref{fig:acc_different_atan} shows that TrSG consistently outperforms AS-SG and RS-SG, regardless of the initial threshold or time constant. This robust behavior parallels the rectangular and triangular results in \cref{sec:exp_trsg}, indicating that TrSG's threshold-robustness extends across all common surrogate-gradient shapes.
+\Cref{fig:acc_different_thr_atan_sig} shows that TrSG consistently outperforms AS-SG and RS-SG under both Arctan and Sigmoid surrogates, regardless of the initial threshold. Together with the rectangular and triangular results of \cref{sec:exp_trsg}, this confirms that TrSG's threshold-robustness extends across all common surrogate-gradient shapes.
 
 \begin{figure}[h]
   \centering
   \begin{subfigure}{0.99\linewidth}
     \centering
     \includegraphics[width=0.99\linewidth]{fig/acc_different_thr_atan.pdf}
-    \caption{Arctan: $\tau=2.0$, $V_{\text{thr}}\in\{0.5,1.0,2.0\}$}
-  \end{subfigure}
-  \par\medskip
-  \begin{subfigure}{0.99\linewidth}
-    \centering
-    \includegraphics[width=0.99\linewidth]{fig/acc_different_tau_atan.pdf}
-    \caption{Arctan: $V_{\text{thr}}=1.0$, $\tau\in\{1.33,2.0,3.0\}$}
+    \caption{Arctan surrogate}
   \end{subfigure}
   \par\medskip
   \begin{subfigure}{0.99\linewidth}
     \centering
     \includegraphics[width=0.99\linewidth]{fig/acc_different_thr_sigmoid.pdf}
-    \caption{Sigmoid: $\tau=2.0$, $V_{\text{thr}}\in\{0.5,1.0,2.0\}$}
+    \caption{Sigmoid surrogate}
   \end{subfigure}
-  \par\medskip
-  \begin{subfigure}{0.99\linewidth}
-    \centering
-    \includegraphics[width=0.99\linewidth]{fig/acc_different_tau_sigmoid.pdf}
-    \caption{Sigmoid: $V_{\text{thr}}=1.0$, $\tau\in\{1.33,2.0,3.0\}$}
-  \end{subfigure}
-  \caption{\textbf{Accuracy under different initial values of $\tau$ and $V_{\text{thr}}$ when learning both parameters, using the Arctan and Sigmoid surrogate functions.} (Top two) Arctan results; (Bottom two) Sigmoid results. We compare AS-SG, RS-SG, and TrSG on ResNet-19 (CIFAR-100, $T=4$), evaluating both soft- and hard-reset LIF neurons.}
-  \label{fig:acc_different_atan}
+  \caption{\textbf{Accuracy under different initial $V_{\text{thr}}\in\{0.5,1.0,2.0\}$ for Arctan and Sigmoid surrogates ($\tau=2.0$).} We compare AS-SG, RS-SG, and TrSG on ResNet-19 (CIFAR-100, $T=4$), evaluating both soft- and hard-reset LIF neurons.}
+  \label{fig:acc_different_thr_atan_sig}
 \end{figure}
 
 \section{Varying Initial \texorpdfstring{$\tau$}{tau} with a Fixed Initial \texorpdfstring{$V_{\text{thr}}$}{V\_thr}}
 \label{sec:exp_varying_tau}
 
-To complement the experiments in \cref{sec:exp_trsg} (which varied initial $V_{\text{thr}}$), we run additional tests with the initial threshold fixed at $V_{\text{thr}}=1.0$ while varying the initial time constant $\tau\in\{1.33,2.0,3.0\}$. \Cref{fig:acc_different_tau_rect_tri} reports accuracy under the rectangular (top) and triangular (bottom) surrogates, comparing AS-SG, RS-SG, and TrSG with both soft and hard resets. TrSG consistently outperforms AS-SG and RS-SG across all initial $\tau$ values, maintaining high accuracy in every setting and reaffirming the robustness observed in \cref{sec:exp_trsg}.
+To complement the experiments in \cref{sec:exp_trsg,sec:exp_more_surrogates} (which varied $V_{\text{thr}}$), we now fix $V_{\text{thr}}=1.0$ and vary the initial leakage constant $\tau\in\{1.33,2.0,3.0\}$. \Cref{fig:acc_different_tau_all} reports accuracy across all four surrogate shapes—rectangular, triangular, Arctan, and Sigmoid—each evaluated with both soft and hard resets. Across every configuration, TrSG consistently outperforms AS-SG and RS-SG, maintaining high accuracy regardless of the initial $\tau$ and reaffirming the robustness observed under varying $V_{\text{thr}}$.
 
 \begin{figure}[h]
   \centering
-  \begin{subfigure}{0.99\linewidth}
+  \begin{subfigure}{0.49\linewidth}
     \centering
     \includegraphics[width=0.99\linewidth]{fig/acc_different_tau_rect.pdf}
-    \caption{Rectangular surrogate}
+    \caption{Rectangular}
     \label{fig:acc_different_tau_rect}
   \end{subfigure}
-  \par\medskip
-  \begin{subfigure}{0.99\linewidth}
+  \hfill
+  \begin{subfigure}{0.49\linewidth}
     \centering
     \includegraphics[width=0.99\linewidth]{fig/acc_different_tau_tri.pdf}
-    \caption{Triangular surrogate}
+    \caption{Triangular}
     \label{fig:acc_different_tau_tri}
   \end{subfigure}
-  \caption{\textbf{Accuracy under different initial $\tau$ values with $V_{\text{thr}}=1.0$.} We compare AS-SG, RS-SG, and TrSG under (a) rectangular and (b) triangular surrogates, each with both soft and hard resets. Initial $\tau\in\{1.33,2.0,3.0\}$. ResNet-19 on CIFAR-100, $T=4$.}
-  \label{fig:acc_different_tau_rect_tri}
+  \par\medskip
+  \begin{subfigure}{0.49\linewidth}
+    \centering
+    \includegraphics[width=0.99\linewidth]{fig/acc_different_tau_atan.pdf}
+    \caption{Arctan}
+    \label{fig:acc_different_tau_atan}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.49\linewidth}
+    \centering
+    \includegraphics[width=0.99\linewidth]{fig/acc_different_tau_sigmoid.pdf}
+    \caption{Sigmoid}
+    \label{fig:acc_different_tau_sigmoid}
+  \end{subfigure}
+  \caption{\textbf{Accuracy under different initial $\tau\in\{1.33,2.0,3.0\}$ with $V_{\text{thr}}=1.0$, across all four surrogate shapes.} (a) Rectangular, (b) triangular, (c) Arctan, (d) Sigmoid—each evaluated with both soft and hard resets. ResNet-19 on CIFAR-100, $T=4$. TrSG consistently outperforms AS-SG and RS-SG in every panel.}
+  \label{fig:acc_different_tau_all}
 \end{figure}
 
 \section{Impact of Trainable Parameters on Accuracy}
