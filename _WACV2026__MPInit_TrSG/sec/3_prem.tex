@@ -1,0 +1,29 @@
+\section{Preliminaries}
+\label{sec:preliminary}
+
+\subsection{The LIF Neuron Model}
+
+LIF model~\cite{eshraghian:2021} is a well-known spiking neural model that emulates key behaviors of biological neurons, including firing spikes and decaying membrane potential. The LIF neuron’s behavior in discrete steps \(t \in \mathbb{N}\) is described as the following equations:
+
+\begin{equation}
+\label{eq:lif_discrete_potential}
+    M^{l}[t] = \left( 1 - \frac{1}{\tau^{l}} \right) U^{l}[t-1] + \frac{1}{\tau^{l}} I^{l}_{\text{in}}[t],
+\end{equation}
+
+\begin{equation}
+\label{eq:lif_discrete_firing}
+    S^{l}[t] = \mathcal{H}\left( M^{l}[t] - V^{l}_{\text{thr}} \right),
+\end{equation}
+
+\begin{equation}
+\label{eq:lif_discrete_reset}
+    U^{l}[t] = \begin{cases}
+        M^{l}[t] - V^{l}_{\text{thr}} \cdot S^{l}[t], & \text{(soft reset)} \\
+        M^{l}[t] \cdot (1 - S^{l}[t]). & \text{(hard reset)}
+\end{cases}
+\end{equation}
+
+In these equations, \( l \) represents the layer index within the network, and \(\mathcal{H}\) denotes the Heaviside step function. The presynaptic input current is defined as \( I^{l}_{\text{in}}[t] = W_{l-1}^{l} O^{l-1}[t] \), where \( W_{l-1}^{l} \) is the synaptic weight matrix connecting layer \( l-1 \) to layer \( l \), and \( O^{l-1}[t] \) represents the output of the previous layer. In direct training, this output typically corresponds to the binary spike itself, i.e., \( O^{l}[t] = S^{l}[t] \)~\cite{wu:2018}. The leakage constant \(\tau^{l}\) can be absorbed into the synaptic weights~\cite{eshraghian:2021}, leading to a rescaling \( W_{l-1}^{l}:=\frac{1}{\tau^{l}}W_{l-1}^{l} \) in \cref{eq:lif_discrete_potential}. The choice between a soft and hard reset in Eq.~\ref{eq:lif_discrete_reset} influences the membrane potential dynamics after firing. Under a soft reset~\cite{rueckauer:2016}, the membrane potential decreases by the threshold voltage \(V^{l}_{\text{thr}}\). In contrast, a hard reset~\cite{wu:2018} resets the membrane potential to zero. Notably, our two novel ideas are effective in both cases, leading to improved quality.
+
+\subsection{Exclusion of Silent Neurons}
+In our analysis of TCS, we focus only on \emph{active neurons}, i.e., those that fire at least once during each simulation. Previous work~\cite{yin:2022} shows that a large portion of neurons in SNNs remain subthreshold throughout a simulation (i.e., \emph{silent}). They are irrelevant to our analysis, as they neither contribute to information propagation nor exhibit statistical properties similar to those of active neurons. Consequently, we exclude silent neurons when analyzing the statistics of the membrane potential.
