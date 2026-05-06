@@ -144,20 +144,64 @@ TrSG unifies a relative-scale argument with threshold multiplication on the forw
 \section{Detailed Gradient Analysis}
 \label{sec:trsg_grad_analysis}
 
-We now derive the gradients of the loss with respect to the trainable internal parameters $V^{l}_{\text{thr}}$ and $\tau^{l}$ under TrSG. Let $\mathcal{L}$ denote the loss; for clarity we omit the layer/time index where unambiguous.
+In \cref{sec:trsg_two_families,sec:trsg_method} our analysis of threshold-related instabilities centered on $\partial S^{l}[t]/\partial M^{l}[t]$, i.e., how the spike output changes with respect to the membrane potential. However, similar issues arise when considering partial derivatives with respect to the learnable internal parameters $V^{l}_{\text{thr}}$ and $\tau^{l}$. We now derive these gradients explicitly and show that AS-SG and RS-SG fail along these pathways as well, while TrSG remains stable.
 
-\paragraph{Gradient with respect to $V^{l}_{\text{thr}}$.}
-With $x = M/V_{\text{thr}}-1$ and $O = V_{\text{thr}}\cdot S$, the chain rule yields
-\[
-\frac{\partial \mathcal{L}}{\partial V_{\text{thr}}}
+\subsection{Gradient with Respect to \texorpdfstring{$V^{l}_{\text{thr}}$}{V\_thr}}
+\label{subsec:trsg_grad_vthr}
+
+Recall from \cref{eq:lif_discrete_firing} that $S^{l}[t]=\mathcal{H}\!\bigl(M^{l}[t]-V^{l}_{\text{thr}}\bigr)$. When approximating $\mathcal{H}$ by a differentiable surrogate $f_{sr}$, existing methods define the argument $x$ in either absolute-scale or relative-scale form.
+
+\paragraph{AS-SG.}
+With $x = M^{l}[t]-V^{l}_{\text{thr}}$,
+\begin{equation}
+\frac{\partial S^{l}[t]}{\partial V^{l}_{\text{thr}}}
 \;=\;
-\frac{\partial \mathcal{L}}{\partial O}
-\Bigl(S \;+\; V_{\text{thr}}\,\frac{\partial S}{\partial V_{\text{thr}}}\Bigr).
-\]
-The $\partial S/\partial V_{\text{thr}}$ term contributes $-\tfrac{M}{V_{\text{thr}}^{2}} f'(x)$, which after multiplication by $V_{\text{thr}}$ becomes $-\tfrac{M}{V_{\text{thr}}}\,f'(x)$. Crucially, this magnitude does not blow up when $V_{\text{thr}}$ is small.
+f_{sr}'(x)\,\Bigl(\tfrac{\partial M^{l}[t]}{\partial V^{l}_{\text{thr}}} - 1\Bigr).
+\end{equation}
+This update does not adapt its magnitude to $V^{l}_{\text{thr}}$. Consequently, if $|V^{l}_{\text{thr}}|$ becomes very large or very small, the gradient can vanish or dominate excessively.
 
-\paragraph{Gradient with respect to $\tau^{l}$.}
-Recall that $\tau$ enters $M$ through \cref{eq:lif_discrete_potential}. Because TrSG affects only the spike-firing path, the gradient w.r.t.\ $\tau$ inherits the standard chain through $\partial M/\partial \tau$, multiplied by $\partial O/\partial M = f'(x)$. The threshold-invariant factor $f'(x)$ stabilizes this gradient as well, so $\tau$ updates remain well-behaved across thresholds.
+\paragraph{RS-SG.}
+With $x = \tfrac{M^{l}[t]}{V^{l}_{\text{thr}}}-1$, the chain rule yields
+\begin{equation}
+\frac{\partial S^{l}[t]}{\partial V^{l}_{\text{thr}}}
+\;\approx\;
+f_{sr}'\!\Bigl(\tfrac{M^{l}[t]}{V^{l}_{\text{thr}}}-1\Bigr)\,\frac{\partial}{\partial V^{l}_{\text{thr}}}\!\Bigl(\tfrac{M^{l}[t]}{V^{l}_{\text{thr}}}-1\Bigr),
+\end{equation}
+which introduces factors proportional to $\tfrac{1}{V^{l}_{\text{thr}}}$. Tiny $V^{l}_{\text{thr}}$ explodes the gradient; huge $V^{l}_{\text{thr}}$ vanishes it.
+
+\paragraph{TrSG.}
+TrSG circumvents both extremes by adopting the relative-scale argument and multiplying $V^{l}_{\text{thr}}$ on the forward path:
+\begin{equation}
+O^{l}[t] \;=\; V^{l}_{\text{thr}}\,S^{l}[t].
+\end{equation}
+The resulting gradient of the loss $\mathcal{L}$ with respect to the threshold combines the direct effect of the multiplication and the indirect effect via the surrogate:
+\begin{equation}
+\frac{\partial \mathcal{L}}{\partial V^{l}_{\text{thr}}}
+\;=\;
+\frac{\partial \mathcal{L}}{\partial O^{l}[t]}
+\Bigl(S^{l}[t] \;+\; V^{l}_{\text{thr}}\,\tfrac{\partial S^{l}[t]}{\partial V^{l}_{\text{thr}}}\Bigr).
+\end{equation}
+The threshold multiplication cancels the problematic $\tfrac{1}{V^{l}_{\text{thr}}}$ factor in the chain rule, keeping the gradient with respect to $V^{l}_{\text{thr}}$ stable across the full range of threshold scales.
+
+\subsection{Gradient with Respect to \texorpdfstring{$\tau^{l}$}{tau}}
+\label{subsec:trsg_grad_tau}
+
+The leakage constant $\tau^{l}$ enters $M^{l}[t]$ through the discrete LIF update of \cref{eq:lif_discrete_potential}:
+\begin{equation}
+M^{l}[t] \;=\; \Bigl(1-\tfrac{1}{\tau^{l}}\Bigr) U^{l}[t-1] + \tfrac{1}{\tau^{l}} I^{l}_{\text{in}}[t].
+\end{equation}
+Since $\tau^{l}$ appears only in $M^{l}[t]$, it influences $S^{l}[t]$ indirectly through the chain
+\begin{equation}
+\frac{\partial S^{l}[t]}{\partial \tau^{l}}
+\;=\;
+\frac{\partial S^{l}[t]}{\partial M^{l}[t]}
+\;\times\;
+\frac{\partial M^{l}[t]}{\partial \tau^{l}}.
+\end{equation}
+If $\partial S^{l}[t]/\partial M^{l}[t]$ is poorly scaled (as in standard AS-SG or RS-SG with extreme $V^{l}_{\text{thr}}$), the corresponding gradient with respect to $\tau^{l}$ can also explode or vanish. By stabilizing the membrane-potential pathway, TrSG simultaneously stabilizes the $\tau^{l}$ pathway, ensuring well-behaved updates of the leakage constant.
+
+\paragraph{Summary.}
+TrSG's threshold-multiplication mechanism, combined with its relative-scale argument, ensures that gradients remain appropriately scaled not only along $M^{l}[t]$ but also along the $V^{l}_{\text{thr}}$ and $\tau^{l}$ pathways. This provides a uniformly stable foundation for end-to-end training of LIF SNNs with multiple learnable internal parameters.
 
 \section{Compatibility Across Surrogate Shapes}
 \label{sec:trsg_compatibility}

@@ -274,6 +274,70 @@ We measure the empirical ratio of $|U^{l}[t]|$ to a per-layer bound across activ
   \label{fig:tv_input}
 \end{figure}
 
+\section{How does MP-Init Impact Training?}
+\label{sec:mpinit_impact_training}
+
+TEBN~\cite{tebn:2022} and TAB~\cite{tab:2024} have shown that temporal covariate shift indeed occurs, and the previous sections have already demonstrated that MP-Init effectively resolves it. However, prior studies did not provide clear evidence of \emph{how} TCS directly impairs training. Inspired by the ensemble interpretation of SNNs in MPS~\cite{ding:2025}, we revisited this question and conducted an experiment on ResNet-19 with CIFAR-100. Specifically, we computed the gradients applied to a given layer at each timestep and measured the cosine similarity across timesteps.
+
+As shown in \cref{fig:gradient_conflict_tcs}, without MP-Init (left), the gradients from $t=1$ exhibit strong conflicts with later timesteps, indicating severe inconsistency across the temporal ensemble members. With MP-Init (right), these conflicts are largely alleviated, and the overall cosine similarity improves. This analysis provides direct evidence that TCS not only degrades inference consistency but also hinders gradient alignment during training, and highlights how MP-Init effectively stabilizes optimization.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.99\linewidth]{fig/grad_collision.pdf}
+    \caption{\textbf{Gradient conflicts across timesteps with and without MP-Init.}
+    Cosine similarity of gradients across timesteps in ResNet-19 on CIFAR-100. \emph{Left:} Without MP-Init, the gradient from $t=1$ strongly conflicts with later timesteps, reflecting the temporal inconsistency highlighted by MPS~\cite{ding:2025}. \emph{Right:} With MP-Init, conflicts are largely resolved and similarities improve, indicating that MP-Init aligns temporal ensemble members and stabilizes training.}
+    \label{fig:gradient_conflict_tcs}
+\end{figure}
+
+\section{Convergence Speed of the Membrane Potential}
+\label{sec:mpinit_convergence_speed}
+
+As predicted by \cref{thm:1}, the empirical TV distance curves in \cref{fig:tv_decay} clearly exhibit \emph{exponential convergence}: deviations are large at $t=1$ but shrink rapidly, already becoming negligible ($<0.1$) by $t=3$. This rapid convergence is highly desirable for SNNs, since reducing the number of timesteps directly improves both energy efficiency and latency. The benefit is especially pronounced at very low timesteps: at $T=2$, MP-Init delivers a \textbf{1.66\,\%pt} accuracy improvement over the baseline (\cref{tab:convergence-mpinit}), highlighting that our method enables reliable inference even under aggressive latency constraints.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method} & \textbf{w/o MP-Init (\%)} & \textbf{w/ MP-Init (\%)} \\
+\midrule
+tdBN ($T=2$) & 72.35 $\pm$ 0.18 & \textbf{74.01 $\pm$ 0.33} \\
+\bottomrule
+\end{tabular}
+\caption{Effect of MP-Init at early timesteps on CIFAR-100 using ResNet-19.}
+\label{tab:convergence-mpinit}
+\end{table}
+
+\section{Convergence Rate as a Function of \texorpdfstring{$\tau$ and $V_{\text{thr}}$}{tau and Vthr}}
+\label{sec:mpinit_convergence_rate}
+
+Beyond establishing convergence, \cref{thm:1} also offers insight into the convergence \emph{rate}, governed by Doeblin's constant $\epsilon$ in \cref{eq:convergence_speed}. We now analyze how the LIF parameters $\tau$ and $V_{\text{thr}}$ influence this rate.
+
+Consider the uniform measure $\mu$ representing a uniform distribution over $[u^{-},u^{+}]$. For simplicity, take $U[t-1]=0$, so that $U[t]=\tfrac{1}{\tau}I_{\text{in}}[t]$. Under this assumption, \cref{eq:minimorization_condition} can be expressed as
+\begin{equation}
+    \Pr\!\Bigl(U[t]=\tfrac{1}{\tau}I_{\text{in}}[t]\in A\Bigr) \;\ge\; \epsilon\,\mu(A).
+\end{equation}
+Decreasing $\tau$ enlarges the maximum permissible $\epsilon$, which by \cref{eq:convergence_speed} accelerates convergence. Similarly, reducing $V_{\text{thr}}$ causes the membrane potential to cross threshold and reset more frequently; this narrows the effective range $[u^{-},u^{+}]$, again increasing $\epsilon$ and accelerating convergence.
+
+We validate this analysis with soft-reset LIF neurons driven by Gaussian inputs, varying $V_{\text{thr}}$ and $\tau$ and computing the TV distance between the distribution at each timestep and the final distribution (\cref{fig:tv_norm}). The results confirm that smaller $V_{\text{thr}}$ and $\tau$ alleviate TCS. However, setting these parameters to extremely small values is not universally beneficial: an excessively low $V_{\text{thr}}$ produces unstable firing rates, while an excessively low $\tau$ degrades the neuron's ability to integrate input over time, effectively reducing it to binary quantization. A careful balance is therefore required.
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}{0.99\linewidth}
+    \includegraphics[width=0.99\linewidth]{fig/tv_distance_thr_plot.pdf}
+    \caption{Impact of varying $V_{\text{thr}}$ on convergence speed.}
+  \end{subfigure}
+  \par\medskip
+  \begin{subfigure}{0.99\linewidth}
+    \includegraphics[width=0.99\linewidth]{fig/tv_distance_tau_plot.pdf}
+    \caption{Impact of varying $\tau$ on convergence speed.}
+  \end{subfigure}
+  \caption{TV distance of the membrane-potential distribution between timestep~10 and previous timesteps under different $V_{\text{thr}}$ (top) and $\tau$ (bottom). Inputs are sampled from a Gaussian distribution.}
+  \label{fig:tv_norm}
+\end{figure}
+
+This analysis suggests a natural connection between MP-Init and TrSG (introduced in \cref{ch:trsg}): rather than relying on manual tuning, training $V_{\text{thr}}$ and $\tau$ as learnable parameters lets the network discover the operating point itself. As shown later in \cref{sec:exp_final_values}, TrSG drives $V_{\text{thr}}$ and $\tau$ toward moderately low values that combine fast convergence with stable dynamics.
+
 \section{Biological Plausibility}
 \label{sec:mpinit_bio}
 
@@ -282,4 +346,4 @@ A neuroscience study~\cite{yoo:2023} reports that resting membrane potentials (R
 \section{Summary}
 \label{sec:mpinit_summary}
 
-This chapter identified the membrane potential as the root cause of TCS in SNNs (\cref{sec:mpinit_root,sec:mpinit_empirical}), proved that the membrane potential converges geometrically to a stationary distribution (\cref{sec:mpinit_theorem}), and used this fact to derive a per-layer running-mean initialization, MP-Init, that eliminates TCS at negligible cost (\cref{sec:mpinit_algorithm}).
+This chapter identified the membrane potential as the root cause of TCS in SNNs (\cref{sec:mpinit_root,sec:mpinit_empirical}), proved that the membrane potential converges geometrically to a stationary distribution (\cref{sec:mpinit_theorem}), and used this fact to derive a per-layer running-mean initialization, MP-Init, that eliminates TCS at negligible cost (\cref{sec:mpinit_algorithm}). We further showed that MP-Init aligns temporal gradients during training (\cref{sec:mpinit_impact_training}), accelerates inference at low timesteps (\cref{sec:mpinit_convergence_speed}), and explained how the LIF parameters $\tau$ and $V_{\text{thr}}$ modulate the convergence rate (\cref{sec:mpinit_convergence_rate}).
