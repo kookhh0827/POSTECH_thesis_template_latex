@@ -413,19 +413,19 @@ For the large threshold $V_{\text{thr}}=2.0$, the absolute window of AS-SG is to
 
 The discussion above raises a natural question: \emph{do real trainings actually visit such extreme thresholds?} The answer is yes. When $V_{\text{thr}}$ is trainable, many layers drift toward \emph{lower} thresholds (often $\ll 1$), while late or deep layers move \emph{upward} toward larger values (around $\sim2$ on CIFAR-100, and even higher on ImageNet). \Cref{fig:vthr_dynamics} summarizes these trajectories. CIFAR-100 and DVS-CIFAR10 show several early layers dropping below $1$ and the last layer increasing, whereas ImageNet exhibits a wider spread with some deep layers rising well beyond $2$. These observations confirm that the brittle regimes identified for AS-SG and RS-SG are encountered in practice—precisely where TrSG's threshold-robustness is most beneficial.
 
-\begin{figure}[h]
+\begin{figure}[t!]
   \centering
-  \begin{subfigure}[b]{0.99\linewidth}
+  \begin{subfigure}[b]{0.78\linewidth}
     \includegraphics[width=\linewidth]{fig/threshold_training_cifar100.pdf}
     \caption{ResNet-19 on CIFAR-100}
   \end{subfigure}
   \par\medskip
-  \begin{subfigure}[b]{0.99\linewidth}
+  \begin{subfigure}[b]{0.78\linewidth}
     \includegraphics[width=\linewidth]{fig/threshold_training_dvscifar10.pdf}
     \caption{ResNet-19 on DVS-CIFAR10}
   \end{subfigure}
   \par\medskip
-  \begin{subfigure}[b]{0.99\linewidth}
+  \begin{subfigure}[b]{0.78\linewidth}
     \includegraphics[width=\linewidth]{fig/threshold_training_imagenet.pdf}
     \caption{ResNet-34 on ImageNet}
   \end{subfigure}
