@@ -611,38 +611,48 @@ section_label(s, "Part II · TrSG")
 slide_title(s, "Two Surrogate-Gradient Families",
             "AS-SG and RS-SG — look similar, behave very differently when V_thr is trainable")
 
-# Top row: two cards with definitions
-card(s, 0.5, 2.5, 6.0, 1.5, fill=CREAM, border=NAVY, border_w=1.5)
-text(s, 0.7, 2.6, 5.6, 0.35, "AS-SG  ·  Absolute-Scale",
+# Recap of surrogate gradient (since it's been a few slides since S3)
+callout_box(s, 0.5, 2.4, 12.3, 0.7,
+            fill=CREAM, accent=AMBER,
+            title="Recap — Surrogate Gradient (SG)",
+            body="Spike S = H(x) is non-differentiable.  In backward pass, replace H' with a smooth f'(x).  "
+                 "The choice of x is what differs below.",
+            title_color=NAVY, body_color=INK,
+            title_size=12, body_size=11)
+
+# Two cards (a bit smaller than before)
+card(s, 0.5, 3.3, 6.0, 1.3, fill=CREAM, border=NAVY, border_w=1.5)
+text(s, 0.7, 3.4, 5.6, 0.35, "AS-SG  ·  Absolute-Scale",
      font=SANS, size=13, bold=True, color=NAVY)
-text(s, 0.7, 3.0, 5.6, 0.45,
+text(s, 0.7, 3.75, 5.6, 0.45,
      "x = M[t] − V_thr",
      font="Cambria Math", size=18, color=NAVY)
-text(s, 0.7, 3.55, 5.6, 0.4,
+text(s, 0.7, 4.25, 5.6, 0.3,
      "Used by tdBN, TET, PLIF, LTMD, …",
      font=SANS, size=10, italic=True, color=GRAY)
 
-card(s, 6.85, 2.5, 6.0, 1.5, fill=CREAM, border=NAVY, border_w=1.5)
-text(s, 7.05, 2.6, 5.6, 0.35, "RS-SG  ·  Relative-Scale",
+card(s, 6.85, 3.3, 6.0, 1.3, fill=CREAM, border=NAVY, border_w=1.5)
+text(s, 7.05, 3.4, 5.6, 0.35, "RS-SG  ·  Relative-Scale",
      font=SANS, size=13, bold=True, color=NAVY)
-text(s, 7.05, 3.0, 5.6, 0.45,
+text(s, 7.05, 3.75, 5.6, 0.45,
      "x = M[t] / V_thr − 1",
      font="Cambria Math", size=18, color=NAVY)
-text(s, 7.05, 3.55, 5.6, 0.4,
+text(s, 7.05, 4.25, 5.6, 0.3,
      "Used by Meng 2023, DIET-SNN",
      font=SANS, size=10, italic=True, color=GRAY)
 
-# Bottom: visual comparison
-text(s, 0.5, 4.15, 12.3, 0.3,
+# Window visualization — fitted height, centered
+text(s, 0.5, 4.75, 12.3, 0.3,
      "How the gradient window looks against the membrane-potential distribution",
-     font=SANS, size=11, italic=True, color=GRAY)
-img(s, GEN + "/sg_windows.png", 3.4, 4.4, w=6.5)
+     font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
+# 8:3 aspect → h = w/2.67.  Need final y < 6.6 (callout) so h ≈ 1.55, w ≈ 4.15
+img(s, GEN + "/sg_windows.png", 4.5, 5.05, w=4.3)
 
 # Bottom strip
 callout_box(s, 0.5, 6.7, 12.3, 0.4,
             fill=NAVY, accent=CORAL,
             title="Same when V_thr is fixed.  Once V_thr trains, AS-SG breaks one way, RS-SG breaks the opposite way.",
-            title_color=AMBER, title_size=11, body_size=10)
+            title_color=AMBER, title_size=11)
 
 page_footer(s, 9)
 
@@ -653,68 +663,49 @@ page_footer(s, 9)
 s = add_blank()
 section_label(s, "Part II · TrSG")
 slide_title(s, "Four Failure Modes — and One Fix",
-            "Both window width and gradient magnitude must scale correctly with V_thr")
+            "Both window width AND gradient magnitude must scale correctly with V_thr")
 
-# Hero figure (second_main has aspect 0.87, set by height)
-img(s, ASSETS + "/second_main.png", 4.7, 1.95, h=4.6)
+# Hero figure: second_main centered.
+# Native aspect 0.87 (1905x2180).
+# We need final y < 6.30 (badges) so use h = 4.0  ->  w ≈ 3.49.
+img_h = 3.7
+img_w = img_h * (1905 / 2180)   # ≈ 3.23
+img_x = (13.333 - img_w) / 2     # auto-center horizontally
+img(s, ASSETS + "/second_main.png", img_x, 2.0, h=img_h)
 
-# Left side: AS-SG / RS-SG / TrSG row labels with failure mode summaries
-left_x = 0.5
-text(s, left_x, 2.05, 4.0, 0.3, "By V_thr:",
-     font=SANS, size=10, italic=True, color=GRAY)
-text(s, left_x, 2.4, 1.6, 0.3, "V_thr ≪ 1",
-     font=SANS, size=10, bold=True, color=NAVY, spacing=150)
-text(s, left_x + 1.7, 2.4, 2.0, 0.3, "V_thr ≫ 1",
-     font=SANS, size=10, bold=True, color=NAVY, spacing=150)
-
-# AS-SG row
-card(s, left_x, 2.8, 0.85, 1.3, fill=CORAL, border=CORAL, border_w=0)
-text(s, left_x, 3.25, 0.85, 0.4, "AS-SG",
-     font=SANS, size=11, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
-card(s, left_x + 0.95, 2.8, 1.6, 1.3, fill=CORAL_LT, border=CORAL, border_w=0.8)
-text(s, left_x + 1.05, 2.9, 1.4, 0.3, "✗  Flood",
-     font=SANS, size=10, bold=True, color=CORAL)
-text(s, left_x + 1.05, 3.25, 1.4, 0.85,
-     "fixed window\ncovers most of\ndistribution",
-     font=SANS, size=8, color=INK)
-card(s, left_x + 2.6, 2.8, 1.6, 1.3, fill=CORAL_LT, border=CORAL, border_w=0.8)
-text(s, left_x + 2.7, 2.9, 1.4, 0.3, "✗  Starve",
-     font=SANS, size=10, bold=True, color=CORAL)
-text(s, left_x + 2.7, 3.25, 1.4, 0.85,
-     "fixed window\nmisses the\ndistribution",
-     font=SANS, size=8, color=INK)
-
-# RS-SG row
-ry = 4.2
-card(s, left_x, ry, 0.85, 1.3, fill=AMBER, border=AMBER, border_w=0)
-text(s, left_x, ry + 0.45, 0.85, 0.4, "RS-SG",
-     font=SANS, size=11, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
-card(s, left_x + 0.95, ry, 1.6, 1.3, fill=AMBER_LT, border=AMBER, border_w=0.8)
-text(s, left_x + 1.05, ry + 0.1, 1.4, 0.3, "✗  Explode",
-     font=SANS, size=10, bold=True, color=CORAL)
-text(s, left_x + 1.05, ry + 0.45, 1.4, 0.85,
-     "1/V_thr\nblows the\nmagnitude up",
-     font=SANS, size=8, color=INK)
-card(s, left_x + 2.6, ry, 1.6, 1.3, fill=AMBER_LT, border=AMBER, border_w=0.8)
-text(s, left_x + 2.7, ry + 0.1, 1.4, 0.3, "✗  Vanish",
-     font=SANS, size=10, bold=True, color=CORAL)
-text(s, left_x + 2.7, ry + 0.45, 1.4, 0.85,
-     "1/V_thr\nshrinks the\nmagnitude",
-     font=SANS, size=8, color=INK)
-
-# TrSG row
-ry2 = 5.6
-card(s, left_x, ry2, 4.2, 0.95, fill=TEAL, border=TEAL, border_w=0)
-text(s, left_x + 0.15, ry2 + 0.1, 1.0, 0.3, "TrSG",
-     font=SANS, size=11, bold=True, color=WHITE)
-text(s, left_x + 0.15, ry2 + 0.45, 4.0, 0.45,
-     "✓  window scales with V_thr · magnitude stays 1",
-     font=SANS, size=10, bold=True, color=WHITE)
-
-# Right of figure: short caption
-text(s, 4.7, 6.6, 8.0, 0.3,
-     "Each colored box = active gradient region.  Width = window where gradient flows.  Height = magnitude.",
+# Caption directly under the figure
+text(s, 0.5, 2.0 + img_h + 0.02, 12.3, 0.25,
+     "Each colored box = active gradient region.   width = window  ·  height = magnitude",
      font=SANS, size=9, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
+
+# Five summary badges in a single horizontal row, BELOW the figure
+def badge(slide, x, y, w, h, label, sub, fill, border, sub_color):
+    card(slide, x, y, w, h, fill=fill, border=border, border_w=1.5)
+    text(slide, x + 0.1, y + 0.1, w - 0.2, 0.35, label,
+         font=SANS, size=11, bold=True, color=border, align=PP_ALIGN.CENTER)
+    text(slide, x + 0.1, y + 0.45, w - 0.2, 0.4, sub,
+         font=SANS, size=9, color=sub_color, align=PP_ALIGN.CENTER)
+
+by  = 6.15
+bw  = 2.36
+gap = 0.18
+bx0 = (13.333 - (5 * bw + 4 * gap)) / 2   # auto-center the badge row
+
+badge(s, bx0 + 0*(bw+gap), by, bw, 0.85,
+      "✗ Flooding",  "AS-SG · V_thr ≪ 1",
+      fill=CORAL_LT, border=CORAL, sub_color=INK)
+badge(s, bx0 + 1*(bw+gap), by, bw, 0.85,
+      "✗ Starvation", "AS-SG · V_thr ≫ 1",
+      fill=CORAL_LT, border=CORAL, sub_color=INK)
+badge(s, bx0 + 2*(bw+gap), by, bw, 0.85,
+      "✗ Explosion",  "RS-SG · V_thr ≪ 1",
+      fill=AMBER_LT, border=AMBER, sub_color=INK)
+badge(s, bx0 + 3*(bw+gap), by, bw, 0.85,
+      "✗ Vanishing",  "RS-SG · V_thr ≫ 1",
+      fill=AMBER_LT, border=AMBER, sub_color=INK)
+badge(s, bx0 + 4*(bw+gap), by, bw, 0.85,
+      "✓ Balanced",   "TrSG · all regimes",
+      fill=TEAL_LT, border=TEAL, sub_color=NAVY)
 
 page_footer(s, 10)
 
