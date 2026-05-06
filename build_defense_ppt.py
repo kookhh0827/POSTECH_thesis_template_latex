@@ -101,7 +101,7 @@ def slide_title(slide, txt, sub=None):
         text(slide, 0.5, 1.75, 12.3, 0.4, sub,
              font=SANS, size=14, italic=True, color=GRAY)
 
-def page_footer(slide, n, total=18):
+def page_footer(slide, n, total=19):
     text(slide, 0.5, 7.10, 6, 0.3, "Defense — Hyunho Kook",
          font=SANS, size=10, color=GRAY)
     text(slide, 7.0, 7.10, 5.8, 0.3, f"{n} / {total}",
@@ -604,7 +604,54 @@ page_footer(s, 8)
 
 
 # ════════════════════════════════════════════════════════════════════
-# S9 — Two SG families
+# S9 — Why MP-Init Works  (mechanism)
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Part I · MP-Init")
+slide_title(s, "Why MP-Init Works — A Closer Look",
+            "Aligning distributions aligns gradients — and improves the firing-rate frontier")
+
+# Left column: gradient cosine similarity
+text(s, 0.5, 2.4, 6.0, 0.4,
+     "Gradient cosine similarity across timesteps",
+     font=SANS, size=13, bold=True, color=NAVY)
+# grad_collision aspect ≈ 2.01.  h=2.0 → w=4.02. Center in left half.
+img(s, ASSETS + "/grad_collision.png", 1.49, 2.85, h=2.0)
+text(s, 0.5, 4.95, 6.0, 0.3,
+     "ResNet-19 · CIFAR-100 · 4 timesteps",
+     font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
+bullets(s, 0.5, 5.3, 6.0, 1.4, [
+    "Without MP-Init: gradients at t=1 conflict with later steps (cos 0.07–0.18)",
+    "With MP-Init: temporal ensemble realigned (cos ≈ 0.5)",
+    "Stable optimization — not just stable inference",
+], size=11, color=INK, bullet="▸")
+
+# Right column: Pareto frontier
+text(s, 6.85, 2.4, 6.0, 0.4,
+     "Accuracy vs. firing rate  (Pareto frontier)",
+     font=SANS, size=13, bold=True, color=NAVY)
+# firing_rate_vs_accuracy aspect ≈ 2.85.  h=2.0 → w=5.70.
+img(s, ASSETS + "/firing_rate_vs_accuracy.png", 7.0, 2.85, h=2.0)
+text(s, 6.85, 4.95, 6.0, 0.3,
+     "ResNet-19 · CIFAR-100 with sparsity regularizer",
+     font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
+bullets(s, 6.85, 5.3, 6.0, 1.4, [
+    "MP-Init dominates baseline at every firing rate",
+    "Even at 6% firing rate, beats all baseline settings",
+    "Gains come from spiking BETTER, not spiking MORE",
+], size=11, color=INK, bullet="▸")
+
+# Bottom takeaway
+callout_box(s, 0.5, 6.65, 12.3, 0.45,
+            fill=TEAL, accent=AMBER,
+            title="Higher accuracy from stabler training — efficiency-preserving improvements, not accuracy-via-spend.",
+            title_color=WHITE, title_size=12)
+
+page_footer(s, 9)
+
+
+# ════════════════════════════════════════════════════════════════════
+# S10 — Two SG families
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Part II · TrSG")
@@ -654,11 +701,11 @@ callout_box(s, 0.5, 6.7, 12.3, 0.4,
             title="Same when V_thr is fixed.  Once V_thr trains, AS-SG breaks one way, RS-SG breaks the opposite way.",
             title_color=AMBER, title_size=11)
 
-page_footer(s, 9)
+page_footer(s, 10)
 
 
 # ════════════════════════════════════════════════════════════════════
-# S10 — Failure modes (table-style)
+# S11 — Failure modes (hero figure)
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Part II · TrSG")
@@ -707,11 +754,11 @@ badge(s, bx0 + 4*(bw+gap), by, bw, 0.85,
       "✓ Balanced",   "TrSG · all regimes",
       fill=TEAL_LT, border=TEAL, sub_color=NAVY)
 
-page_footer(s, 10)
+page_footer(s, 11)
 
 
 # ════════════════════════════════════════════════════════════════════
-# S11 — One-line fix
+# S12 — One-line fix
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Part II · TrSG")
@@ -753,11 +800,11 @@ callout_box(s, 0.5, 6.4, 12.3, 0.6,
             title="Window adapts with V_thr  ·  gradient magnitude is threshold-invariant.",
             title_color=WHITE, title_size=13)
 
-page_footer(s, 11)
+page_footer(s, 12)
 
 
 # ════════════════════════════════════════════════════════════════════
-# S12 — Inference stays binary
+# S13 — Inference stays binary
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Part II · TrSG")
@@ -792,11 +839,11 @@ callout_box(s, 0.5, 6.2, 12.3, 0.7,
             title="Standard LIF operators at inference. Hardware compatibility preserved.",
             title_color=WHITE, title_size=13)
 
-page_footer(s, 12)
+page_footer(s, 13)
 
 
 # ════════════════════════════════════════════════════════════════════
-# S13 — TrSG: Result + Mechanism
+# S14 — TrSG: Result + Mechanism
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Part II · TrSG")
@@ -847,11 +894,11 @@ callout_box(s, 0.5, 5.5, 12.3, 1.4,
             title_color=AMBER, body_color=WHITE,
             title_size=14, body_size=11)
 
-page_footer(s, 13)
+page_footer(s, 14)
 
 
 # ════════════════════════════════════════════════════════════════════
-# S14 — Main Results
+# S15 — Main Results
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Experiments · 1/3")
@@ -881,11 +928,11 @@ callout_box(s, 0.5, 6.7, 12.3, 0.4,
             title="Biggest gain on the most challenging (event-based) dataset — DVS-CIFAR10 +5.23 %pt",
             title_color=AMBER, title_size=11)
 
-page_footer(s, 14)
+page_footer(s, 15)
 
 
 # ════════════════════════════════════════════════════════════════════
-# S15 — Ablation
+# S16 — Ablation
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Experiments · 2/3")
@@ -917,11 +964,11 @@ callout_box(s, 0.5, 6.55, 12.3, 0.55,
             title="The two fixes are orthogonal — diagnoses aim at different components, not the same problem twice.",
             title_color=WHITE, title_size=11)
 
-page_footer(s, 15)
+page_footer(s, 16)
 
 
 # ════════════════════════════════════════════════════════════════════
-# S16 — Generalization
+# S17 — Generalization
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Experiments · 3/3")
@@ -966,11 +1013,11 @@ callout_box(s, 0.5, 6.25, 12.3, 0.75,
             title="No architectural changes, no extra losses, no per-timestep parameters — just drop in.",
             title_color=AMBER, title_size=13)
 
-page_footer(s, 16)
+page_footer(s, 17)
 
 
 # ════════════════════════════════════════════════════════════════════
-# S17 — Recap
+# S18 — Recap
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Conclusion")
@@ -1010,11 +1057,11 @@ takeaway_card(s, 8.9, 3.7, 4.0, 3.0,
               "Generalizes to Transformer SNNs (QKFormer +1.10) and detection (COCO +0.014 mAP).\n\n"
               "All without architectural changes.")
 
-page_footer(s, 17)
+page_footer(s, 18)
 
 
 # ════════════════════════════════════════════════════════════════════
-# S18 — Limitations + Future + Thanks
+# S19 — Limitations + Future + Thanks
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 fill_bg(s, NAVY)
@@ -1068,7 +1115,7 @@ amber_underline(s, 0.7, 6.85, w=1.0)
 text(s, 0.7, 7.0, 12, 0.4,
      "Thank you.   Questions?",
      font=SERIF, size=20, bold=True, italic=True, color=AMBER)
-text(s, 11.0, 7.10, 1.8, 0.3, "18 / 18",
+text(s, 11.0, 7.10, 1.8, 0.3, "19 / 19",
      font=SANS, size=10, color=RGBColor(0x80, 0x95, 0xA8), align=PP_ALIGN.RIGHT)
 
 
