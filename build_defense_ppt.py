@@ -101,7 +101,7 @@ def slide_title(slide, txt, sub=None):
         text(slide, 0.5, 1.75, 12.3, 0.4, sub,
              font=SANS, size=14, italic=True, color=GRAY)
 
-def page_footer(slide, n, total=19):
+def page_footer(slide, n, total=20):
     text(slide, 0.5, 7.10, 6, 0.3, "Defense — Hyunho Kook",
          font=SANS, size=10, color=GRAY)
     text(slide, 7.0, 7.10, 5.8, 0.3, f"{n} / {total}",
@@ -846,31 +846,120 @@ page_footer(s, 13)
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Part II · TrSG")
-slide_title(s, "Why TrSG Works — A Closer Look",
-            "Stable gradient across thresholds  ·  real trainings actually visit those regimes")
+slide_title(s, "Why TrSG Works — A Stable Gradient",
+            "Three stability metrics tell the same story across extreme V_thr")
 
-# Hero: no_training_acc bar chart, sized to fit
-# Chart aspect 2.5 (7.5x3).  h=2.6 → w=6.5.  Center horizontally.
-img(s, GEN + "/no_training_acc.png", 3.4, 2.4, w=6.5)
+# Top: metric definitions
+def metric_def(slide, x, y, w, name, formula, healthy):
+    card(slide, x, y, w, 1.05, fill=CREAM, border=GRAY_LT, border_w=0.5)
+    text(slide, x + 0.15, y + 0.08, w - 0.3, 0.3, name,
+         font=SANS, size=12, bold=True, color=NAVY)
+    text(slide, x + 0.15, y + 0.4, w - 0.3, 0.3, formula,
+         font="Cambria Math", size=11, color=INK)
+    text(slide, x + 0.15, y + 0.72, w - 0.3, 0.3, healthy,
+         font=SANS, size=9, italic=True, color=GRAY)
 
-# Bullets summarizing the mechanism
-bullets(s, 0.5, 5.25, 12.3, 1.4, [
-    "TrSG wins at every V_thr — most dramatically at the extremes (74.0 vs 61.6 / div. at V_thr=0.1; 64.3 vs 18.1 / 5.4 at V_thr=2.0)",
-    "AS-SG and RS-SG only work in a narrow band around V_thr=1.0",
-    "Real trainings DO visit V_thr ≪ 1 (early layers) and V_thr ≫ 1 (deep layers)",
-], size=12, color=INK, bullet="▸")
+metric_def(s, 0.5,  2.45, 4.05,
+           "AbsStr",  "mean |gradient|",
+           "low → vanishing,   high → exploding")
+metric_def(s, 4.65, 2.45, 4.05,
+           "RatioAG", "% neurons with active gradient",
+           "low → starvation,   high → flooding")
+metric_def(s, 8.8,  2.45, 4.05,
+           "GradCV",  "std / mean of |gradient|",
+           "high → unstable, hard-to-tune updates")
 
-# Bottom strip
-callout_box(s, 0.5, 6.65, 12.3, 0.45,
+# Middle: stress-test tables (V_thr=0.1, V_thr=2.0)
+text(s, 0.5, 3.7, 12.3, 0.3,
+     "Stress-test metrics at epoch 100 — CIFAR-100, ResNet-19, τ=2.0 frozen",
+     font=SANS, size=10, italic=True, color=GRAY)
+
+def stress_table(slide, x, y, title, rows):
+    card(slide, x, y, 6.05, 2.4, fill=CREAM, border=NAVY, border_w=1.0)
+    text(slide, x + 0.2, y + 0.1, 5.8, 0.3, title,
+         font=SANS, size=12, bold=True, color=NAVY)
+    # Header
+    hx = x + 0.2
+    headers = [(1.55, "SG"), (3.0, "AbsStr"), (4.3, "RatioAG"), (5.4, "GradCV")]
+    for hxx, h in headers:
+        text(slide, hx + hxx - 0.2, y + 0.5, 1.3, 0.25, h,
+             font=SANS, size=9, bold=True, color=TEAL)
+    # Rows
+    for i, (sg, absstr, ratio, cv, color) in enumerate(rows):
+        ry = y + 0.85 + i * 0.45
+        text(slide, hx + 0.0, ry, 1.4, 0.3, sg,
+             font=SANS, size=11, bold=True, color=color)
+        text(slide, hx + 1.55, ry, 1.3, 0.3, absstr,
+             font="Consolas", size=10.5, color=color)
+        text(slide, hx + 2.85, ry, 1.3, 0.3, ratio,
+             font="Consolas", size=10.5, color=color)
+        text(slide, hx + 4.15, ry, 1.3, 0.3, cv,
+             font="Consolas", size=10.5, color=color)
+
+stress_table(s, 0.5, 4.05,
+             "V_thr = 0.1   (small threshold)",
+             [("AS-SG",  "0.0145",  "90.20%", "1.22",   CORAL),
+              ("RS-SG",  "NaN",     "0.00%",  "NaN",    CORAL),
+              ("TrSG",   "0.0153",  "21.45%", "0.87",   TEAL)])
+
+stress_table(s, 6.78, 4.05,
+             "V_thr = 2.0   (large threshold)",
+             [("AS-SG",  "0.0000",  "0.00%",  "0.000",  CORAL),
+              ("RS-SG",  "0.0021",  "0.10%",  "2.25",   CORAL),
+              ("TrSG",   "0.0323",  "6.90%",  "0.73",   TEAL)])
+
+# Bottom takeaway
+callout_box(s, 0.5, 6.7, 12.3, 0.4,
             fill=NAVY, accent=AMBER,
-            title="Threshold-robustness is a practical necessity, not a theoretical edge case.",
+            title="TrSG keeps all three metrics in the healthy range — at every threshold.",
             title_color=AMBER, title_size=12)
 
 page_footer(s, 14)
 
 
 # ════════════════════════════════════════════════════════════════════
-# S15 — Main Results
+# S15 — TrSG Robust Across All V_thr  (outcome + real-world relevance)
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Part II · TrSG")
+slide_title(s, "TrSG Robust Across All V_thr",
+            "Direct accuracy evidence  +  real trainings actually visit the extreme regimes")
+
+# Left: no_training_acc bar chart (the direct accuracy evidence)
+text(s, 0.5, 2.4, 6.7, 0.3,
+     "Accuracy with V_thr frozen at varying values",
+     font=SANS, size=12, bold=True, color=NAVY)
+img(s, GEN + "/no_training_acc.png", 0.5, 2.8, w=6.7)
+text(s, 0.5, 5.5, 6.7, 0.3,
+     "CIFAR-100, ResNet-19, τ=2.0 frozen",
+     font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
+
+# Right: threshold trajectories (small) + bullets
+text(s, 7.4, 2.4, 5.5, 0.3,
+     "Trainable V_thr trajectories — ImageNet",
+     font=SANS, size=12, bold=True, color=NAVY)
+img(s, ASSETS + "/threshold_training_imagenet.png", 7.4, 2.8, w=5.5, h=2.5)
+text(s, 7.4, 5.4, 5.5, 0.3,
+     "ResNet-34 on ImageNet · 120 epochs",
+     font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
+
+# Bullets across the bottom
+bullets(s, 0.5, 5.85, 12.3, 0.7, [
+    "Frozen V_thr accuracy:  TrSG wins at every threshold; AS-SG/RS-SG fail outside V_thr ≈ 1",
+    "Real trainings drift V_thr ≪ 1 in early layers and ≫ 1 in deep layers — exactly the failure regimes",
+], size=11, color=INK, bullet="▸")
+
+# Bottom takeaway
+callout_box(s, 0.5, 6.65, 12.3, 0.4,
+            fill=NAVY, accent=AMBER,
+            title="Threshold-robustness is a practical necessity, not a theoretical edge case.",
+            title_color=AMBER, title_size=11)
+
+page_footer(s, 15)
+
+
+# ════════════════════════════════════════════════════════════════════
+# S16 — Main Results
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Experiments · 1/3")
@@ -900,11 +989,11 @@ callout_box(s, 0.5, 6.7, 12.3, 0.4,
             title="Biggest gain on the most challenging (event-based) dataset — DVS-CIFAR10 +5.23 %pt",
             title_color=AMBER, title_size=11)
 
-page_footer(s, 15)
+page_footer(s, 16)
 
 
 # ════════════════════════════════════════════════════════════════════
-# S16 — Ablation
+# S17 — Ablation
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Experiments · 2/3")
@@ -936,11 +1025,11 @@ callout_box(s, 0.5, 6.55, 12.3, 0.55,
             title="The two fixes are orthogonal — diagnoses aim at different components, not the same problem twice.",
             title_color=WHITE, title_size=11)
 
-page_footer(s, 16)
+page_footer(s, 17)
 
 
 # ════════════════════════════════════════════════════════════════════
-# S17 — Generalization
+# S18 — Generalization
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Experiments · 3/3")
@@ -985,11 +1074,11 @@ callout_box(s, 0.5, 6.25, 12.3, 0.75,
             title="No architectural changes, no extra losses, no per-timestep parameters — just drop in.",
             title_color=AMBER, title_size=13)
 
-page_footer(s, 17)
+page_footer(s, 18)
 
 
 # ════════════════════════════════════════════════════════════════════
-# S18 — Recap
+# S19 — Recap
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Conclusion")
@@ -1029,11 +1118,11 @@ takeaway_card(s, 8.9, 3.7, 4.0, 3.0,
               "Generalizes to Transformer SNNs (QKFormer +1.10) and detection (COCO +0.014 mAP).\n\n"
               "All without architectural changes.")
 
-page_footer(s, 18)
+page_footer(s, 19)
 
 
 # ════════════════════════════════════════════════════════════════════
-# S19 — Limitations + Future + Thanks
+# S20 — Limitations + Future + Thanks
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 fill_bg(s, NAVY)
@@ -1072,7 +1161,7 @@ amber_underline(s, 0.7, 6.85, w=1.0)
 text(s, 0.7, 6.97, 12, 0.4,
      "Thank you.   Questions?",
      font=SERIF, size=22, bold=True, italic=True, color=AMBER)
-text(s, 11.0, 7.10, 1.8, 0.3, "19 / 19",
+text(s, 11.0, 7.10, 1.8, 0.3, "20 / 20",
      font=SANS, size=10, color=RGBColor(0x80, 0x95, 0xA8), align=PP_ALIGN.RIGHT)
 
 
