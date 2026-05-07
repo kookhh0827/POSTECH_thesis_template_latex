@@ -573,33 +573,59 @@ text(s, 0.5, 5.10, 12.3, 0.4,
      "Consistent accuracy gain on every baseline",
      font=SANS, size=14, bold=True, color=NAVY)
 
-# Gain table — properly aligned with three columns + headers
-gx, gy, gw, gh = 0.5, 5.5, 7.2, 1.55
-card(s, gx, gy, gw, gh, fill=CREAM, border=GRAY_LT, border_w=0.5)
-
-# Header row
-text(s, gx + 0.3, gy + 0.1, 3.5, 0.3, "Setting",
-     font=SANS, size=11, bold=True, color=TEAL)
-text(s, gx + 4.0, gy + 0.1, 1.4, 0.3, "Baseline",
-     font=SANS, size=11, bold=True, color=TEAL, align=PP_ALIGN.CENTER)
-text(s, gx + 5.5, gy + 0.1, 1.4, 0.3, "+ MP-Init",
-     font=SANS, size=11, bold=True, color=TEAL, align=PP_ALIGN.CENTER)
-
-# Rows
+# Gain table — native PPT table for cleaner grid + edit-ability
+gx, gy = 0.5, 5.5
 gain_rows = [
     ("CIFAR-100  ·  T=4  ·  tdBN",      "75.55", "76.09"),
     ("CIFAR-100  ·  T=4  ·  TEBN",      "75.96", "76.45"),
     ("CIFAR-100  ·  T=4  ·  TAB",       "76.25", "77.24"),
     ("DVS-CIFAR10  ·  T=10  ·  tdBN",   "76.60", "77.37"),
 ]
-for i, (label, base, ours) in enumerate(gain_rows):
-    ry = gy + 0.45 + i * 0.26
-    text(s, gx + 0.3, ry, 3.5, 0.25, label,
-         font=SANS, size=11, color=INK)
-    text(s, gx + 4.0, ry, 1.4, 0.25, base,
-         font=SANS, size=11, color=GRAY, align=PP_ALIGN.CENTER)
-    text(s, gx + 5.5, ry, 1.4, 0.25, ours,
-         font=SANS, size=11, bold=True, color=TEAL, align=PP_ALIGN.CENTER)
+gain_tbl_shape = s.shapes.add_table(
+    len(gain_rows) + 1, 3,
+    Inches(gx), Inches(gy),
+    Inches(7.2), Inches(1.55))
+gain_tbl = gain_tbl_shape.table
+gain_tbl.columns[0].width = Inches(4.2)
+gain_tbl.columns[1].width = Inches(1.5)
+gain_tbl.columns[2].width = Inches(1.5)
+gain_tbl.rows[0].height = Inches(0.35)
+for r in range(1, len(gain_rows) + 1):
+    gain_tbl.rows[r].height = Inches(0.30)
+
+# Header row
+for j, (h, alignj) in enumerate([("Setting", PP_ALIGN.LEFT),
+                                  ("Baseline", PP_ALIGN.CENTER),
+                                  ("+ MP-Init", PP_ALIGN.CENTER)]):
+    cell = gain_tbl.cell(0, j)
+    cell.text = h
+    cell.fill.solid(); cell.fill.fore_color.rgb = TEAL_LT
+    p = cell.text_frame.paragraphs[0]
+    p.font.name = SANS; p.font.size = Pt(11); p.font.bold = True
+    p.font.color.rgb = NAVY
+    p.alignment = alignj
+    cell.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+    cell.margin_left = Inches(0.15)
+    cell.margin_right = Inches(0.15)
+
+# Data rows with zebra striping
+for i, (label, base, ours) in enumerate(gain_rows, start=1):
+    bg = CREAM if i % 2 == 0 else WHITE
+    for j, (val, font_color, is_bold, alignj) in enumerate([
+        (label, INK,  False, PP_ALIGN.LEFT),
+        (base,  GRAY, False, PP_ALIGN.CENTER),
+        (ours,  TEAL, True,  PP_ALIGN.CENTER),
+    ]):
+        cell = gain_tbl.cell(i, j)
+        cell.text = val
+        cell.fill.solid(); cell.fill.fore_color.rgb = bg
+        p = cell.text_frame.paragraphs[0]
+        p.font.name = SANS; p.font.size = Pt(11); p.font.bold = is_bold
+        p.font.color.rgb = font_color
+        p.alignment = alignj
+        cell.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+        cell.margin_left = Inches(0.15)
+        cell.margin_right = Inches(0.15)
 
 # Right: highlighted +1.66
 hx = 8.0
@@ -887,9 +913,8 @@ text(s, 0.5, 3.7, 12.3, 0.3,
      font=SANS, size=10, italic=True, color=GRAY)
 
 def stress_table(slide, x, y, title, rows):
-    # Outer card
-    card(slide, x, y, 6.05, 2.6, fill=WHITE, border=NAVY, border_w=1.5)
-    # Title bar (NAVY filled header strip)
+    """Stress-test table using PowerPoint's native table object."""
+    # Title bar above the table
     title_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
         Inches(x), Inches(y), Inches(6.05), Inches(0.42))
     title_bar.fill.solid(); title_bar.fill.fore_color.rgb = NAVY
@@ -897,44 +922,57 @@ def stress_table(slide, x, y, title, rows):
     text(slide, x + 0.2, y + 0.06, 5.8, 0.35, title,
          font=SANS, size=12, bold=True, color=AMBER)
 
-    # Column header row (TEAL background strip)
-    hdr_y = y + 0.5
-    hdr_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
-        Inches(x + 0.05), Inches(hdr_y), Inches(5.95), Inches(0.4))
-    hdr_bar.fill.solid(); hdr_bar.fill.fore_color.rgb = TEAL_LT
-    hdr_bar.line.fill.background()
+    # Native PPT table:  4 rows (1 header + 3 data) × 4 cols
+    tw, th = 6.05, 1.95
+    tbl_shape = slide.shapes.add_table(
+        4, 4,
+        Inches(x), Inches(y + 0.42),
+        Inches(tw), Inches(th))
+    tbl = tbl_shape.table
 
-    col_xs = [0.0, 1.55, 3.05, 4.55]   # SG, AbsStr, RatioAG, GradCV
+    # Column widths (sum to 6.05 inches)
+    col_widths = [1.45, 1.50, 1.55, 1.55]
+    for i, cw in enumerate(col_widths):
+        tbl.columns[i].width = Inches(cw)
+
+    # Row heights
+    tbl.rows[0].height = Inches(0.45)
+    for r in range(1, 4):
+        tbl.rows[r].height = Inches(0.50)
+
+    # Header row
     headers = ["SG", "AbsStr", "RatioAG", "GradCV"]
-    hx = x + 0.25
-    for cx, h in zip(col_xs, headers):
-        text(slide, hx + cx, hdr_y + 0.06, 1.4, 0.3, h,
-             font=SANS, size=11, bold=True, color=NAVY)
+    for j, h in enumerate(headers):
+        cell = tbl.cell(0, j)
+        cell.text = h
+        cell.fill.solid(); cell.fill.fore_color.rgb = TEAL_LT
+        p = cell.text_frame.paragraphs[0]
+        p.font.name = SANS; p.font.size = Pt(11); p.font.bold = True
+        p.font.color.rgb = NAVY
+        p.alignment = PP_ALIGN.CENTER if j > 0 else PP_ALIGN.LEFT
+        cell.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+        cell.margin_left = Inches(0.12)
+        cell.margin_right = Inches(0.12)
 
-    # Header underline
-    underline = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
-        Inches(x + 0.05), Inches(hdr_y + 0.4), Inches(5.95), Inches(0.025))
-    underline.fill.solid(); underline.fill.fore_color.rgb = TEAL
-    underline.line.fill.background()
-
-    # Rows with zebra striping
-    for i, (sg, absstr, ratio, cv, color) in enumerate(rows):
-        ry = hdr_y + 0.45 + i * 0.5
-        # Zebra: alternate background
-        if i % 2 == 1:
-            stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
-                Inches(x + 0.05), Inches(ry), Inches(5.95), Inches(0.5))
-            stripe.fill.solid(); stripe.fill.fore_color.rgb = CREAM
-            stripe.line.fill.background()
-
-        text(slide, hx + col_xs[0], ry + 0.1, 1.4, 0.35, sg,
-             font=SANS, size=13, bold=True, color=color)
-        text(slide, hx + col_xs[1], ry + 0.1, 1.4, 0.35, absstr,
-             font="Consolas", size=13, bold=True, color=color)
-        text(slide, hx + col_xs[2], ry + 0.1, 1.4, 0.35, ratio,
-             font="Consolas", size=13, bold=True, color=color)
-        text(slide, hx + col_xs[3], ry + 0.1, 1.4, 0.35, cv,
-             font="Consolas", size=13, bold=True, color=color)
+    # Data rows
+    for i, (sg, absstr, ratio, cv, color) in enumerate(rows, start=1):
+        # Zebra striping
+        bg = CREAM if i % 2 == 0 else WHITE
+        for j, val in enumerate([sg, absstr, ratio, cv]):
+            cell = tbl.cell(i, j)
+            cell.text = val
+            cell.fill.solid(); cell.fill.fore_color.rgb = bg
+            p = cell.text_frame.paragraphs[0]
+            if j == 0:
+                p.font.name = SANS; p.font.bold = True
+            else:
+                p.font.name = "Consolas"; p.font.bold = True
+            p.font.size = Pt(13)
+            p.font.color.rgb = color
+            p.alignment = PP_ALIGN.CENTER if j > 0 else PP_ALIGN.LEFT
+            cell.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+            cell.margin_left = Inches(0.12)
+            cell.margin_right = Inches(0.12)
 
 stress_table(s, 0.5, 4.05,
              "V_thr = 0.1   (small threshold)",
