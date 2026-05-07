@@ -1348,7 +1348,7 @@ tbl.rows[0].height = Inches(0.50)
 for r in range(1, 8):
     tbl.rows[r].height = Inches(0.55)
 
-headers = ["Chip", "Year", "Process", "Capacity", "Energy / power"]
+headers = ["Chip", "Year", "Process", "Capacity", "Headline metric"]
 for j, h in enumerate(headers):
     cell = tbl.cell(0, j)
     cell.text = h
@@ -1364,10 +1364,10 @@ chips = [
     ("IBM TrueNorth",   "2014", "65 nm",  "1 M neur.\n256 M syn.",  "70 mW · 26 pJ/event"),
     ("Intel Loihi",     "2018", "14 nm",  "130 K neur.\n130 M syn.","23.6 pJ / op"),
     ("Intel Loihi 2",   "2021", "Intel 4","1 M neur.\ngraded spikes","improved · multi-bit"),
-    ("SpiNNaker 2",     "2024", "22 nm",  "10 M neur.\n152 ARM cores","ARM-based · digital"),
+    ("SpiNNaker 2",     "2024", "22 nm",  "152 K neur.\n152 M syn. / chip","ARM-based · digital"),
     ("Tianjic",         "2019", "28 nm",  "40 K neur.\nSNN+ANN hybrid","Tsinghua · Nature 2019"),
-    ("Speck (SynSense)","2022", "65 nm",  "327 K neur.\nDVS on-chip","mW-level · always-on"),
-    ("BrainScaleS-2",   "2022", "65 nm",  "512 analog neur.","1000× wall-clock"),
+    ("Speck (SynSense)","2022", "65 nm",  "328 K neur.\nDVS on-chip","< 10 mW · always-on"),
+    ("BrainScaleS-2",   "2022", "65 nm",  "512 analog neur.","1000× biological speed"),
 ]
 for i, row in enumerate(chips, start=1):
     bg = CREAM if i % 2 == 0 else WHITE
@@ -1425,7 +1425,7 @@ reasons = [
      "Typical activity:  5–20 % per timestep"),
     ("②  Multiplication-free", AMBER,
      "Spike ∈ {0, 1} → W·spike degenerates to W or 0. Each synapse becomes an Accumulate (AC), not a MAC.",
-     "AC ≈ 6–8× cheaper than MAC (45 nm)"),
+     "INT8 AC ≈ 8× cheaper than INT8 MAC (45 nm)"),
     ("③  Co-located memory", CORAL,
      "Neuromorphic cores keep synaptic weights in local SRAM, on-chip mesh routing — no DRAM trip.",
      "DRAM 64-bit ≈ 1300 pJ vs SRAM ≈ 5 pJ"),
@@ -1492,7 +1492,7 @@ text(s, 8.4, 3.95, 4.6, 0.4,
      "Static images (CIFAR / ImageNet)",
      font=SANS, size=12, bold=True, color=AMBER)
 text(s, 8.4, 4.28, 4.6, 0.5,
-     "~3–10×  vs GPU at iso-accuracy",
+     "~2–5×  vs GPU at iso-accuracy\n(per published SNN/CNN comparisons)",
      font=SANS, size=10.5, color=INK)
 
 text(s, 8.4, 4.85, 4.6, 0.4,
@@ -1593,7 +1593,7 @@ for j, h in enumerate(headers):
 datasets = [
     ("DVS-CIFAR10",      "CIFAR-10 on monitor + saccading DVS",     "10 K"),
     ("N-MNIST",          "MNIST shown to event camera",              "70 K"),
-    ("N-Caltech101",     "Caltech101 in event form",                "8.7 K"),
+    ("N-Caltech101",     "Caltech101 in event form",                "9.1 K"),
     ("DVS-Gesture (IBM)","11 hand gestures, 29 subjects",          "1.3 K clips"),
     ("SHD",              "Spiking Heidelberg Digits (audio events)", "10 K"),
     ("Gen1 / 1Mpx",      "Prophesee automotive (object detect.)",   "39 h / 14 h"),
@@ -1698,8 +1698,8 @@ details = [
      "Bi & Poo 1998\nDiehl & Cook 2015",
      0.55, 2.85, AMBER),
     ("Train ANN → convert weights",
-     "Use pretrained ReLU CNN; map activations to spike rates.\nNeeds T = 100–2000; cannot use event data.",
-     "Cao 2015 · Diehl 2015\nRueckauer 2017",
+     "Use pretrained ReLU CNN; map activations to spike rates.\nEarly: T = 100–2000.  Modern (QCFS '23): T ≤ 8.\nStill cannot consume native event data.",
+     "Cao 2015 · Rueckauer 2017\nBu 2023 (QCFS) · Hao 2023",
      3.55, 2.85, CORAL),
     ("Surrogate gradient (STBP / BPTT)",
      "Replace Heaviside backward with a smooth function.\nFew timesteps; works on event data; modern dominant.",
@@ -1768,10 +1768,10 @@ for j, h in enumerate(headers):
     cell.margin_left = Inches(0.12); cell.margin_right = Inches(0.10)
 
 tcs_rows = [
-    ("BNTT '20",   "Per-timestep BN params",       "Output BN only"),
-    ("tdBN '20",   "Threshold-dependent BN",       "Output BN only"),
-    ("TEBN '22",   "Timestep-specific affine",     "Doesn't fix membrane drift"),
-    ("TAB '24",    "Temporal-adaptive normalize",  "Membrane TCS persists"),
+    ("BNTT '21",   "BN on synaptic input current",  "U[t] drift not corrected"),
+    ("tdBN '20",   "Threshold-dependent BN on activations", "Pre-spike BN; U[t] persists"),
+    ("TEBN '22",   "Timestep-specific affine on outputs", "Membrane drift untouched"),
+    ("TAB '24",    "Temporal-adaptive output normalization",  "Membrane TCS persists"),
 ]
 for i, (m, w_, mi) in enumerate(tcs_rows, start=1):
     bg = CREAM if i % 2 == 0 else WHITE
