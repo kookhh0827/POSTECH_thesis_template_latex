@@ -446,7 +446,7 @@ slide_title(s, "Why Does the Membrane Potential Drift?",
 callout_box(s, 0.5, 2.5, 7.2, 0.7,
             fill=CREAM, accent=TEAL,
             title="The recurrence is a Markov chain",
-            body="U[t+1] = f( U[t], I_in[t+1] ) — i.i.d. ⇒ Markov chain",
+            body="U[t+1] = f( U[t], I_in[t+1] ) — Markov by construction;  i.i.d. inputs ⇒ time-homogeneous",
             title_color=TEAL, body_color=INK,
             title_size=12, body_size=11)
 
@@ -569,13 +569,14 @@ text(s, 9.8, 4.65, 2.95, 0.3, "MP-Init (ours)",
      font=SANS, size=10, bold=True, color=TEAL, align=PP_ALIGN.CENTER)
 
 # Bottom: gain table card
-text(s, 0.5, 5.10, 12.3, 0.4,
+text(s, 0.5, 4.95, 12.3, 0.4,
      "Consistent accuracy gain on every baseline",
      font=SANS, size=14, bold=True, color=NAVY)
 
 # Gain table — native PPT table for cleaner grid + edit-ability
-gx, gy = 0.5, 5.5
+gx, gy = 0.5, 5.30
 gain_rows = [
+    ("CIFAR-100  ·  T=2  ·  tdBN",      "72.35", "74.01"),
     ("CIFAR-100  ·  T=4  ·  tdBN",      "75.55", "76.09"),
     ("CIFAR-100  ·  T=4  ·  TEBN",      "75.96", "76.45"),
     ("CIFAR-100  ·  T=4  ·  TAB",       "76.25", "77.24"),
@@ -589,9 +590,9 @@ gain_tbl = gain_tbl_shape.table
 gain_tbl.columns[0].width = Inches(4.2)
 gain_tbl.columns[1].width = Inches(1.5)
 gain_tbl.columns[2].width = Inches(1.5)
-gain_tbl.rows[0].height = Inches(0.35)
+gain_tbl.rows[0].height = Inches(0.32)
 for r in range(1, len(gain_rows) + 1):
-    gain_tbl.rows[r].height = Inches(0.30)
+    gain_tbl.rows[r].height = Inches(0.245)
 
 # Header row
 for j, (h, alignj) in enumerate([("Setting", PP_ALIGN.LEFT),
@@ -630,13 +631,13 @@ for i, (label, base, ours) in enumerate(gain_rows, start=1):
 # Right: highlighted +1.66
 hx = 8.0
 hbox = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
-    Inches(hx), Inches(5.5), Inches(4.85), Inches(1.55))
+    Inches(hx), Inches(5.30), Inches(4.85), Inches(1.55))
 hbox.fill.solid(); hbox.fill.fore_color.rgb = AMBER_LT
 hbox.line.color.rgb = AMBER; hbox.line.width = Pt(1.2)
-text(s, hx + 0.25, 5.65, 4.5, 0.55,
+text(s, hx + 0.25, 5.45, 4.5, 0.55,
      "+1.66 %pt at T = 2",
      font=SERIF, size=24, bold=True, color=NAVY)
-text(s, hx + 0.25, 6.25, 4.5, 0.7,
+text(s, hx + 0.25, 6.05, 4.5, 0.7,
      "Biggest gain in the most latency-critical regime —\nexactly where SNN energy efficiency matters.",
      font=SANS, size=10, color=INK)
 
@@ -776,7 +777,7 @@ gap = 0.18
 bx0 = (13.333 - (5 * bw + 4 * gap)) / 2   # auto-center the badge row
 
 badge(s, bx0 + 0*(bw+gap), by, bw, 0.85,
-      "✗ Flooding",  "AS-SG · V_thr ≪ 1",
+      "✗ Flood",     "AS-SG · V_thr ≪ 1",
       fill=CORAL_LT, border=CORAL, sub_color=INK)
 badge(s, bx0 + 1*(bw+gap), by, bw, 0.85,
       "✗ Starvation", "AS-SG · V_thr ≫ 1",
@@ -863,7 +864,7 @@ text(s, 0.5, 3.95, 12.3, 0.4,
      font=SANS, size=14, bold=True, color=NAVY)
 callout_box(s, 0.5, 4.45, 12.3, 0.7,
             fill=CREAM, accent=AMBER,
-            body="W'_{l→l+1}   =   V_thr  ·  W_{l→l+1}    (one-time rescaling)",
+            body="W'_{l→l+1}   =   V_thr^l  ·  W_{l→l+1}    (one-time rescaling per layer)",
             body_color=INK, body_size=12)
 callout_box(s, 0.5, 5.25, 12.3, 0.7,
             fill=TEAL_LT, accent=TEAL,
@@ -1059,7 +1060,7 @@ def gain_card(slide, x, y, value, label, color):
 
 gain_card(s, 9.0, 2.4, "+1.09", "CIFAR-100  ·  beats TAB", TEAL)
 gain_card(s, 9.0, 3.95, "+0.64", "ImageNet  ·  beats MPS",   TEAL)
-gain_card(s, 9.0, 5.5,  "+5.23", "DVS-CIFAR10  ·  beats RMP", AMBER)
+gain_card(s, 9.0, 5.5,  "+5.23", "DVS-CIFAR10  ·  beats RMP-Loss", AMBER)
 
 # Bottom emphasis
 callout_box(s, 0.5, 6.7, 12.3, 0.4,
@@ -1076,7 +1077,7 @@ page_footer(s, 16)
 s = add_blank()
 section_label(s, "Experiments · 2/3")
 slide_title(s, "Ablation — Independent and Complementary",
-            "Each method helps alone; together they compound (especially on event-based data)")
+            "Each method helps alone; gains stack additively (largest combined effect on event-based data)")
 
 # Bar chart
 img(s, GEN + "/ablation_bars.png", 0.4, 2.45, w=10.0)
@@ -1135,10 +1136,11 @@ gen_card(s, 6.85, 2.5, 6.0, 1.7,
          "First evidence the principles transfer beyond classification.")
 
 gen_card(s, 0.5, 4.4, 6.0, 1.7,
-         "Energy at matched firing rate  (CIFAR-100)",
+         "Energy under matched configuration  (CIFAR-100)",
          "Baseline   1.57 mJ   ·   75.58 %\n"
          "+ MP-Init + TrSG    1.67 mJ   ·   77.68 %\n"
-         "+2.10 %pt at +6 % energy — gains aren't from spiking more.")
+         "+2.10 %pt at +6 % energy → orders of magnitude better than\n"
+         "spike-rate-multiplying baselines (cf. Pareto frontier on slide 9).")
 
 gen_card(s, 6.85, 4.4, 6.0, 1.7,
          "All four surrogate shapes",

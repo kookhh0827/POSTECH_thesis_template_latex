@@ -198,7 +198,7 @@ datasets = ["CIFAR-10\n(R-19, T=6)", "CIFAR-100\n(R-19, T=6)",
             "ImageNet\n(SEW-R34, T=4)", "DVS-CIFAR10\n(R-19, T=10)"]
 prev_best = [94.81, 76.82, 69.03, 76.20]
 ours      = [95.50, 77.91, 69.67, 81.43]
-prev_label = ["TAB", "TAB", "MPS", "RMP"]
+prev_label = ["TAB", "TAB", "MPS", "RMP-Loss"]
 
 x = np.arange(len(datasets))
 w = 0.32
@@ -310,12 +310,17 @@ for bar, val in zip(b2, rs_vals):
 
 ax.set_xticks(x); ax.set_xticklabels([f"$V_{{\\rm thr}}={v}$" for v in v_thrs], fontsize=10)
 ax.set_ylabel("Accuracy (%)", fontsize=10)
-ax.set_ylim(0, 90)
+ax.set_ylim(0, 105)  # extra headroom so legend sits above all bars
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 ax.tick_params(axis="y", labelsize=9, colors=GRAY)
-ax.legend(loc="upper right", fontsize=10, frameon=False)
+ax.legend(loc="upper center", ncol=3, fontsize=10, frameon=False,
+          bbox_to_anchor=(0.5, 1.02))
 ax.set_title("CIFAR-100, ResNet-19, $\\tau=2.0$ frozen — $V_{\\rm thr}$ frozen at varying values",
-             fontsize=11, color=NAVY)
+             fontsize=10.5, color=NAVY, pad=22)
+# Footnote: AS-SG and RS-SG are mathematically identical at V_thr=1.0 (paper convention)
+ax.text(0.5, -0.22,
+        "AS-SG and RS-SG coincide at $V_{\\rm thr}=1.0$ → reported under TrSG only",
+        transform=ax.transAxes, ha="center", fontsize=8.5, color=GRAY, style="italic")
 
 plt.tight_layout()
 plt.savefig("ppt_assets/gen/no_training_acc.png", bbox_inches="tight",
