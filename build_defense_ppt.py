@@ -566,37 +566,48 @@ text(s, 9.8, 4.65, 2.95, 0.3, "MP-Init (ours)",
      font=SANS, size=10, bold=True, color=TEAL, align=PP_ALIGN.CENTER)
 
 # Bottom: gain table card
-text(s, 0.5, 5.15, 12.3, 0.4,
+text(s, 0.5, 5.10, 12.3, 0.4,
      "Consistent accuracy gain on every baseline",
-     font=SANS, size=12, bold=True, color=NAVY)
+     font=SANS, size=14, bold=True, color=NAVY)
 
-# Compact gain table
-gx, gy, gw, gh = 0.5, 5.55, 7.0, 1.4
+# Gain table — properly aligned with three columns + headers
+gx, gy, gw, gh = 0.5, 5.5, 7.2, 1.55
 card(s, gx, gy, gw, gh, fill=CREAM, border=GRAY_LT, border_w=0.5)
-gain_lines = [
-    ("CIFAR-100, T=4   tdBN",        "75.55", "76.09"),
-    ("                 TEBN",        "75.96", "76.45"),
-    ("                 TAB",         "76.25", "77.24"),
-    ("DVS-CIFAR10, T=10  tdBN",      "76.60", "77.37"),
+
+# Header row
+text(s, gx + 0.3, gy + 0.1, 3.5, 0.3, "Setting",
+     font=SANS, size=11, bold=True, color=TEAL)
+text(s, gx + 4.0, gy + 0.1, 1.4, 0.3, "Baseline",
+     font=SANS, size=11, bold=True, color=TEAL, align=PP_ALIGN.CENTER)
+text(s, gx + 5.5, gy + 0.1, 1.4, 0.3, "+ MP-Init",
+     font=SANS, size=11, bold=True, color=TEAL, align=PP_ALIGN.CENTER)
+
+# Rows
+gain_rows = [
+    ("CIFAR-100  ·  T=4  ·  tdBN",      "75.55", "76.09"),
+    ("CIFAR-100  ·  T=4  ·  TEBN",      "75.96", "76.45"),
+    ("CIFAR-100  ·  T=4  ·  TAB",       "76.25", "77.24"),
+    ("DVS-CIFAR10  ·  T=10  ·  tdBN",   "76.60", "77.37"),
 ]
-ctx = s.shapes.add_textbox(Inches(gx + 0.2), Inches(gy + 0.1),
-                            Inches(gw - 0.4), Inches(gh - 0.2))
-tf = ctx.text_frame; tf.word_wrap = True
-for i, (label, base, ours) in enumerate(gain_lines):
-    p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-    p.text = f"{label:<32s} {base}  →  {ours}"
-    p.font.name = "Consolas"; p.font.size = Pt(11); p.font.color.rgb = INK
+for i, (label, base, ours) in enumerate(gain_rows):
+    ry = gy + 0.45 + i * 0.26
+    text(s, gx + 0.3, ry, 3.5, 0.25, label,
+         font=SANS, size=11, color=INK)
+    text(s, gx + 4.0, ry, 1.4, 0.25, base,
+         font=SANS, size=11, color=GRAY, align=PP_ALIGN.CENTER)
+    text(s, gx + 5.5, ry, 1.4, 0.25, ours,
+         font=SANS, size=11, bold=True, color=TEAL, align=PP_ALIGN.CENTER)
 
 # Right: highlighted +1.66
-hx = 7.8
+hx = 8.0
 hbox = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
-    Inches(hx), Inches(5.55), Inches(5.0), Inches(1.4))
+    Inches(hx), Inches(5.5), Inches(4.85), Inches(1.55))
 hbox.fill.solid(); hbox.fill.fore_color.rgb = AMBER_LT
 hbox.line.color.rgb = AMBER; hbox.line.width = Pt(1.2)
 text(s, hx + 0.25, 5.65, 4.5, 0.55,
      "+1.66 %pt at T = 2",
-     font=SERIF, size=22, bold=True, color=NAVY)
-text(s, hx + 0.25, 6.2, 4.5, 0.65,
+     font=SERIF, size=24, bold=True, color=NAVY)
+text(s, hx + 0.25, 6.25, 4.5, 0.7,
      "Biggest gain in the most latency-critical regime —\nexactly where SNN energy efficiency matters.",
      font=SANS, size=10, color=INK)
 
@@ -875,26 +886,27 @@ text(s, 0.5, 3.7, 12.3, 0.3,
      font=SANS, size=10, italic=True, color=GRAY)
 
 def stress_table(slide, x, y, title, rows):
-    card(slide, x, y, 6.05, 2.4, fill=CREAM, border=NAVY, border_w=1.0)
-    text(slide, x + 0.2, y + 0.1, 5.8, 0.3, title,
-         font=SANS, size=12, bold=True, color=NAVY)
-    # Header
-    hx = x + 0.2
-    headers = [(1.55, "SG"), (3.0, "AbsStr"), (4.3, "RatioAG"), (5.4, "GradCV")]
-    for hxx, h in headers:
-        text(slide, hx + hxx - 0.2, y + 0.5, 1.3, 0.25, h,
-             font=SANS, size=9, bold=True, color=TEAL)
+    card(slide, x, y, 6.05, 2.5, fill=CREAM, border=NAVY, border_w=1.0)
+    text(slide, x + 0.2, y + 0.1, 5.8, 0.35, title,
+         font=SANS, size=13, bold=True, color=NAVY)
+    # Column header row
+    col_xs = [0.0, 1.55, 3.05, 4.55]   # SG, AbsStr, RatioAG, GradCV
+    headers = ["SG", "AbsStr", "RatioAG", "GradCV"]
+    hx = x + 0.25
+    for cx, h in zip(col_xs, headers):
+        text(slide, hx + cx, y + 0.55, 1.4, 0.3, h,
+             font=SANS, size=11, bold=True, color=TEAL)
     # Rows
     for i, (sg, absstr, ratio, cv, color) in enumerate(rows):
-        ry = y + 0.85 + i * 0.45
-        text(slide, hx + 0.0, ry, 1.4, 0.3, sg,
-             font=SANS, size=11, bold=True, color=color)
-        text(slide, hx + 1.55, ry, 1.3, 0.3, absstr,
-             font="Consolas", size=10.5, color=color)
-        text(slide, hx + 2.85, ry, 1.3, 0.3, ratio,
-             font="Consolas", size=10.5, color=color)
-        text(slide, hx + 4.15, ry, 1.3, 0.3, cv,
-             font="Consolas", size=10.5, color=color)
+        ry = y + 0.95 + i * 0.48
+        text(slide, hx + col_xs[0], ry, 1.4, 0.35, sg,
+             font=SANS, size=13, bold=True, color=color)
+        text(slide, hx + col_xs[1], ry, 1.4, 0.35, absstr,
+             font="Consolas", size=12.5, color=color)
+        text(slide, hx + col_xs[2], ry, 1.4, 0.35, ratio,
+             font="Consolas", size=12.5, color=color)
+        text(slide, hx + col_xs[3], ry, 1.4, 0.35, cv,
+             font="Consolas", size=12.5, color=color)
 
 stress_table(s, 0.5, 4.05,
              "V_thr = 0.1   (small threshold)",
