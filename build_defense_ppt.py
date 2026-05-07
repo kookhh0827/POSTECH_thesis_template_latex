@@ -332,7 +332,7 @@ text(s, 7.0, 5.85, 5.9, 0.45,
      font=SANS, size=11, color=INK)
 
 # Bottom callout (single-line title only — keep tight)
-callout_box(s, 0.5, 6.55, 12.3, 0.45,
+callout_box(s, 0.5, 6.2, 12.3, 0.45,
             title="Everything in this thesis turns on M[t] and V_thr  ·  TCS at M[t]  ·  pathology at V_thr",
             title_size=12)
 
@@ -669,46 +669,44 @@ section_label(s, "Part II · TrSG")
 slide_title(s, "Two Surrogate-Gradient Families",
             "AS-SG and RS-SG — look similar, behave very differently when V_thr is trainable")
 
-# Recap of surrogate gradient (since it's been a few slides since S3)
-callout_box(s, 0.5, 2.4, 12.3, 0.7,
+# Recap of surrogate gradient (compact)
+callout_box(s, 0.5, 2.4, 12.3, 0.55,
             fill=CREAM, accent=AMBER,
-            title="Recap — Surrogate Gradient (SG)",
-            body="Spike S = H(x) is non-differentiable.  In backward pass, replace H' with a smooth f'(x).  "
-                 "The choice of x is what differs below.",
-            title_color=NAVY, body_color=INK,
-            title_size=12, body_size=11)
+            title="Recap — Surrogate Gradient: replace H'(x) with smooth f'(x).  Choice of x differs below.",
+            title_color=NAVY, title_size=12)
 
-# Two cards (a bit smaller than before)
-card(s, 0.5, 3.3, 6.0, 1.3, fill=CREAM, border=NAVY, border_w=1.5)
-text(s, 0.7, 3.4, 5.6, 0.35, "AS-SG  ·  Absolute-Scale",
+# Left side: definitions stacked vertically
+card(s, 0.5, 3.15, 5.2, 1.65, fill=CREAM, border=NAVY, border_w=1.5)
+text(s, 0.7, 3.25, 4.8, 0.35, "AS-SG  ·  Absolute-Scale",
      font=SANS, size=13, bold=True, color=NAVY)
-text(s, 0.7, 3.75, 5.6, 0.45,
+text(s, 0.7, 3.65, 4.8, 0.5,
      "x = M[t] − V_thr",
      font="Cambria Math", size=18, color=NAVY)
-text(s, 0.7, 4.25, 5.6, 0.3,
-     "Used by tdBN, TET, PLIF, LTMD, …",
-     font=SANS, size=10, italic=True, color=GRAY)
+text(s, 0.7, 4.30, 4.8, 0.4,
+     "Window of FIXED width γ, centered at V_thr",
+     font=SANS, size=11, italic=True, color=CORAL)
 
-card(s, 6.85, 3.3, 6.0, 1.3, fill=CREAM, border=NAVY, border_w=1.5)
-text(s, 7.05, 3.4, 5.6, 0.35, "RS-SG  ·  Relative-Scale",
+card(s, 0.5, 4.95, 5.2, 1.65, fill=CREAM, border=NAVY, border_w=1.5)
+text(s, 0.7, 5.05, 4.8, 0.35, "RS-SG  ·  Relative-Scale",
      font=SANS, size=13, bold=True, color=NAVY)
-text(s, 7.05, 3.75, 5.6, 0.45,
+text(s, 0.7, 5.45, 4.8, 0.5,
      "x = M[t] / V_thr − 1",
      font="Cambria Math", size=18, color=NAVY)
-text(s, 7.05, 4.25, 5.6, 0.3,
-     "Used by Meng 2023, DIET-SNN",
-     font=SANS, size=10, italic=True, color=GRAY)
+text(s, 0.7, 6.10, 4.8, 0.4,
+     "Window SCALES with V_thr — but magnitude / V_thr",
+     font=SANS, size=11, italic=True, color=AMBER)
 
-# Window visualization — fitted height, centered.  Aspect 8:3 → h ≈ w/2.67
-text(s, 0.5, 4.6, 12.3, 0.3,
-     "How the gradient window looks against the membrane-potential distribution",
-     font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
-img(s, GEN + "/sg_windows.png", 4.7, 4.9, w=3.9)
+# Right side: BIG window visualization (now properly sized)
+text(s, 5.95, 3.15, 7.0, 0.3,
+     "Gradient-window vs membrane distribution",
+     font=SANS, size=11, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
+# sg_windows is 8:3 aspect.  At w=7.0 → h=2.62.  Position y=3.5 → ends 6.12.
+img(s, GEN + "/sg_windows.png", 5.95, 3.5, w=7.0)
 
-# Bottom strip — fits comfortably above page footer
-callout_box(s, 0.5, 6.6, 12.3, 0.4,
+# Bottom strip (sits above the page footer)
+callout_box(s, 0.5, 6.55, 12.3, 0.4,
             fill=NAVY, accent=CORAL,
-            title="Same when V_thr is fixed.  Once V_thr trains, AS-SG breaks one way, RS-SG the opposite.",
+            title="Same when V_thr is fixed. Once V_thr trains, AS-SG and RS-SG break in opposite ways.",
             title_color=AMBER, title_size=11)
 
 page_footer(s, 10)
@@ -886,27 +884,54 @@ text(s, 0.5, 3.7, 12.3, 0.3,
      font=SANS, size=10, italic=True, color=GRAY)
 
 def stress_table(slide, x, y, title, rows):
-    card(slide, x, y, 6.05, 2.5, fill=CREAM, border=NAVY, border_w=1.0)
-    text(slide, x + 0.2, y + 0.1, 5.8, 0.35, title,
-         font=SANS, size=13, bold=True, color=NAVY)
-    # Column header row
+    # Outer card
+    card(slide, x, y, 6.05, 2.6, fill=WHITE, border=NAVY, border_w=1.5)
+    # Title bar (NAVY filled header strip)
+    title_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+        Inches(x), Inches(y), Inches(6.05), Inches(0.42))
+    title_bar.fill.solid(); title_bar.fill.fore_color.rgb = NAVY
+    title_bar.line.fill.background()
+    text(slide, x + 0.2, y + 0.06, 5.8, 0.35, title,
+         font=SANS, size=12, bold=True, color=AMBER)
+
+    # Column header row (TEAL background strip)
+    hdr_y = y + 0.5
+    hdr_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+        Inches(x + 0.05), Inches(hdr_y), Inches(5.95), Inches(0.4))
+    hdr_bar.fill.solid(); hdr_bar.fill.fore_color.rgb = TEAL_LT
+    hdr_bar.line.fill.background()
+
     col_xs = [0.0, 1.55, 3.05, 4.55]   # SG, AbsStr, RatioAG, GradCV
     headers = ["SG", "AbsStr", "RatioAG", "GradCV"]
     hx = x + 0.25
     for cx, h in zip(col_xs, headers):
-        text(slide, hx + cx, y + 0.55, 1.4, 0.3, h,
-             font=SANS, size=11, bold=True, color=TEAL)
-    # Rows
+        text(slide, hx + cx, hdr_y + 0.06, 1.4, 0.3, h,
+             font=SANS, size=11, bold=True, color=NAVY)
+
+    # Header underline
+    underline = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+        Inches(x + 0.05), Inches(hdr_y + 0.4), Inches(5.95), Inches(0.025))
+    underline.fill.solid(); underline.fill.fore_color.rgb = TEAL
+    underline.line.fill.background()
+
+    # Rows with zebra striping
     for i, (sg, absstr, ratio, cv, color) in enumerate(rows):
-        ry = y + 0.95 + i * 0.48
-        text(slide, hx + col_xs[0], ry, 1.4, 0.35, sg,
+        ry = hdr_y + 0.45 + i * 0.5
+        # Zebra: alternate background
+        if i % 2 == 1:
+            stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+                Inches(x + 0.05), Inches(ry), Inches(5.95), Inches(0.5))
+            stripe.fill.solid(); stripe.fill.fore_color.rgb = CREAM
+            stripe.line.fill.background()
+
+        text(slide, hx + col_xs[0], ry + 0.1, 1.4, 0.35, sg,
              font=SANS, size=13, bold=True, color=color)
-        text(slide, hx + col_xs[1], ry, 1.4, 0.35, absstr,
-             font="Consolas", size=12.5, color=color)
-        text(slide, hx + col_xs[2], ry, 1.4, 0.35, ratio,
-             font="Consolas", size=12.5, color=color)
-        text(slide, hx + col_xs[3], ry, 1.4, 0.35, cv,
-             font="Consolas", size=12.5, color=color)
+        text(slide, hx + col_xs[1], ry + 0.1, 1.4, 0.35, absstr,
+             font="Consolas", size=13, bold=True, color=color)
+        text(slide, hx + col_xs[2], ry + 0.1, 1.4, 0.35, ratio,
+             font="Consolas", size=13, bold=True, color=color)
+        text(slide, hx + col_xs[3], ry + 0.1, 1.4, 0.35, cv,
+             font="Consolas", size=13, bold=True, color=color)
 
 stress_table(s, 0.5, 4.05,
              "V_thr = 0.1   (small threshold)",
