@@ -1243,6 +1243,636 @@ text(s, 11.0, 7.10, 1.8, 0.3, "20 / 20",
      font=SANS, size=10, color=RGBColor(0x80, 0x95, 0xA8), align=PP_ALIGN.RIGHT)
 
 
+# ════════════════════════════════════════════════════════════════════
+# APPENDIX — backup slides for Q&A
+# ════════════════════════════════════════════════════════════════════
+def appendix_footer(slide, label):
+    text(slide, 0.5, 7.10, 6, 0.3, "Appendix — Hyunho Kook",
+         font=SANS, size=10, color=GRAY)
+    text(slide, 7.0, 7.10, 5.8, 0.3, label,
+         font=SANS, size=10, color=GRAY, align=PP_ALIGN.RIGHT)
+
+def appendix_label(slide, text_str):
+    """Maroon-colored label band in top-left to mark appendix slides."""
+    bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+        Inches(0.5), Inches(0.62), Inches(0.06), Inches(0.22))
+    bar.fill.solid(); bar.fill.fore_color.rgb = CORAL; bar.line.fill.background()
+    text(slide, 0.65, 0.6, 6, 0.3, text_str,
+         font=SANS, size=10, bold=True, color=CORAL, spacing=400)
+
+
+# ════════════════════════════════════════════════════════════════════
+# A0 — Appendix divider
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+fill_bg(s, NAVY)
+add_circle(s, -2.0, -2.0, 5.5, NAVY_DK)
+add_circle(s, 10.5, 4.5, 4.0, NAVY_DK)
+
+text(s, 0.7, 2.0, 12, 0.4, "BACKUP MATERIAL",
+     font=SANS, size=12, bold=True, color=AMBER, spacing=400)
+text(s, 0.7, 2.7, 12, 1.2,
+     "Appendix",
+     font=SERIF, size=60, bold=True, color=WHITE)
+amber_underline(s, 0.7, 4.05, w=1.0)
+text(s, 0.7, 4.3, 12, 0.5,
+     "Q&A reference: hardware, datasets, prior work",
+     font=SERIF, size=20, italic=True, color=AMBER)
+
+# Mini table of contents
+toc = [
+    ("A1", "Can SNNs run on real chips?"),
+    ("A2", "Where SNN efficiency comes from"),
+    ("A3", "Energy: SNN chip vs DNN platforms"),
+    ("A4", "What is an event-based dataset?"),
+    ("A5", "From DVS events to SNN input"),
+    ("A6", "How were SNNs trained before?"),
+    ("A7", "Prior work on TCS & threshold learning"),
+]
+ty = 5.0
+for i, (tag, title) in enumerate(toc):
+    col = i // 4
+    row = i % 4
+    tx = 0.7 + col * 6.3
+    yy = ty + row * 0.40
+    text(s, tx, yy, 0.6, 0.32, tag,
+         font=SANS, size=12, bold=True, color=AMBER)
+    text(s, tx + 0.7, yy, 5.6, 0.32, title,
+         font=SANS, size=12, color=RGBColor(0xCB, 0xD8, 0xE0))
+
+
+# ════════════════════════════════════════════════════════════════════
+# A1 — SNN chips landscape
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+appendix_label(s, "APPENDIX · A1")
+slide_title(s, "Can SNNs Actually Run on Chips?",
+            sub="Production-grade neuromorphic silicon already exists.")
+
+# Left column: brief intro
+text(s, 0.5, 2.4, 4.1, 0.4,
+     "Yes — and at scale.",
+     font=SANS, size=15, bold=True, color=NAVY)
+text(s, 0.5, 2.85, 4.1, 2.3,
+     "Several research and commercial chips natively run "
+     "spiking models. Our methods (MP-Init, TrSG) are "
+     "training-time techniques that produce the same LIF model "
+     "these chips already accept — so the trained network ports "
+     "directly without architectural changes.",
+     font=SANS, size=11.5, color=INK)
+
+callout_box(s, 0.5, 5.6, 4.1, 1.3,
+            fill=TEAL_LT, accent=TEAL,
+            title="Key takeaway",
+            body="Hardware is here. The bottleneck is training quality at low T.",
+            title_color=TEAL, body_color=INK,
+            title_size=11, body_size=11)
+
+# Right column: native PPT table of chips
+tx_, ty_, tw_, th_ = 4.95, 2.4, 8.0, 4.5
+tbl_shape = s.shapes.add_table(
+    8, 5,
+    Inches(tx_), Inches(ty_),
+    Inches(tw_), Inches(th_))
+tbl = tbl_shape.table
+
+col_widths = [1.55, 0.60, 0.85, 1.55, 1.55, 1.90]  # 6 widths for 5 cols (6th will not be set)
+col_widths = [1.55, 0.60, 0.95, 1.55, 1.55]  # Sum = 6.20  — actually 5 columns
+# Recompute to sum 8.0
+col_widths = [1.95, 0.70, 1.05, 1.95, 2.35]
+for i, cw in enumerate(col_widths):
+    tbl.columns[i].width = Inches(cw)
+
+# Heights
+tbl.rows[0].height = Inches(0.50)
+for r in range(1, 8):
+    tbl.rows[r].height = Inches(0.55)
+
+headers = ["Chip", "Year", "Process", "Capacity", "Energy / power"]
+for j, h in enumerate(headers):
+    cell = tbl.cell(0, j)
+    cell.text = h
+    cell.fill.solid(); cell.fill.fore_color.rgb = NAVY
+    p = cell.text_frame.paragraphs[0]
+    p.font.name = SANS; p.font.size = Pt(11); p.font.bold = True
+    p.font.color.rgb = WHITE
+    p.alignment = PP_ALIGN.CENTER if j > 0 else PP_ALIGN.LEFT
+    cell.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+    cell.margin_left = Inches(0.10); cell.margin_right = Inches(0.10)
+
+chips = [
+    ("IBM TrueNorth",   "2014", "65 nm",  "1 M neur.\n256 M syn.",  "70 mW · 26 pJ/event"),
+    ("Intel Loihi",     "2018", "14 nm",  "130 K neur.\n130 M syn.","23.6 pJ / op"),
+    ("Intel Loihi 2",   "2021", "Intel 4","1 M neur.\ngraded spikes","improved · multi-bit"),
+    ("SpiNNaker 2",     "2024", "22 nm",  "10 M neur.\n152 ARM cores","ARM-based · digital"),
+    ("Tianjic",         "2019", "28 nm",  "40 K neur.\nSNN+ANN hybrid","Tsinghua · Nature 2019"),
+    ("Speck (SynSense)","2022", "65 nm",  "327 K neur.\nDVS on-chip","mW-level · always-on"),
+    ("BrainScaleS-2",   "2022", "65 nm",  "512 analog neur.","1000× wall-clock"),
+]
+for i, row in enumerate(chips, start=1):
+    bg = CREAM if i % 2 == 0 else WHITE
+    for j, val in enumerate(row):
+        cell = tbl.cell(i, j)
+        cell.text = val
+        cell.fill.solid(); cell.fill.fore_color.rgb = bg
+        p = cell.text_frame.paragraphs[0]
+        if j == 0:
+            p.font.name = SANS; p.font.bold = True; p.font.size = Pt(10.5)
+            p.font.color.rgb = NAVY
+        elif j == 1 or j == 2:
+            p.font.name = "Consolas"; p.font.size = Pt(10)
+            p.font.color.rgb = INK
+        else:
+            p.font.name = SANS; p.font.size = Pt(9.5)
+            p.font.color.rgb = INK
+        p.alignment = PP_ALIGN.CENTER if j > 0 else PP_ALIGN.LEFT
+        # Multi-line cells
+        for extra_p in cell.text_frame.paragraphs[1:]:
+            extra_p.font.name = p.font.name
+            extra_p.font.size = p.font.size
+            extra_p.font.color.rgb = p.font.color.rgb
+            extra_p.alignment = p.alignment
+        cell.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+        cell.margin_left = Inches(0.10); cell.margin_right = Inches(0.10)
+        cell.margin_top = Inches(0.04); cell.margin_bottom = Inches(0.04)
+
+# Caption under table
+text(s, 4.95, 6.95, 8.0, 0.25,
+     "Refs: Merolla 2014 · Davies 2018 · Mayr 2019 · Pei 2019 · SynSense 2022 · BrainScaleS team 2022.",
+     font=SANS, size=8.5, italic=True, color=GRAY)
+
+appendix_footer(s, "A1 / A7")
+
+
+# ════════════════════════════════════════════════════════════════════
+# A2 — Where SNN efficiency comes from
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+appendix_label(s, "APPENDIX · A2")
+slide_title(s, "Where SNN Efficiency Comes From",
+            sub="Three structural advantages — none requires a new training scheme.")
+
+# Three cards across top
+card_y = 2.4
+card_h = 2.55
+card_w = 4.05
+gaps = 0.21
+xs = [0.5, 0.5 + card_w + gaps, 0.5 + 2*(card_w + gaps)]
+
+reasons = [
+    ("①  Event-driven", TEAL,
+     "No spike → no compute. Inactive neurons skip MAC and memory access entirely.",
+     "Typical activity:  5–20 % per timestep"),
+    ("②  Multiplication-free", AMBER,
+     "Spike ∈ {0, 1} → W·spike degenerates to W or 0. Each synapse becomes an Accumulate (AC), not a MAC.",
+     "AC ≈ 6–8× cheaper than MAC (45 nm)"),
+    ("③  Co-located memory", CORAL,
+     "Neuromorphic cores keep synaptic weights in local SRAM, on-chip mesh routing — no DRAM trip.",
+     "DRAM 64-bit ≈ 1300 pJ vs SRAM ≈ 5 pJ"),
+]
+for i, (title, accent, body, footer_t) in enumerate(reasons):
+    card(s, xs[i], card_y, card_w, card_h, fill=WHITE, border=accent, border_w=1.8)
+    # Top accent bar
+    abar = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+        Inches(xs[i]), Inches(card_y), Inches(card_w), Inches(0.10))
+    abar.fill.solid(); abar.fill.fore_color.rgb = accent; abar.line.fill.background()
+
+    text(s, xs[i] + 0.2, card_y + 0.25, card_w - 0.4, 0.40, title,
+         font=SANS, size=14, bold=True, color=accent)
+    text(s, xs[i] + 0.2, card_y + 0.75, card_w - 0.4, 1.30, body,
+         font=SANS, size=11, color=INK)
+    # Bottom strip
+    strip = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+        Inches(xs[i] + 0.15), Inches(card_y + card_h - 0.55),
+        Inches(card_w - 0.30), Inches(0.40))
+    strip.fill.solid(); strip.fill.fore_color.rgb = CREAM; strip.line.fill.background()
+    text(s, xs[i] + 0.2, card_y + card_h - 0.49, card_w - 0.4, 0.32, footer_t,
+         font="Consolas", size=10, bold=True, color=NAVY)
+
+# Bottom: AC vs MAC chart  (8.0 × 2.2 figure → at w=7.4 height ≈ 2.04, fits 5.15–7.05)
+img(s, f"{GEN}/mac_vs_ac.png", 0.5, 5.15, w=7.4)
+
+# Right side: key fact panel
+callout_box(s, 8.20, 5.30, 4.75, 1.65,
+            fill=NAVY, accent=AMBER,
+            title="Bottom line",
+            body="Efficiency is structural — comes from sparsity + binary spikes + co-located memory.\nMP-Init / TrSG protect (1) by stabilizing low-T training.",
+            title_color=AMBER, body_color=WHITE,
+            title_size=11, body_size=10)
+
+appendix_footer(s, "A2 / A7")
+
+
+# ════════════════════════════════════════════════════════════════════
+# A3 — Energy SNN vs DNN
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+appendix_label(s, "APPENDIX · A3")
+slide_title(s, "Energy: SNN Chip vs DNN Platforms",
+            sub="Same task, four hardware platforms — what does the gap actually look like?")
+
+# Left: chart
+img(s, f"{GEN}/energy_compare.png", 0.4, 2.4, w=7.7)
+text(s, 0.4, 5.95, 7.7, 0.3,
+     "Same Aloha keyword-spotting task on each platform.",
+     font=SANS, size=10, italic=True, color=GRAY)
+
+# Right: explanation + caveats
+text(s, 8.4, 2.4, 4.6, 0.4,
+     "How big is the gap?",
+     font=SANS, size=15, bold=True, color=NAVY)
+
+text(s, 8.4, 2.85, 4.6, 0.4,
+     "Sparse / event tasks", font=SANS, size=12, bold=True, color=TEAL)
+text(s, 8.4, 3.18, 4.6, 0.5,
+     "~50–100×  vs embedded GPU\n(keyword spot, gesture, sparse coding)",
+     font=SANS, size=10.5, color=INK)
+
+text(s, 8.4, 3.95, 4.6, 0.4,
+     "Static images (CIFAR / ImageNet)",
+     font=SANS, size=12, bold=True, color=AMBER)
+text(s, 8.4, 4.28, 4.6, 0.5,
+     "~3–10×  vs GPU at iso-accuracy",
+     font=SANS, size=10.5, color=INK)
+
+text(s, 8.4, 4.85, 4.6, 0.4,
+     "Why so task-dependent?",
+     font=SANS, size=12, bold=True, color=CORAL)
+text(s, 8.4, 5.18, 4.6, 0.7,
+     "Energy ∝ T × spike-rate × neurons.\nLow-T + high-sparsity → big gap.",
+     font=SANS, size=10.5, color=INK)
+
+callout_box(s, 8.4, 6.05, 4.6, 0.9,
+            fill=NAVY, accent=AMBER,
+            title="Why this matters for our work",
+            body="MP-Init enables T = 2 SOTA → directly multiplies energy savings.",
+            title_color=AMBER, body_color=WHITE,
+            title_size=10.5, body_size=9.5)
+
+# Citation strip
+text(s, 0.5, 7.0, 12.0, 0.25,
+     "Sources: Blouw et al. 2019 (keyword-spotting benchmark); Davies et al. 2021 (LASSO 48× vs CPU); Horowitz ISSCC 2014 (per-op energy).",
+     font=SANS, size=8.5, italic=True, color=GRAY)
+
+appendix_footer(s, "A3 / A7")
+
+
+# ════════════════════════════════════════════════════════════════════
+# A4 — What is an event-based dataset?
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+appendix_label(s, "APPENDIX · A4")
+slide_title(s, "What Is an Event-Based Dataset?",
+            sub="Output of asynchronous DVS cameras — sparse, fast, high dynamic range.")
+
+# Left column: DVS explanation
+text(s, 0.5, 2.4, 5.5, 0.4,
+     "DVS: Dynamic Vision Sensor",
+     font=SANS, size=15, bold=True, color=NAVY)
+text(s, 0.5, 2.85, 5.5, 1.2,
+     "Each pixel asynchronously emits an event "
+     "when its log-intensity changes by a threshold.\n"
+     "Output: a stream of (x, y, t, polarity) tuples.",
+     font=SANS, size=11, color=INK)
+
+# 4 properties as small boxes
+prop_y = 4.35
+props = [
+    ("μs",  "temporal resolution", TEAL),
+    (">120 dB", "dynamic range", AMBER),
+    ("Sparse", "only changes emit", CORAL),
+    ("No blur","no exposure window", NAVY),
+]
+for i, (big, small, color) in enumerate(props):
+    bx = 0.5 + i * 1.42
+    box = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+        Inches(bx), Inches(prop_y), Inches(1.30), Inches(0.95))
+    box.fill.solid(); box.fill.fore_color.rgb = CREAM
+    box.line.color.rgb = color; box.line.width = Pt(1.5)
+    text(s, bx, prop_y + 0.10, 1.30, 0.40, big,
+         font=SANS, size=13, bold=True, color=color, align=PP_ALIGN.CENTER)
+    text(s, bx, prop_y + 0.50, 1.30, 0.40, small,
+         font=SANS, size=8.5, color=GRAY, align=PP_ALIGN.CENTER)
+
+# This work uses
+callout_box(s, 0.5, 5.65, 5.85, 1.10,
+            fill=TEAL_LT, accent=TEAL,
+            title="In this thesis",
+            body="DVS-CIFAR10  (event-based image classification, T = 10).",
+            title_color=TEAL, body_color=INK,
+            title_size=11, body_size=11)
+
+# Right column: native PPT table of common datasets
+tx_, ty_, tw_, th_ = 6.6, 2.4, 6.4, 4.35
+tbl_shape = s.shapes.add_table(
+    8, 3,
+    Inches(tx_), Inches(ty_),
+    Inches(tw_), Inches(th_))
+tbl = tbl_shape.table
+
+col_widths = [2.30, 2.85, 1.25]
+for i, cw in enumerate(col_widths):
+    tbl.columns[i].width = Inches(cw)
+
+tbl.rows[0].height = Inches(0.45)
+for r in range(1, 8):
+    tbl.rows[r].height = Inches(0.55)
+
+headers = ["Dataset", "Description", "Size"]
+for j, h in enumerate(headers):
+    cell = tbl.cell(0, j)
+    cell.text = h
+    cell.fill.solid(); cell.fill.fore_color.rgb = NAVY
+    p = cell.text_frame.paragraphs[0]
+    p.font.name = SANS; p.font.size = Pt(11); p.font.bold = True
+    p.font.color.rgb = WHITE
+    p.alignment = PP_ALIGN.LEFT if j != 2 else PP_ALIGN.CENTER
+    cell.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+    cell.margin_left = Inches(0.12); cell.margin_right = Inches(0.10)
+
+datasets = [
+    ("DVS-CIFAR10",      "CIFAR-10 on monitor + saccading DVS",     "10 K"),
+    ("N-MNIST",          "MNIST shown to event camera",              "70 K"),
+    ("N-Caltech101",     "Caltech101 in event form",                "8.7 K"),
+    ("DVS-Gesture (IBM)","11 hand gestures, 29 subjects",          "1.3 K clips"),
+    ("SHD",              "Spiking Heidelberg Digits (audio events)", "10 K"),
+    ("Gen1 / 1Mpx",      "Prophesee automotive (object detect.)",   "39 h / 14 h"),
+    ("ASL-DVS",          "American Sign Language (event)",          "100 K"),
+]
+for i, (name, desc, sz) in enumerate(datasets, start=1):
+    bg = CREAM if i % 2 == 0 else WHITE
+    is_used = (name == "DVS-CIFAR10")
+    for j, val in enumerate([name, desc, sz]):
+        cell = tbl.cell(i, j)
+        cell.text = val
+        cell.fill.solid(); cell.fill.fore_color.rgb = (TEAL_LT if is_used else bg)
+        p = cell.text_frame.paragraphs[0]
+        if j == 0:
+            p.font.name = SANS; p.font.bold = True; p.font.size = Pt(10.5)
+            p.font.color.rgb = (TEAL if is_used else NAVY)
+        elif j == 1:
+            p.font.name = SANS; p.font.size = Pt(10)
+            p.font.color.rgb = INK
+        else:
+            p.font.name = "Consolas"; p.font.size = Pt(10)
+            p.font.color.rgb = INK
+        p.alignment = PP_ALIGN.LEFT if j != 2 else PP_ALIGN.CENTER
+        cell.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+        cell.margin_left = Inches(0.12); cell.margin_right = Inches(0.10)
+
+text(s, 6.6, 6.8, 6.4, 0.25,
+     "Highlighted: dataset used in this thesis.",
+     font=SANS, size=9, italic=True, color=GRAY)
+
+appendix_footer(s, "A4 / A7")
+
+
+# ════════════════════════════════════════════════════════════════════
+# A5 — From DVS events to SNN input
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+appendix_label(s, "APPENDIX · A5")
+slide_title(s, "From DVS Events to SNN Input",
+            sub="Asynchronous events become T frames that the LIF stack consumes.")
+
+# Hero diagram (large) — captions are baked into the matplotlib figure itself
+img(s, f"{GEN}/dvs_workflow.png", 0.6, 2.5, w=12.1)
+
+# Bottom callout
+callout_box(s, 0.6, 6.30, 12.1, 0.65,
+            fill=TEAL_LT, accent=TEAL,
+            title="Why this matters for MP-Init",
+            body="The first frame after binning has no history → the membrane starts at zero, far from π. That's exactly the gap MP-Init closes.",
+            title_color=TEAL, body_color=INK,
+            title_size=11.5, body_size=10.5)
+
+appendix_footer(s, "A5 / A7")
+
+
+# ════════════════════════════════════════════════════════════════════
+# A6 — How were SNNs trained before?
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+appendix_label(s, "APPENDIX · A6")
+slide_title(s, "How Were SNNs Trained Before?",
+            sub="From biological learning rules to modern surrogate-gradient BPTT.")
+
+# Timeline backbone
+tl_y = 3.2
+tl_x_start = 0.8
+tl_x_end = 12.5
+# Main horizontal bar
+bar = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+    Inches(tl_x_start), Inches(tl_y), Inches(tl_x_end - tl_x_start), Inches(0.04))
+bar.fill.solid(); bar.fill.fore_color.rgb = NAVY; bar.line.fill.background()
+
+# Era markers
+eras = [
+    # (x_pos, year, era_name, accent_color)
+    (0.8,  "1998", "STDP",                  AMBER),
+    (4.0,  "2015", "ANN→SNN\nconversion",   CORAL),
+    (8.0,  "2018", "Surrogate\ngradient",   TEAL),
+    (12.0, "today","Direct +\nlearnable",   NAVY),
+]
+
+for (xp, year, name, color) in eras:
+    # Tick + circle on timeline
+    circ = s.shapes.add_shape(MSO_SHAPE.OVAL,
+        Inches(xp - 0.13), Inches(tl_y - 0.10), Inches(0.26), Inches(0.26))
+    circ.fill.solid(); circ.fill.fore_color.rgb = color
+    circ.line.color.rgb = WHITE; circ.line.width = Pt(2.5)
+
+    # Year above
+    text(s, xp - 0.6, tl_y - 0.5, 1.2, 0.3, year,
+         font="Consolas", size=11, bold=True, color=color, align=PP_ALIGN.CENTER)
+    # Era name below
+    text(s, xp - 1.0, tl_y + 0.25, 2.0, 0.6, name,
+         font=SANS, size=12, bold=True, color=color, align=PP_ALIGN.CENTER)
+
+# Detail cards under timeline (one per era)
+detail_y = 4.55
+detail_h = 2.10
+details = [
+    ("Spike-Timing-Dependent Plasticity",
+     "Biological Hebbian rule.\nUnsupervised, local; works on small nets only.",
+     "Bi & Poo 1998\nDiehl & Cook 2015",
+     0.55, 2.85, AMBER),
+    ("Train ANN → convert weights",
+     "Use pretrained ReLU CNN; map activations to spike rates.\nNeeds T = 100–2000; cannot use event data.",
+     "Cao 2015 · Diehl 2015\nRueckauer 2017",
+     3.55, 2.85, CORAL),
+    ("Surrogate gradient (STBP / BPTT)",
+     "Replace Heaviside backward with a smooth function.\nFew timesteps; works on event data; modern dominant.",
+     "Bohte 2002 · Wu 2018\nNeftci 2019",
+     6.55, 2.85, TEAL),
+    ("Learnable LIF parameters",
+     "Train V_thr, τ end-to-end → adaptive neurons.\nThis thesis: stabilize that training pathway.",
+     "Fang 2021 · Wang 2022\nRathi 2023 · ours",
+     9.55, 2.85, NAVY),
+]
+for (title, body, refs, x, w, color) in details:
+    card(s, x, detail_y, w, detail_h, fill=WHITE, border=color, border_w=1.5)
+    # accent strip
+    strip = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+        Inches(x), Inches(detail_y), Inches(w), Inches(0.06))
+    strip.fill.solid(); strip.fill.fore_color.rgb = color; strip.line.fill.background()
+
+    text(s, x + 0.15, detail_y + 0.18, w - 0.3, 0.4, title,
+         font=SANS, size=11, bold=True, color=color)
+    text(s, x + 0.15, detail_y + 0.62, w - 0.3, 1.05, body,
+         font=SANS, size=10, color=INK)
+    # Refs at bottom in italic
+    text(s, x + 0.15, detail_y + detail_h - 0.55, w - 0.3, 0.5, refs,
+         font=SANS, size=8.5, italic=True, color=GRAY)
+
+appendix_footer(s, "A6 / A7")
+
+
+# ════════════════════════════════════════════════════════════════════
+# A7 — Prior work on TCS & threshold learning
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+appendix_label(s, "APPENDIX · A7")
+slide_title(s, "Where Prior Work Falls Short",
+            sub="TCS methods miss the membrane potential; threshold-learning methods don't diagnose the gradient.")
+
+# ── Left: TCS prior work table ────────────────────────────────────
+text(s, 0.5, 2.4, 6.0, 0.4,
+     "TCS / Normalization in SNNs",
+     font=SANS, size=14, bold=True, color=NAVY)
+
+tx_, ty_, tw_, th_ = 0.5, 2.85, 6.0, 3.0
+tbl_shape = s.shapes.add_table(
+    5, 3,
+    Inches(tx_), Inches(ty_),
+    Inches(tw_), Inches(th_))
+tbl = tbl_shape.table
+
+col_widths = [1.40, 2.55, 2.05]
+for i, cw in enumerate(col_widths):
+    tbl.columns[i].width = Inches(cw)
+tbl.rows[0].height = Inches(0.50)
+for r in range(1, 5):
+    tbl.rows[r].height = Inches(0.62)
+
+headers = ["Method", "What it does", "What it misses"]
+for j, h in enumerate(headers):
+    cell = tbl.cell(0, j)
+    cell.text = h
+    cell.fill.solid(); cell.fill.fore_color.rgb = NAVY
+    p = cell.text_frame.paragraphs[0]
+    p.font.name = SANS; p.font.size = Pt(10.5); p.font.bold = True
+    p.font.color.rgb = WHITE
+    p.alignment = PP_ALIGN.LEFT
+    cell.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+    cell.margin_left = Inches(0.12); cell.margin_right = Inches(0.10)
+
+tcs_rows = [
+    ("BNTT '20",   "Per-timestep BN params",       "Output BN only"),
+    ("tdBN '20",   "Threshold-dependent BN",       "Output BN only"),
+    ("TEBN '22",   "Timestep-specific affine",     "Doesn't fix membrane drift"),
+    ("TAB '24",    "Temporal-adaptive normalize",  "Membrane TCS persists"),
+]
+for i, (m, w_, mi) in enumerate(tcs_rows, start=1):
+    bg = CREAM if i % 2 == 0 else WHITE
+    for j, val in enumerate([m, w_, mi]):
+        cell = tbl.cell(i, j)
+        cell.text = val
+        cell.fill.solid(); cell.fill.fore_color.rgb = bg
+        p = cell.text_frame.paragraphs[0]
+        if j == 0:
+            p.font.name = SANS; p.font.size = Pt(10); p.font.bold = True
+            p.font.color.rgb = NAVY
+        elif j == 2:
+            p.font.name = SANS; p.font.size = Pt(9.5); p.font.italic = True
+            p.font.color.rgb = CORAL
+        else:
+            p.font.name = SANS; p.font.size = Pt(9.5)
+            p.font.color.rgb = INK
+        p.alignment = PP_ALIGN.LEFT
+        cell.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+        cell.margin_left = Inches(0.12); cell.margin_right = Inches(0.10)
+
+callout_box(s, 0.5, 6.0, 6.0, 0.85,
+            fill=TEAL_LT, accent=TEAL,
+            title="Our take (MP-Init)",
+            body="Fix the cause, not symptom — align M[t] with stationary π directly.",
+            title_color=TEAL, body_color=INK,
+            title_size=11, body_size=10)
+
+# ── Right: Threshold-learning prior work table ────────────────────
+text(s, 6.85, 2.4, 6.0, 0.4,
+     "Trainable LIF parameters (V_thr, τ)",
+     font=SANS, size=14, bold=True, color=NAVY)
+
+tx_, ty_, tw_, th_ = 6.85, 2.85, 6.0, 3.0
+tbl_shape = s.shapes.add_table(
+    5, 3,
+    Inches(tx_), Inches(ty_),
+    Inches(tw_), Inches(th_))
+tbl = tbl_shape.table
+
+col_widths = [1.55, 2.40, 2.05]
+for i, cw in enumerate(col_widths):
+    tbl.columns[i].width = Inches(cw)
+tbl.rows[0].height = Inches(0.50)
+for r in range(1, 5):
+    tbl.rows[r].height = Inches(0.62)
+
+headers = ["Method", "What's learned", "What it misses"]
+for j, h in enumerate(headers):
+    cell = tbl.cell(0, j)
+    cell.text = h
+    cell.fill.solid(); cell.fill.fore_color.rgb = NAVY
+    p = cell.text_frame.paragraphs[0]
+    p.font.name = SANS; p.font.size = Pt(10.5); p.font.bold = True
+    p.font.color.rgb = WHITE
+    p.alignment = PP_ALIGN.LEFT
+    cell.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+    cell.margin_left = Inches(0.12); cell.margin_right = Inches(0.10)
+
+thr_rows = [
+    ("PLIF '21",     "Leakage τ only",            "V_thr fixed"),
+    ("LTMD '22",     "V_thr + τ (heavy clipping)", "Hides instability"),
+    ("DIET-SNN '23", "V_thr + τ (gradient clip)", "Doesn't classify failure"),
+    ("Ours (TrSG)",  "V_thr + τ, scale-invariant", "—"),
+]
+for i, (m, w_, mi) in enumerate(thr_rows, start=1):
+    is_ours = (m == "Ours (TrSG)")
+    bg = (TEAL_LT if is_ours else (CREAM if i % 2 == 0 else WHITE))
+    for j, val in enumerate([m, w_, mi]):
+        cell = tbl.cell(i, j)
+        cell.text = val
+        cell.fill.solid(); cell.fill.fore_color.rgb = bg
+        p = cell.text_frame.paragraphs[0]
+        if j == 0:
+            p.font.name = SANS; p.font.size = Pt(10); p.font.bold = True
+            p.font.color.rgb = (TEAL if is_ours else NAVY)
+        elif j == 2:
+            if is_ours:
+                p.font.name = SANS; p.font.size = Pt(11); p.font.bold = True
+                p.font.color.rgb = TEAL
+            else:
+                p.font.name = SANS; p.font.size = Pt(9.5); p.font.italic = True
+                p.font.color.rgb = CORAL
+        else:
+            p.font.name = SANS; p.font.size = Pt(9.5)
+            p.font.color.rgb = (TEAL if is_ours else INK)
+            if is_ours: p.font.bold = True
+        p.alignment = PP_ALIGN.LEFT
+        cell.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+        cell.margin_left = Inches(0.12); cell.margin_right = Inches(0.10)
+
+callout_box(s, 6.85, 6.0, 6.0, 0.85,
+            fill=NAVY, accent=AMBER,
+            title="Our take (TrSG)",
+            body="Diagnose first (4 failure modes), then cancel the 1/V_thr factor by construction.",
+            title_color=AMBER, body_color=WHITE,
+            title_size=11, body_size=10)
+
+appendix_footer(s, "A7 / A7")
+
+
 # ─── Save ──────────────────────────────────────────────────────────
 out = "Hyunho_Kook_Master_Defense.pptx"
 prs.save(out)

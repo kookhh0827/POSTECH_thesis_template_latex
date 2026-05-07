@@ -14,6 +14,8 @@ CORAL    = "#E56945"
 INK      = "#1A1A1A"
 GRAY     = "#7A7A7A"
 GRAY_LT  = "#E5E5E0"
+TEAL_LT  = "#E5F5F0"
+CREAM    = "#F8F7F2"
 
 # ─── 1. LIF dynamics — for slide 3 ──────────────────────────────────
 fig, ax = plt.subplots(figsize=(6.5, 3.0), dpi=200)
@@ -320,3 +322,148 @@ plt.savefig("ppt_assets/gen/no_training_acc.png", bbox_inches="tight",
             facecolor="white")
 plt.close()
 print("Saved no_training_acc.png")
+
+
+# ─── 8. AC vs MAC energy (Horowitz 2014, 45nm) — appendix A2 ─────────
+# Flat aspect ratio so it fits below the 3 cards on slide A2
+fig, ax = plt.subplots(figsize=(8.0, 2.2), dpi=200)
+ops = ["INT8\nADD", "INT8\nMULT", "INT8\nMAC", "FP16\nMAC", "FP32\nMAC"]
+energy = [0.03, 0.2, 0.23, 1.5, 4.6]
+colors = [TEAL, AMBER, AMBER, CORAL, CORAL]
+bars = ax.bar(ops, energy, color=colors, width=0.65, edgecolor="white", linewidth=1.5)
+for bar, val in zip(bars, energy):
+    ax.text(bar.get_x() + bar.get_width()/2, val + 0.1, f"{val} pJ",
+            ha="center", color=NAVY, fontsize=9, fontweight="bold")
+# Annotation: SNN is "AC only"
+ax.annotate("SNN: AC only\n(spike × W = W or 0)",
+            xy=(0, 0.03), xytext=(0.6, 1.7),
+            fontsize=10, color=TEAL, ha="left",
+            arrowprops=dict(arrowstyle="->", color=TEAL, lw=1.5))
+ax.annotate("DNN: MAC", xy=(2, 0.23), xytext=(2.3, 2.6),
+            fontsize=10, color=CORAL, ha="left",
+            arrowprops=dict(arrowstyle="->", color=CORAL, lw=1.5))
+ax.set_ylabel("Energy per op (pJ)", fontsize=10, color=NAVY)
+ax.set_ylim(0, 5.2)
+ax.set_title("Per-operation energy at 45nm  [Horowitz, ISSCC 2014]",
+             fontsize=10.5, color=NAVY, pad=8)
+ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
+ax.tick_params(axis="both", labelsize=9, colors=GRAY)
+plt.tight_layout()
+plt.savefig("ppt_assets/gen/mac_vs_ac.png", bbox_inches="tight",
+            facecolor="white")
+plt.close()
+print("Saved mac_vs_ac.png")
+
+
+# ─── 9. Energy comparison: SNN chip vs DNN platforms — appendix A3 ──
+fig, ax = plt.subplots(figsize=(6.5, 3.2), dpi=200)
+platforms = ["Loihi\n(SNN, 14nm)", "Movidius NCS\n(DNN, 16nm)",
+             "Jetson TX1\n(GPU, 20nm)", "Intel i7 CPU"]
+energy = [0.27, 2.6, 13.84, 6.49]
+colors = [TEAL, AMBER, CORAL, "#9A6E3F"]
+bars = ax.barh(platforms, energy, color=colors, edgecolor="white", linewidth=1.5)
+for bar, val in zip(bars, energy):
+    ax.text(val + 0.3, bar.get_y() + bar.get_height()/2, f"{val} mJ",
+            va="center", color=NAVY, fontsize=10, fontweight="bold")
+ax.set_xlabel("Energy per inference (mJ)  ·  lower is better",
+              fontsize=10, color=NAVY)
+ax.set_xlim(0, 16.5)
+ax.set_title("Keyword spotting on identical task  [Blouw et al. 2019]",
+             fontsize=10.5, color=NAVY, pad=8)
+ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
+ax.tick_params(axis="both", labelsize=9, colors=GRAY)
+ax.invert_yaxis()
+# Speedup annotation
+ax.annotate("≈ 50× lower",
+            xy=(0.27, 0), xytext=(4.5, 0.6),
+            fontsize=10, color=TEAL, fontweight="bold",
+            arrowprops=dict(arrowstyle="->", color=TEAL, lw=1.5))
+plt.tight_layout()
+plt.savefig("ppt_assets/gen/energy_compare.png", bbox_inches="tight",
+            facecolor="white")
+plt.close()
+print("Saved energy_compare.png")
+
+
+# ─── 10. DVS event → frame → SNN flow — appendix A5 ─────────────────
+fig, ax = plt.subplots(figsize=(8.5, 3.0), dpi=200)
+ax.set_xlim(0, 10); ax.set_ylim(0, 3.4); ax.axis("off")
+
+# Box 1 — event stream
+b1 = patches.FancyBboxPatch((0.1, 1.0), 1.9, 1.6,
+                            boxstyle="round,pad=0.05",
+                            facecolor="white", edgecolor=NAVY, linewidth=1.8)
+ax.add_patch(b1)
+ax.text(1.05, 2.4, "1. Event stream", ha="center", fontsize=10,
+        color=NAVY, fontweight="bold")
+# Random event dots inside box 1
+np.random.seed(11)
+for _ in range(28):
+    x = 0.25 + np.random.rand() * 1.6
+    y = 1.1 + np.random.rand() * 1.05
+    pol = np.random.choice([0, 1])
+    ax.scatter(x, y, s=8, c=AMBER if pol else CORAL, alpha=0.85)
+ax.text(1.05, 0.6, "(x, y, t, ±)\n~μs resolution", ha="center", fontsize=8,
+        color=GRAY)
+
+# Arrow 1
+ax.annotate("", xy=(2.5, 1.8), xytext=(2.1, 1.8),
+            arrowprops=dict(arrowstyle="->", color=GRAY, lw=1.6))
+
+# Box 2 — Time-bin
+b2 = patches.FancyBboxPatch((2.6, 1.0), 1.9, 1.6,
+                            boxstyle="round,pad=0.05",
+                            facecolor="white", edgecolor=NAVY, linewidth=1.8)
+ax.add_patch(b2)
+ax.text(3.55, 2.4, "2. Time-bin", ha="center", fontsize=10,
+        color=NAVY, fontweight="bold")
+for i in range(4):
+    rx = 2.75 + i * 0.42
+    ax.add_patch(patches.Rectangle((rx, 1.15), 0.34, 1.05,
+                                    facecolor=TEAL_LT if i % 2 == 0 else "white",
+                                    edgecolor=TEAL, linewidth=0.8))
+    ax.text(rx + 0.17, 1.05, f"t{i+1}", ha="center", fontsize=7, color=GRAY)
+ax.text(3.55, 0.6, "split into T windows\n(~10 ms each)", ha="center",
+        fontsize=8, color=GRAY)
+
+# Arrow 2
+ax.annotate("", xy=(4.95, 1.8), xytext=(4.55, 1.8),
+            arrowprops=dict(arrowstyle="->", color=GRAY, lw=1.6))
+
+# Box 3 — Frame stack
+b3 = patches.FancyBboxPatch((5.05, 1.0), 1.9, 1.6,
+                            boxstyle="round,pad=0.05",
+                            facecolor="white", edgecolor=NAVY, linewidth=1.8)
+ax.add_patch(b3)
+ax.text(6.0, 2.4, "3. Frame stack", ha="center", fontsize=10,
+        color=NAVY, fontweight="bold")
+# Stack of frames
+for i in range(3):
+    ax.add_patch(patches.Rectangle((5.4 - i*0.07, 1.15 + i*0.07), 0.85, 0.85,
+                                    facecolor=AMBER if i == 0 else "#F4DCA8",
+                                    edgecolor=NAVY, linewidth=1.0))
+ax.text(6.55, 1.55, "2-ch\n(±)", fontsize=8, color=NAVY, ha="left")
+ax.text(6.0, 0.6, "T frames × H × W × 2", ha="center", fontsize=8, color=GRAY)
+
+# Arrow 3
+ax.annotate("", xy=(7.4, 1.8), xytext=(7.0, 1.8),
+            arrowprops=dict(arrowstyle="->", color=GRAY, lw=1.6))
+
+# Box 4 — SNN
+b4 = patches.FancyBboxPatch((7.5, 1.0), 2.3, 1.6,
+                            boxstyle="round,pad=0.05",
+                            facecolor=NAVY, edgecolor=NAVY, linewidth=1.8)
+ax.add_patch(b4)
+ax.text(8.65, 2.4, "4. SNN forward", ha="center", fontsize=10,
+        color="white", fontweight="bold")
+ax.text(8.65, 1.78, "LIF · LIF · LIF ...", ha="center", fontsize=11,
+        color=AMBER, fontweight="bold", family="monospace")
+ax.text(8.65, 1.35, "T timesteps", ha="center", fontsize=9,
+        color="white")
+ax.text(8.65, 0.6, "membrane → spike", ha="center", fontsize=8, color=GRAY)
+
+plt.tight_layout()
+plt.savefig("ppt_assets/gen/dvs_workflow.png", bbox_inches="tight",
+            facecolor="white")
+plt.close()
+print("Saved dvs_workflow.png")
