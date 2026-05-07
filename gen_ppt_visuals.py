@@ -141,9 +141,13 @@ ax.set_yticks([])
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 ax.tick_params(axis="both", labelsize=9, colors=GRAY)
 ax.legend(loc="upper right", fontsize=9, frameon=False)
-ax.text(-1.0, 3.5, "drift!", fontsize=11, color=CORAL, fontweight="bold")
-ax.annotate("", xy=(0.8, 2.8), xytext=(-0.5, 3.3),
-            arrowprops=dict(arrowstyle="->", color=CORAL, lw=1.5))
+# Annotate the drift: from U[0]'s sharp peak toward the stationary mean π
+ax.annotate("",
+            xy=(1.45, 1.45), xytext=(0.05, 3.6),
+            arrowprops=dict(arrowstyle="->", color=CORAL, lw=2.0,
+                            connectionstyle="arc3,rad=-0.25"))
+ax.text(0.55, 3.55, "drift toward π",
+        fontsize=11, color=CORAL, fontweight="bold", ha="left")
 
 plt.tight_layout()
 plt.savefig("ppt_assets/gen/convergence.png", bbox_inches="tight",
