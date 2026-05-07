@@ -325,14 +325,14 @@ text(s, 0.5, eq_y + 1.95, 6.2, 0.4,
 img(s, GEN + "/lif_dynamics.png", 7.0, 2.5, w=5.9)
 text(s, 7.0, 5.05, 5.9, 0.3,
      "M[t] integrates inputs, fires at V_thr, resets — repeat.",
-     font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
+     font=SANS, size=11.5, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
 
 text(s, 7.0, 5.45, 5.9, 0.4,
      "Heaviside H is not differentiable",
      font=SANS, size=12, bold=True, color=CORAL)
 text(s, 7.0, 5.85, 5.9, 0.45,
      "Surrogate gradient: backward pass uses smooth f'(x) ≈ H'(x).",
-     font=SANS, size=11, color=INK)
+     font=SANS, size=12, color=INK)
 
 # Bottom callout (single-line title only — keep tight)
 callout_box(s, 0.5, 6.2, 12.3, 0.45,
@@ -406,7 +406,7 @@ bullets(s, left_x + 0.3, fy + 0.7, w - 0.5, 1.8, [
     "AS-SG floods — fixed window covers almost the entire distribution",
     "RS-SG explodes — the 1/V_thr factor blows the magnitude up",
     "Real example: at V_thr = 0.1, RS-SG diverges to NaN within 100 epochs",
-], size=11, color=INK, bullet="▸")
+], size=12, color=INK, bullet="▸")
 
 # Right scenario
 rect_r = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
@@ -420,7 +420,7 @@ bullets(s, right_x + 0.3, fy + 0.7, w - 0.5, 1.8, [
     "AS-SG starves — fixed window covers a tiny tail of the distribution",
     "RS-SG vanishes — the same 1/V_thr factor shrinks the magnitude",
     "Real example: at V_thr = 2.0, AS-SG hits 0% active neurons by epoch 100",
-], size=11, color=INK, bullet="▸")
+], size=12, color=INK, bullet="▸")
 
 # Bottom: real-world emphasis
 callout_box(s, 0.5, 5.4, 12.3, 1.4,
@@ -467,7 +467,7 @@ bullets(s, 0.5, 5.6, 7.2, 1.4, [
     "Initial state ≠ π  ⇒  drift is inevitable",
     "Standard U[0] = 0 is far from π",
     "Don't fix BN — fix the initial state",
-], size=11, color=INK, bullet="▸")
+], size=12, color=INK, bullet="▸")
 
 # Right: convergence visualization
 img(s, GEN + "/convergence.png", 8.0, 2.5, w=5.0)
@@ -477,7 +477,7 @@ text(s, 8.0, 5.4, 5.0, 0.4,
 text(s, 8.0, 5.8, 5.0, 0.7,
      "Starting from U[0]=0 (sharp red), the distribution exponentially "
      "approaches the stationary π (dashed navy).",
-     font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
+     font=SANS, size=11.5, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
 
 page_footer(s, 6)
 
@@ -534,7 +534,7 @@ tf = ctx.text_frame; tf.word_wrap = True
 for i, line in enumerate(code_lines):
     p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
     p.text = line
-    p.font.name = "Consolas"; p.font.size = Pt(11.5); p.font.color.rgb = WHITE
+    p.font.name = "Consolas"; p.font.size = Pt(12.5); p.font.color.rgb = WHITE
 
 # Bottom strip
 callout_box(s, 0.5, 6.05, 12.3, 0.9,
@@ -562,11 +562,11 @@ img(s, ASSETS + "/density_plot_membrane_potential_tdbn.png", 0.5, 2.8, w=2.95)
 img(s, ASSETS + "/density_plot_membrane_potential_tebn.png", 3.6, 2.8, w=2.95)
 img(s, ASSETS + "/density_plot_membrane_potential_tab.png",  6.7, 2.8, w=2.95)
 img(s, ASSETS + "/density_plot_membrane_potential_mpinit.png", 9.8, 2.8, w=2.95)
-text(s, 0.5, 4.65, 2.95, 0.3, "tdBN", font=SANS, size=10, color=GRAY, align=PP_ALIGN.CENTER)
-text(s, 3.6, 4.65, 2.95, 0.3, "TEBN", font=SANS, size=10, color=GRAY, align=PP_ALIGN.CENTER)
-text(s, 6.7, 4.65, 2.95, 0.3, "TAB",  font=SANS, size=10, color=GRAY, align=PP_ALIGN.CENTER)
+text(s, 0.5, 4.65, 2.95, 0.3, "tdBN", font=SANS, size=13, color=GRAY, align=PP_ALIGN.CENTER)
+text(s, 3.6, 4.65, 2.95, 0.3, "TEBN", font=SANS, size=13, color=GRAY, align=PP_ALIGN.CENTER)
+text(s, 6.7, 4.65, 2.95, 0.3, "TAB",  font=SANS, size=13, color=GRAY, align=PP_ALIGN.CENTER)
 text(s, 9.8, 4.65, 2.95, 0.3, "MP-Init (ours)",
-     font=SANS, size=10, bold=True, color=TEAL, align=PP_ALIGN.CENTER)
+     font=SANS, size=13, bold=True, color=TEAL, align=PP_ALIGN.CENTER)
 
 # Bottom: gain table card
 text(s, 0.5, 4.95, 12.3, 0.4,
@@ -660,12 +660,12 @@ text(s, 0.5, 2.4, 6.0, 0.4,
 img(s, ASSETS + "/grad_collision.png", 1.49, 2.85, h=2.0)
 text(s, 0.5, 4.95, 6.0, 0.3,
      "ResNet-19 · CIFAR-100 · 4 timesteps",
-     font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
+     font=SANS, size=11.5, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
 bullets(s, 0.5, 5.3, 6.0, 1.4, [
     "Without MP-Init: gradients at t=1 conflict with later steps (cos 0.07–0.18)",
     "With MP-Init: temporal ensemble realigned (cos ≈ 0.5)",
     "Stable optimization — not just stable inference",
-], size=11, color=INK, bullet="▸")
+], size=12, color=INK, bullet="▸")
 
 # Right column: Pareto frontier
 text(s, 6.85, 2.4, 6.0, 0.4,
@@ -675,12 +675,12 @@ text(s, 6.85, 2.4, 6.0, 0.4,
 img(s, ASSETS + "/firing_rate_vs_accuracy.png", 7.0, 2.85, h=2.0)
 text(s, 6.85, 4.95, 6.0, 0.3,
      "ResNet-19 · CIFAR-100 with sparsity regularizer",
-     font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
+     font=SANS, size=11.5, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
 bullets(s, 6.85, 5.3, 6.0, 1.4, [
     "MP-Init dominates baseline at every firing rate",
     "Even at 6% firing rate, beats all baseline settings",
     "Gains come from spiking BETTER, not spiking MORE",
-], size=11, color=INK, bullet="▸")
+], size=12, color=INK, bullet="▸")
 
 # Bottom takeaway
 callout_box(s, 0.5, 6.65, 12.3, 0.45,
@@ -714,7 +714,7 @@ text(s, 0.7, 3.60, 4.8, 0.5,
      font="Cambria Math", size=18, color=NAVY)
 text(s, 0.7, 4.20, 4.8, 0.4,
      "Window of FIXED width γ, centered at V_thr",
-     font=SANS, size=11, italic=True, color=CORAL)
+     font=SANS, size=12, italic=True, color=CORAL)
 
 card(s, 0.5, 4.80, 5.2, 1.50, fill=CREAM, border=NAVY, border_w=1.5)
 text(s, 0.7, 4.87, 4.8, 0.35, "RS-SG  ·  Relative-Scale",
@@ -724,7 +724,7 @@ text(s, 0.7, 5.25, 4.8, 0.5,
      font="Cambria Math", size=18, color=NAVY)
 text(s, 0.7, 5.85, 4.8, 0.4,
      "Window SCALES with V_thr — but magnitude / V_thr",
-     font=SANS, size=11, italic=True, color=AMBER)
+     font=SANS, size=12, italic=True, color=AMBER)
 
 # Right side: BIG window visualization (now properly sized)
 text(s, 5.95, 3.15, 7.0, 0.3,
@@ -761,7 +761,7 @@ img(s, ASSETS + "/second_main.png", img_x, 1.95, h=img_h)
 # Caption directly under the figure
 text(s, 0.5, 1.95 + img_h + 0.02, 12.3, 0.25,
      "Each colored box = active gradient region.   width = window  ·  height = magnitude",
-     font=SANS, size=9, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
+     font=SANS, size=10.5, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
 
 # Five summary badges in a single horizontal row, BELOW the figure
 def badge(slide, x, y, w, h, label, sub, fill, border, sub_color):
@@ -896,7 +896,7 @@ def metric_def(slide, x, y, w, name, formula, healthy):
     text(slide, x + 0.15, y + 0.4, w - 0.3, 0.3, formula,
          font="Cambria Math", size=11, color=INK)
     text(slide, x + 0.15, y + 0.72, w - 0.3, 0.3, healthy,
-         font=SANS, size=9, italic=True, color=GRAY)
+         font=SANS, size=10.5, italic=True, color=GRAY)
 
 metric_def(s, 0.5,  2.45, 4.05,
            "AbsStr",  "mean |gradient|",
@@ -1011,7 +1011,7 @@ text(s, 0.5, 2.4, 6.7, 0.3,
 img(s, GEN + "/no_training_acc.png", 0.5, 2.8, w=6.7, h=2.7)
 text(s, 0.5, 5.55, 6.7, 0.3,
      "CIFAR-100, ResNet-19, τ=2.0 frozen",
-     font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
+     font=SANS, size=11.5, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
 
 # Right: threshold trajectories (small) + bullets
 text(s, 7.4, 2.4, 5.5, 0.3,
@@ -1020,13 +1020,13 @@ text(s, 7.4, 2.4, 5.5, 0.3,
 img(s, ASSETS + "/threshold_training_imagenet.png", 7.4, 2.8, w=5.5, h=2.7)
 text(s, 7.4, 5.55, 5.5, 0.3,
      "ResNet-34 on ImageNet · 120 epochs",
-     font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
+     font=SANS, size=11.5, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
 
 # Bullets across the bottom
 bullets(s, 0.5, 5.85, 12.3, 0.7, [
     "Frozen V_thr accuracy:  TrSG wins at every threshold; AS-SG/RS-SG fail outside V_thr ≈ 1",
     "Real trainings drift V_thr ≪ 1 in early layers and ≫ 1 in deep layers — exactly the failure regimes",
-], size=11, color=INK, bullet="▸")
+], size=12, color=INK, bullet="▸")
 
 # Bottom takeaway
 callout_box(s, 0.5, 6.65, 12.3, 0.4,
@@ -1121,7 +1121,7 @@ def gen_card(slide, x, y, w, h, header, body):
     text(slide, x + 0.2, y + 0.15, w - 0.4, 0.4,
          header, font=SANS, size=12, bold=True, color=TEAL)
     text(slide, x + 0.2, y + 0.55, w - 0.4, h - 0.7, body,
-         font=SANS, size=11, color=INK)
+         font=SANS, size=12, color=INK)
 
 gen_card(s, 0.5, 2.5, 6.0, 1.55,
          "Transformer SNN  (QKFormer, ImageNet, T=4)",
@@ -1178,7 +1178,7 @@ def takeaway_card(slide, x, y, w, h, header, header_color, body):
     text(slide, x + 0.2, y + 0.15, w - 0.4, 0.5,
          header, font=SERIF, size=18, bold=True, color=header_color)
     text(slide, x + 0.2, y + 0.7, w - 0.4, h - 0.8,
-         body, font=SANS, size=11, color=INK)
+         body, font=SANS, size=12, color=INK)
 
 takeaway_card(s, 0.5, 3.7, 4.0, 3.0,
               "MP-Init", TEAL,
@@ -1379,13 +1379,13 @@ for i, row in enumerate(chips, start=1):
         cell.fill.solid(); cell.fill.fore_color.rgb = bg
         p = cell.text_frame.paragraphs[0]
         if j == 0:
-            p.font.name = SANS; p.font.bold = True; p.font.size = Pt(10.5)
+            p.font.name = SANS; p.font.bold = True; p.font.size = Pt(11.5)
             p.font.color.rgb = NAVY
         elif j == 1 or j == 2:
-            p.font.name = "Consolas"; p.font.size = Pt(10)
+            p.font.name = "Consolas"; p.font.size = Pt(11.5)
             p.font.color.rgb = INK
         else:
-            p.font.name = SANS; p.font.size = Pt(9.5)
+            p.font.name = SANS; p.font.size = Pt(11)
             p.font.color.rgb = INK
         p.alignment = PP_ALIGN.CENTER if j > 0 else PP_ALIGN.LEFT
         # Multi-line cells
@@ -1401,7 +1401,7 @@ for i, row in enumerate(chips, start=1):
 # Caption under table
 text(s, 4.95, 6.95, 8.0, 0.25,
      "Refs: Merolla 2014 · Davies 2018 · Mayr 2019 · Pei 2019 · SynSense 2022 · BrainScaleS team 2022.",
-     font=SANS, size=8.5, italic=True, color=GRAY)
+     font=SANS, size=10, italic=True, color=GRAY)
 
 appendix_footer(s, "A1 / A7")
 
@@ -1442,7 +1442,7 @@ for i, (title, accent, body, footer_t) in enumerate(reasons):
     text(s, xs[i] + 0.2, card_y + 0.25, card_w - 0.4, 0.40, title,
          font=SANS, size=14, bold=True, color=accent)
     text(s, xs[i] + 0.2, card_y + 0.75, card_w - 0.4, 1.30, body,
-         font=SANS, size=11, color=INK)
+         font=SANS, size=12, color=INK)
     # Bottom strip
     strip = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
         Inches(xs[i] + 0.15), Inches(card_y + card_h - 0.55),
@@ -1460,7 +1460,7 @@ callout_box(s, 8.20, 5.30, 4.75, 1.65,
             title="Bottom line",
             body="Efficiency is structural — comes from sparsity + binary spikes + co-located memory.\nMP-Init / TrSG protect (1) by stabilizing low-T training.",
             title_color=AMBER, body_color=WHITE,
-            title_size=11, body_size=10)
+            title_size=12, body_size=11)
 
 appendix_footer(s, "A2 / A7")
 
@@ -1509,12 +1509,12 @@ callout_box(s, 8.4, 6.05, 4.6, 0.9,
             title="Why this matters for our work",
             body="MP-Init enables T = 2 SOTA → directly multiplies energy savings.",
             title_color=AMBER, body_color=WHITE,
-            title_size=10.5, body_size=9.5)
+            title_size=11.5, body_size=10.5)
 
 # Citation strip
 text(s, 0.5, 7.0, 12.0, 0.25,
      "Sources: Blouw et al. 2019 (keyword-spotting benchmark); Davies et al. 2021 (LASSO 48× vs CPU); Horowitz ISSCC 2014 (per-op energy).",
-     font=SANS, size=8.5, italic=True, color=GRAY)
+     font=SANS, size=10, italic=True, color=GRAY)
 
 appendix_footer(s, "A3 / A7")
 
@@ -1535,7 +1535,7 @@ text(s, 0.5, 2.85, 5.5, 1.2,
      "Each pixel asynchronously emits an event "
      "when its log-intensity changes by a threshold.\n"
      "Output: a stream of (x, y, t, polarity) tuples.",
-     font=SANS, size=11, color=INK)
+     font=SANS, size=12, color=INK)
 
 # 4 properties as small boxes
 prop_y = 4.35
@@ -1610,13 +1610,13 @@ for i, (name, desc, sz) in enumerate(datasets, start=1):
         cell.fill.solid(); cell.fill.fore_color.rgb = (TEAL_LT if is_used else bg)
         p = cell.text_frame.paragraphs[0]
         if j == 0:
-            p.font.name = SANS; p.font.bold = True; p.font.size = Pt(10.5)
+            p.font.name = SANS; p.font.bold = True; p.font.size = Pt(11.5)
             p.font.color.rgb = (TEAL if is_used else NAVY)
         elif j == 1:
-            p.font.name = SANS; p.font.size = Pt(10)
+            p.font.name = SANS; p.font.size = Pt(11.5)
             p.font.color.rgb = INK
         else:
-            p.font.name = "Consolas"; p.font.size = Pt(10)
+            p.font.name = "Consolas"; p.font.size = Pt(11.5)
             p.font.color.rgb = INK
         p.alignment = PP_ALIGN.LEFT if j != 2 else PP_ALIGN.CENTER
         cell.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
@@ -1624,7 +1624,7 @@ for i, (name, desc, sz) in enumerate(datasets, start=1):
 
 text(s, 6.6, 6.8, 6.4, 0.25,
      "Highlighted: dataset used in this thesis.",
-     font=SANS, size=9, italic=True, color=GRAY)
+     font=SANS, size=10.5, italic=True, color=GRAY)
 
 appendix_footer(s, "A4 / A7")
 
@@ -1725,7 +1725,7 @@ for (title, body, refs, x, w, color) in details:
          font=SANS, size=10, color=INK)
     # Refs at bottom in italic
     text(s, x + 0.15, detail_y + detail_h - 0.55, w - 0.3, 0.5, refs,
-         font=SANS, size=8.5, italic=True, color=GRAY)
+         font=SANS, size=10, italic=True, color=GRAY)
 
 appendix_footer(s, "A6 / A7")
 
@@ -1763,7 +1763,7 @@ for j, h in enumerate(headers):
     cell.text = h
     cell.fill.solid(); cell.fill.fore_color.rgb = NAVY
     p = cell.text_frame.paragraphs[0]
-    p.font.name = SANS; p.font.size = Pt(10.5); p.font.bold = True
+    p.font.name = SANS; p.font.size = Pt(12); p.font.bold = True
     p.font.color.rgb = WHITE
     p.alignment = PP_ALIGN.LEFT
     cell.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
@@ -1783,13 +1783,13 @@ for i, (m, w_, mi) in enumerate(tcs_rows, start=1):
         cell.fill.solid(); cell.fill.fore_color.rgb = bg
         p = cell.text_frame.paragraphs[0]
         if j == 0:
-            p.font.name = SANS; p.font.size = Pt(10); p.font.bold = True
+            p.font.name = SANS; p.font.size = Pt(11.5); p.font.bold = True
             p.font.color.rgb = NAVY
         elif j == 2:
-            p.font.name = SANS; p.font.size = Pt(9.5); p.font.italic = True
+            p.font.name = SANS; p.font.size = Pt(11); p.font.italic = True
             p.font.color.rgb = CORAL
         else:
-            p.font.name = SANS; p.font.size = Pt(9.5)
+            p.font.name = SANS; p.font.size = Pt(11)
             p.font.color.rgb = INK
         p.alignment = PP_ALIGN.LEFT
         cell.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
@@ -1800,7 +1800,7 @@ callout_box(s, 0.5, 6.0, 6.0, 0.85,
             title="Our take (MP-Init)",
             body="Fix the cause, not symptom — align M[t] with stationary π directly.",
             title_color=TEAL, body_color=INK,
-            title_size=11, body_size=10)
+            title_size=12, body_size=11)
 
 # ── Right: Threshold-learning prior work table ────────────────────
 text(s, 6.85, 2.4, 6.0, 0.4,
@@ -1827,7 +1827,7 @@ for j, h in enumerate(headers):
     cell.text = h
     cell.fill.solid(); cell.fill.fore_color.rgb = NAVY
     p = cell.text_frame.paragraphs[0]
-    p.font.name = SANS; p.font.size = Pt(10.5); p.font.bold = True
+    p.font.name = SANS; p.font.size = Pt(12); p.font.bold = True
     p.font.color.rgb = WHITE
     p.alignment = PP_ALIGN.LEFT
     cell.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
@@ -1848,17 +1848,17 @@ for i, (m, w_, mi) in enumerate(thr_rows, start=1):
         cell.fill.solid(); cell.fill.fore_color.rgb = bg
         p = cell.text_frame.paragraphs[0]
         if j == 0:
-            p.font.name = SANS; p.font.size = Pt(10); p.font.bold = True
+            p.font.name = SANS; p.font.size = Pt(11.5); p.font.bold = True
             p.font.color.rgb = (TEAL if is_ours else NAVY)
         elif j == 2:
             if is_ours:
                 p.font.name = SANS; p.font.size = Pt(11); p.font.bold = True
                 p.font.color.rgb = TEAL
             else:
-                p.font.name = SANS; p.font.size = Pt(9.5); p.font.italic = True
+                p.font.name = SANS; p.font.size = Pt(11); p.font.italic = True
                 p.font.color.rgb = CORAL
         else:
-            p.font.name = SANS; p.font.size = Pt(9.5)
+            p.font.name = SANS; p.font.size = Pt(11)
             p.font.color.rgb = (TEAL if is_ours else INK)
             if is_ours: p.font.bold = True
         p.alignment = PP_ALIGN.LEFT
@@ -1870,7 +1870,7 @@ callout_box(s, 6.85, 6.0, 6.0, 0.85,
             title="Our take (TrSG)",
             body="Diagnose first (4 failure modes), then cancel the 1/V_thr factor by construction.",
             title_color=AMBER, body_color=WHITE,
-            title_size=11, body_size=10)
+            title_size=12, body_size=11)
 
 appendix_footer(s, "A7 / A7")
 
