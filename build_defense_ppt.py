@@ -219,7 +219,7 @@ section_label(s, "Motivation")
 slide_title(s, "Why Spiking Neural Networks?")
 
 # Left column: 3 rows of bullet points
-y = 2.4
+y = 2.0
 text(s, 0.5, y, 7.2, 0.45,
      "DNNs are powerful but expensive",
      font=SANS, size=15, bold=True, color=NAVY)
@@ -245,7 +245,7 @@ text(s, 0.5, y+3.7, 7.2, 1.0,
      font=SANS, size=12, color=INK)
 
 # Right column: dark callout panel
-panel_x, panel_y, panel_w, panel_h = 8.5, 2.3, 4.4, 4.4
+panel_x, panel_y, panel_w, panel_h = 8.5, 1.95, 4.4, 4.6
 box = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
     Inches(panel_x), Inches(panel_y), Inches(panel_w), Inches(panel_h))
 box.fill.solid(); box.fill.fore_color.rgb = NAVY; box.line.fill.background()
@@ -375,7 +375,7 @@ callout_box(s, 0.5, 6.0, 6.5, 0.95,
 
 # Right: figure
 img(s, ASSETS + "/density_plot_membrane_potential_tdbn.png", 7.5, 2.4, w=5.4)
-text(s, 7.5, 6.3, 5.4, 0.3,
+text(s, 7.5, 5.05, 5.4, 0.3,
      "M[t] under tdBN — distribution clearly drifts as t grows",
      font=SANS, size=10, italic=True, color=CORAL, align=PP_ALIGN.CENTER)
 
@@ -515,7 +515,7 @@ text(s, code_x, 2.5, 5.4, 0.4,
      font=SANS, size=14, bold=True, color=NAVY)
 
 code_box = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
-    Inches(code_x), Inches(2.95), Inches(5.4), Inches(2.7))
+    Inches(code_x), Inches(2.95), Inches(5.4), Inches(3.0))
 code_box.fill.solid(); code_box.fill.fore_color.rgb = NAVY
 code_box.line.fill.background()
 
@@ -552,7 +552,7 @@ page_footer(s, 7)
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
 section_label(s, "Part I · MP-Init")
-slide_title(s, "MP-Init Works — at Both the Distribution and the Metric")
+slide_title(s, "MP-Init Works — in Both Distribution and Metric")
 
 # Top row: 4 panels showing distribution alignment
 text(s, 0.5, 2.4, 12.3, 0.4,
@@ -685,7 +685,7 @@ bullets(s, 6.85, 5.3, 6.0, 1.4, [
 # Bottom takeaway
 callout_box(s, 0.5, 6.65, 12.3, 0.45,
             fill=TEAL, accent=AMBER,
-            title="Higher accuracy from stabler training — efficiency-preserving improvements, not accuracy-via-spend.",
+            title="Higher accuracy from more stable training — efficiency-preserving improvements, not accuracy-via-spend.",
             title_color=WHITE, title_size=12)
 
 page_footer(s, 9)
@@ -706,23 +706,23 @@ callout_box(s, 0.5, 2.4, 12.3, 0.55,
             title_color=NAVY, title_size=12)
 
 # Left side: definitions stacked vertically
-card(s, 0.5, 3.15, 5.2, 1.65, fill=CREAM, border=NAVY, border_w=1.5)
-text(s, 0.7, 3.25, 4.8, 0.35, "AS-SG  ·  Absolute-Scale",
+card(s, 0.5, 3.15, 5.2, 1.50, fill=CREAM, border=NAVY, border_w=1.5)
+text(s, 0.7, 3.22, 4.8, 0.35, "AS-SG  ·  Absolute-Scale",
      font=SANS, size=13, bold=True, color=NAVY)
-text(s, 0.7, 3.65, 4.8, 0.5,
+text(s, 0.7, 3.60, 4.8, 0.5,
      "x = M[t] − V_thr",
      font="Cambria Math", size=18, color=NAVY)
-text(s, 0.7, 4.30, 4.8, 0.4,
+text(s, 0.7, 4.20, 4.8, 0.4,
      "Window of FIXED width γ, centered at V_thr",
      font=SANS, size=11, italic=True, color=CORAL)
 
-card(s, 0.5, 4.95, 5.2, 1.65, fill=CREAM, border=NAVY, border_w=1.5)
-text(s, 0.7, 5.05, 4.8, 0.35, "RS-SG  ·  Relative-Scale",
+card(s, 0.5, 4.80, 5.2, 1.50, fill=CREAM, border=NAVY, border_w=1.5)
+text(s, 0.7, 4.87, 4.8, 0.35, "RS-SG  ·  Relative-Scale",
      font=SANS, size=13, bold=True, color=NAVY)
-text(s, 0.7, 5.45, 4.8, 0.5,
+text(s, 0.7, 5.25, 4.8, 0.5,
      "x = M[t] / V_thr − 1",
      font="Cambria Math", size=18, color=NAVY)
-text(s, 0.7, 6.10, 4.8, 0.4,
+text(s, 0.7, 5.85, 4.8, 0.4,
      "Window SCALES with V_thr — but magnitude / V_thr",
      font=SANS, size=11, italic=True, color=AMBER)
 
@@ -751,15 +751,15 @@ slide_title(s, "Four Failure Modes — and One Fix",
             "Both window width AND gradient magnitude must scale correctly with V_thr")
 
 # Hero figure: second_main centered.
-# Native aspect 0.87 (1905x2180).
-# We need final y < 6.30 (badges) so use h = 4.0  ->  w ≈ 3.49.
-img_h = 3.7
-img_w = img_h * (1905 / 2180)   # ≈ 3.23
+# Native aspect 0.87 (1905x2180) — portrait-like, so width is bounded by height.
+# Figure y=1.95, h=4.00  ->  w ≈ 3.50;  caption + badges fit before footer.
+img_h = 4.00
+img_w = img_h * (1905 / 2180)   # ≈ 3.67
 img_x = (13.333 - img_w) / 2     # auto-center horizontally
-img(s, ASSETS + "/second_main.png", img_x, 2.0, h=img_h)
+img(s, ASSETS + "/second_main.png", img_x, 1.95, h=img_h)
 
 # Caption directly under the figure
-text(s, 0.5, 2.0 + img_h + 0.02, 12.3, 0.25,
+text(s, 0.5, 1.95 + img_h + 0.02, 12.3, 0.25,
      "Each colored box = active gradient region.   width = window  ·  height = magnitude",
      font=SANS, size=9, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
 
@@ -771,24 +771,24 @@ def badge(slide, x, y, w, h, label, sub, fill, border, sub_color):
     text(slide, x + 0.1, y + 0.45, w - 0.2, 0.4, sub,
          font=SANS, size=9, color=sub_color, align=PP_ALIGN.CENTER)
 
-by  = 6.15
+by  = 6.30
 bw  = 2.36
 gap = 0.18
 bx0 = (13.333 - (5 * bw + 4 * gap)) / 2   # auto-center the badge row
 
-badge(s, bx0 + 0*(bw+gap), by, bw, 0.85,
+badge(s, bx0 + 0*(bw+gap), by, bw, 0.75,
       "✗ Flood",     "AS-SG · V_thr ≪ 1",
       fill=CORAL_LT, border=CORAL, sub_color=INK)
-badge(s, bx0 + 1*(bw+gap), by, bw, 0.85,
+badge(s, bx0 + 1*(bw+gap), by, bw, 0.75,
       "✗ Starvation", "AS-SG · V_thr ≫ 1",
       fill=CORAL_LT, border=CORAL, sub_color=INK)
-badge(s, bx0 + 2*(bw+gap), by, bw, 0.85,
+badge(s, bx0 + 2*(bw+gap), by, bw, 0.75,
       "✗ Explosion",  "RS-SG · V_thr ≪ 1",
       fill=AMBER_LT, border=AMBER, sub_color=INK)
-badge(s, bx0 + 3*(bw+gap), by, bw, 0.85,
+badge(s, bx0 + 3*(bw+gap), by, bw, 0.75,
       "✗ Vanishing",  "RS-SG · V_thr ≫ 1",
       fill=AMBER_LT, border=AMBER, sub_color=INK)
-badge(s, bx0 + 4*(bw+gap), by, bw, 0.85,
+badge(s, bx0 + 4*(bw+gap), by, bw, 0.75,
       "✓ Balanced",   "TrSG · all regimes",
       fill=TEAL_LT, border=TEAL, sub_color=NAVY)
 
@@ -988,7 +988,7 @@ stress_table(s, 6.78, 4.05,
               ("TrSG",   "0.0323",  "6.90%",  "0.73",   TEAL)])
 
 # Bottom takeaway
-callout_box(s, 0.5, 6.7, 12.3, 0.4,
+callout_box(s, 0.5, 6.55, 12.3, 0.45,
             fill=NAVY, accent=AMBER,
             title="TrSG keeps all three metrics in the healthy range — at every threshold.",
             title_color=AMBER, title_size=12)
@@ -1008,8 +1008,8 @@ slide_title(s, "TrSG Robust Across All V_thr",
 text(s, 0.5, 2.4, 6.7, 0.3,
      "Accuracy with V_thr frozen at varying values",
      font=SANS, size=12, bold=True, color=NAVY)
-img(s, GEN + "/no_training_acc.png", 0.5, 2.8, w=6.7)
-text(s, 0.5, 5.5, 6.7, 0.3,
+img(s, GEN + "/no_training_acc.png", 0.5, 2.8, w=6.7, h=2.7)
+text(s, 0.5, 5.55, 6.7, 0.3,
      "CIFAR-100, ResNet-19, τ=2.0 frozen",
      font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
 
@@ -1017,8 +1017,8 @@ text(s, 0.5, 5.5, 6.7, 0.3,
 text(s, 7.4, 2.4, 5.5, 0.3,
      "Trainable V_thr trajectories — ImageNet",
      font=SANS, size=12, bold=True, color=NAVY)
-img(s, ASSETS + "/threshold_training_imagenet.png", 7.4, 2.8, w=5.5, h=2.5)
-text(s, 7.4, 5.4, 5.5, 0.3,
+img(s, ASSETS + "/threshold_training_imagenet.png", 7.4, 2.8, w=5.5, h=2.7)
+text(s, 7.4, 5.55, 5.5, 0.3,
      "ResNet-34 on ImageNet · 120 epochs",
      font=SANS, size=10, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
 
@@ -1123,33 +1123,33 @@ def gen_card(slide, x, y, w, h, header, body):
     text(slide, x + 0.2, y + 0.55, w - 0.4, h - 0.7, body,
          font=SANS, size=11, color=INK)
 
-gen_card(s, 0.5, 2.5, 6.0, 1.7,
+gen_card(s, 0.5, 2.5, 6.0, 1.55,
          "Transformer SNN  (QKFormer, ImageNet, T=4)",
          "Baseline 78.80    →    + ours 79.90    (+1.10 %pt)\n"
          "AS-SG    77.09    →    RS-SG  78.70    →    TrSG  79.90\n"
          "Drop-in SG swap on a state-of-the-art Transformer SNN.")
 
-gen_card(s, 6.85, 2.5, 6.0, 1.7,
+gen_card(s, 6.85, 2.5, 6.0, 1.55,
          "Object detection  (COCO-2017, EMS-ResNet10, T=3)",
          "mAP@0.5         0.291  →  0.305    (+0.014)\n"
          "mAP@0.5:0.95    0.138  →  0.147    (+0.009)\n"
          "First evidence the principles transfer beyond classification.")
 
-gen_card(s, 0.5, 4.4, 6.0, 1.7,
+gen_card(s, 0.5, 4.20, 6.0, 1.65,
          "Energy under matched configuration  (CIFAR-100)",
          "Baseline   1.57 mJ   ·   75.58 %\n"
          "+ MP-Init + TrSG    1.67 mJ   ·   77.68 %\n"
          "+2.10 %pt at +6 % energy → orders of magnitude better than\n"
          "spike-rate-multiplying baselines (cf. Pareto frontier on slide 9).")
 
-gen_card(s, 6.85, 4.4, 6.0, 1.7,
+gen_card(s, 6.85, 4.20, 6.0, 1.65,
          "All four surrogate shapes",
          "Rectangular · Triangular · Arctan · Sigmoid\n"
          "TrSG remains the best across initial V_thr, initial τ,\n"
          "and surrogate shape — never tied for second.")
 
 # Bottom emphasis
-callout_box(s, 0.5, 6.25, 12.3, 0.75,
+callout_box(s, 0.5, 6.10, 12.3, 0.75,
             fill=NAVY, accent=AMBER,
             title="No architectural changes, no extra losses, no per-timestep parameters — just drop in.",
             title_color=AMBER, title_size=13)
@@ -1367,7 +1367,7 @@ chips = [
     ("Intel Loihi",     "2018", "14 nm",  "130 K neur.\n130 M syn.","23.6 pJ / op"),
     ("Intel Loihi 2",   "2021", "Intel 4","1 M neur.\ngraded spikes","improved · multi-bit"),
     ("SpiNNaker 2",     "2024", "22 nm",  "152 K neur.\n152 M syn. / chip","ARM-based · digital"),
-    ("Tianjic",         "2019", "28 nm",  "40 K neur.\nSNN+ANN hybrid","Tsinghua · Nature 2019"),
+    ("Tianjic",         "2019", "28 nm",  "40 K neur.\nSNN+ANN hybrid","Tsinghua · hybrid arch."),
     ("Speck (SynSense)","2022", "65 nm",  "328 K neur.\nDVS on-chip","< 10 mW · always-on"),
     ("BrainScaleS-2",   "2022", "65 nm",  "512 analog neur.","1000× biological speed"),
 ]
@@ -1700,7 +1700,7 @@ details = [
      "Bi & Poo 1998\nDiehl & Cook 2015",
      0.55, 2.85, AMBER),
     ("Train ANN → convert weights",
-     "Use pretrained ReLU CNN; map activations to spike rates.\nEarly: T = 100–2000.  Modern (QCFS '23): T ≤ 8.\nStill cannot consume native event data.",
+     "Pretrained ReLU CNN → spike rates.\nEarly methods: T = 100–2000.\nModern (QCFS '23, Hao '23): T ≤ 8.\nStill cannot consume native event data.",
      "Cao 2015 · Rueckauer 2017\nBu 2023 (QCFS) · Hao 2023",
      3.55, 2.85, CORAL),
     ("Surrogate gradient (STBP / BPTT)",
