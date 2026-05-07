@@ -130,9 +130,12 @@ def callout_box(slide, x, y, w, h, *, fill=NAVY, accent=AMBER,
     # text
     if title or body:
         tx = slide.shapes.add_textbox(
-            Inches(x + 0.35), Inches(y + 0.15),
-            Inches(w - 0.5), Inches(h - 0.3))
+            Inches(x + 0.35), Inches(y + 0.05),
+            Inches(w - 0.5), Inches(h - 0.1))
         tf = tx.text_frame; tf.word_wrap = True
+        # Vertically center the text within the callout box
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf.margin_top = Inches(0.05); tf.margin_bottom = Inches(0.05)
         if title:
             p = tf.paragraphs[0]
             p.text = title
