@@ -66,14 +66,19 @@ xs = np.linspace(-2, 4, 400)
 def density(x, mu, s=0.5):
     return np.exp(-(x - mu)**2 / (2*s**2)) / (s * np.sqrt(2*np.pi))
 
+CHART_TOP = 1.15   # everything above this is reserved for the title row
+TITLE_Y   = 1.32   # subplot title baseline
+
 # Left: AS-SG  (window width = γ regardless of V_thr; height = 1)
 ax = axes[0]
 mu = 1.5; gamma = 1.0
 V_thr = mu
-density_handle = ax.fill_between(xs, density(xs, mu), color=NAVY, alpha=0.18,
-                                  label="$M[t]$ density")
+ax.fill_between(xs, density(xs, mu), color=NAVY, alpha=0.18)
 ax.plot(xs, density(xs, mu), color=NAVY, lw=1.5)
-vthr_handle = ax.axvline(V_thr, color=GRAY, ls=":", lw=1.2, label="$V_{\\rm thr}$")
+# V_thr dotted line — drawn only inside the chart area (does NOT cross the title)
+ax.plot([V_thr, V_thr], [0, CHART_TOP], color=GRAY, ls=":", lw=1.2)
+ax.text(V_thr, -0.06, "$V_{\\rm thr}$", ha="center", va="top",
+        fontsize=9, color=GRAY)
 as_h = 0.85
 rect = patches.Rectangle((V_thr - gamma/2, 0), gamma, as_h,
                           linewidth=0, color=CORAL, alpha=0.30)
@@ -87,10 +92,10 @@ ax.annotate("", xy=(V_thr + gamma/2 + 0.30, as_h),
             arrowprops=dict(arrowstyle="<->", color=CORAL, lw=1.2))
 ax.text(V_thr + gamma/2 + 0.40, as_h/2, "$1$  (fixed)",
         fontsize=10, ha="left", va="center", color=CORAL, fontweight="bold")
-# Title centered above V_thr (not above the whole subplot)
-ax.text(V_thr, 1.32, "AS-SG", ha="center", va="center",
+# Title centered above V_thr (clear of the chart area, no V_thr line passing through)
+ax.text(V_thr, TITLE_Y, "AS-SG", ha="center", va="center",
         fontsize=14, color=NAVY, fontweight="bold")
-ax.set_xlim(-1.5, 4); ax.set_ylim(0, 1.45)
+ax.set_xlim(-1.5, 4); ax.set_ylim(-0.15, 1.45)
 ax.set_xticks([]); ax.set_yticks([])
 ax.spines[:].set_visible(False)
 
@@ -100,7 +105,10 @@ mu = 1.5; gamma = 1.0
 V_thr = mu
 ax.fill_between(xs, density(xs, mu), color=NAVY, alpha=0.18)
 ax.plot(xs, density(xs, mu), color=NAVY, lw=1.5)
-ax.axvline(V_thr, color=GRAY, ls=":", lw=1.2)
+# V_thr dotted line — chart area only
+ax.plot([V_thr, V_thr], [0, CHART_TOP], color=GRAY, ls=":", lw=1.2)
+ax.text(V_thr, -0.06, "$V_{\\rm thr}$", ha="center", va="top",
+        fontsize=9, color=GRAY)
 window_w = gamma * V_thr
 rs_h = as_h / V_thr  # height inversely scales with V_thr
 rect = patches.Rectangle((V_thr - window_w/2, 0), window_w, rs_h,
@@ -116,16 +124,11 @@ ax.annotate("", xy=(V_thr + window_w/2 + 0.30, rs_h),
 ax.text(V_thr + window_w/2 + 0.40, rs_h/2, "$1/V_{\\rm thr}$",
         fontsize=10, ha="left", va="center", color="#A07020", fontweight="bold")
 # Title centered above V_thr
-ax.text(V_thr, 1.32, "RS-SG", ha="center", va="center",
+ax.text(V_thr, TITLE_Y, "RS-SG", ha="center", va="center",
         fontsize=14, color=NAVY, fontweight="bold")
-ax.set_xlim(-1.5, 4); ax.set_ylim(0, 1.45)
+ax.set_xlim(-1.5, 4); ax.set_ylim(-0.15, 1.45)
 ax.set_xticks([]); ax.set_yticks([])
 ax.spines[:].set_visible(False)
-
-# Shared legend at the bottom of the figure
-fig.legend(handles=[density_handle, vthr_handle],
-           loc="lower center", ncol=2, fontsize=9, frameon=False,
-           bbox_to_anchor=(0.5, -0.02))
 
 plt.tight_layout()
 plt.savefig("ppt_assets/gen/sg_windows.png", bbox_inches="tight",
