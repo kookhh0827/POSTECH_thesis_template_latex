@@ -327,15 +327,15 @@ for xi, val in zip(x, rs_vals):
         ax.text(xi, 5, "div.", ha="center", color=CORAL,
                 fontsize=11, fontweight="bold")
 for bar, val in zip(b3, tr_vals):
-    ax.text(bar.get_x() + bar.get_width()/2, val + 1, f"{val:.1f}",
+    ax.text(bar.get_x() + bar.get_width()/2, val + 1, f"{val:.2f}",
             ha="center", color=TEAL, fontsize=8.5, fontweight="bold")
 for bar, val in zip(b1, ax_vals):
     if not np.isnan(val):
-        ax.text(bar.get_x() + bar.get_width()/2, val + 1, f"{val:.1f}",
+        ax.text(bar.get_x() + bar.get_width()/2, val + 1, f"{val:.2f}",
                 ha="center", color=GRAY, fontsize=8)
 for bar, val in zip(b2, rs_vals):
     if not np.isnan(val):
-        ax.text(bar.get_x() + bar.get_width()/2, val + 1, f"{val:.1f}",
+        ax.text(bar.get_x() + bar.get_width()/2, val + 1, f"{val:.2f}",
                 ha="center", color=GRAY, fontsize=8)
 
 ax.set_xticks(x); ax.set_xticklabels([f"$V_{{\\rm thr}}={v}$" for v in v_thrs], fontsize=10)
