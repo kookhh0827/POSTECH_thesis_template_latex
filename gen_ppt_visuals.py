@@ -407,12 +407,13 @@ ax.set_title("Keyword spotting on identical task  [Blouw et al. 2019]",
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 ax.tick_params(axis="both", labelsize=9, colors=GRAY)
 ax.invert_yaxis()
-# Speedup annotation — straight arrow.  Tip sits in the empty space
-# just above-right of the "0.27 mJ" label so the arrowhead doesn't
-# pass through the label glyphs.
+# Speedup annotation — horizontal straight arrow at the Loihi-row level.
+# Tip sits to the RIGHT of the "0.27 mJ" label (gap ~0.14 in chart units),
+# arrow body extends right toward the "≈ 50× lower" text.
 ax.annotate("≈ 50× lower",
-            xy=(1.55, -0.15), xytext=(11.5, -0.25),
+            xy=(3.0, 0.0), xytext=(11.5, 0.0),
             fontsize=14, color=TEAL, fontweight="bold",
+            va="center",
             arrowprops=dict(arrowstyle="->", color=TEAL, lw=1.8))
 plt.tight_layout()
 plt.savefig("ppt_assets/gen/energy_compare.png", bbox_inches="tight",
