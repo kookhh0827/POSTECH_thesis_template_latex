@@ -289,7 +289,7 @@ page_footer(s, 2)
 # S3 — SNNs in 60 seconds (LIF + surrogate gradient)
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
-section_label(s, "Background · 1/3")
+section_label(s, "Background · 1/2")
 slide_title(s, "Spiking Neurons in 60 Seconds",
             "Three discrete-time updates, plus one trick to get gradients through them")
 
@@ -346,7 +346,7 @@ page_footer(s, 3)
 # S4 — Surrogate Gradient primer (NEW: paper-style intro before AS/RS-SG)
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
-section_label(s, "Background · 2/3")
+section_label(s, "Background · 2/2")
 slide_title(s, "Surrogate Gradient — Training Through the Spike",
             "Spikes are non-differentiable; smooth surrogates re-open backprop")
 
@@ -407,7 +407,7 @@ page_footer(s, 4, total=21)
 # S5 — Diagnosis ① TCS in membrane potential
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
-section_label(s, "Background · 3/3")
+section_label(s, "Setup · 1/2")
 slide_title(s, "Diagnosis ①: TCS Lives in the Membrane Potential")
 
 # Left: prose
@@ -447,7 +447,7 @@ page_footer(s, 5)
 # S5 — Diagnosis ② V_thr training breaks gradient
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
-section_label(s, "Setup")
+section_label(s, "Setup · 2/2")
 slide_title(s, "Diagnosis ②: Trainable V_thr Breaks the Gradient",
             "PLIF, LTMD, DIET-SNN all let V_thr learn — but the surrogate gradient is scale-sensitive")
 
@@ -760,39 +760,39 @@ section_label(s, "Part II · TrSG")
 slide_title(s, "Two Surrogate-Gradient Families",
             "AS-SG and RS-SG — look similar, behave very differently when V_thr is trainable")
 
-# Recap of surrogate gradient (compact)
-callout_box(s, 0.5, 2.4, 12.3, 0.55,
+# Recap of surrogate gradient — explicit f'(x) form, single line
+callout_box(s, 0.5, 2.4, 12.3, 0.65,
             fill=CREAM, accent=AMBER,
-            title="Recap — peak-normalized SG (max f' = 1, window width γ).  γ controls width;  height comes from chain rule.",
+            title="∂S/∂M ≈ f'(x)   ·   rectangular f' = 1 on | x | < γ/2  (peak-normalized)   ·   γ = active window width",
             title_color=NAVY, title_size=12)
 
 # Left side: definitions stacked vertically
-card(s, 0.5, 3.15, 5.2, 1.50, fill=CREAM, border=NAVY, border_w=1.5)
-text(s, 0.7, 3.22, 4.8, 0.35, "AS-SG  ·  Absolute-Scale",
+card(s, 0.5, 3.25, 5.2, 1.50, fill=CREAM, border=NAVY, border_w=1.5)
+text(s, 0.7, 3.32, 4.8, 0.35, "AS-SG  ·  Absolute-Scale",
      font=SANS, size=13, bold=True, color=NAVY)
-text(s, 0.7, 3.60, 4.8, 0.5,
+text(s, 0.7, 3.70, 4.8, 0.5,
      "x = M[t] − V_thr",
      font="Cambria Math", size=18, color=NAVY)
-text(s, 0.7, 4.20, 4.8, 0.4,
+text(s, 0.7, 4.30, 4.8, 0.4,
      "Window of FIXED width γ, centered at V_thr",
      font=SANS, size=12, italic=True, color=CORAL)
 
-card(s, 0.5, 4.80, 5.2, 1.50, fill=CREAM, border=NAVY, border_w=1.5)
-text(s, 0.7, 4.87, 4.8, 0.35, "RS-SG  ·  Relative-Scale",
+card(s, 0.5, 4.90, 5.2, 1.50, fill=CREAM, border=NAVY, border_w=1.5)
+text(s, 0.7, 4.97, 4.8, 0.35, "RS-SG  ·  Relative-Scale",
      font=SANS, size=13, bold=True, color=NAVY)
-text(s, 0.7, 5.25, 4.8, 0.5,
+text(s, 0.7, 5.35, 4.8, 0.5,
      "x = M[t] / V_thr − 1",
      font="Cambria Math", size=18, color=NAVY)
-text(s, 0.7, 5.85, 4.8, 0.4,
+text(s, 0.7, 5.95, 4.8, 0.4,
      "Window SCALES with V_thr — but magnitude / V_thr",
      font=SANS, size=12, italic=True, color=AMBER)
 
 # Right side: BIG window visualization (now properly sized)
-text(s, 5.95, 3.15, 7.0, 0.3,
+text(s, 5.95, 3.25, 7.0, 0.3,
      "Gradient-window vs membrane distribution",
      font=SANS, size=11, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
-# sg_windows is 8:3 aspect.  At w=7.0 → h=2.62.  Position y=3.5 → ends 6.12.
-img(s, GEN + "/sg_windows.png", 5.95, 3.5, w=7.0)
+# sg_windows is 8:3 aspect.  At w=7.0 → h=2.62.  Position y=3.6 → ends 6.22.
+img(s, GEN + "/sg_windows.png", 5.95, 3.60, w=7.0)
 
 # Bottom strip (sits above the page footer)
 callout_box(s, 0.5, 6.55, 12.3, 0.4,
