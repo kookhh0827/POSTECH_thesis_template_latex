@@ -69,11 +69,11 @@ def density(x, mu, s=0.5):
 # Left: AS-SG  (window width = γ regardless of V_thr; height = 1)
 ax = axes[0]
 mu = 1.5; gamma = 1.0
-ax.fill_between(xs, density(xs, mu), color=NAVY, alpha=0.18,
-                label="$M[t]$ density")
-ax.plot(xs, density(xs, mu), color=NAVY, lw=1.5)
 V_thr = mu
-ax.axvline(V_thr, color=CORAL, ls=":", lw=1.2, label="$V_{\\rm thr}$")
+density_handle = ax.fill_between(xs, density(xs, mu), color=NAVY, alpha=0.18,
+                                  label="$M[t]$ density")
+ax.plot(xs, density(xs, mu), color=NAVY, lw=1.5)
+vthr_handle = ax.axvline(V_thr, color=GRAY, ls=":", lw=1.2, label="$V_{\\rm thr}$")
 as_h = 0.85
 rect = patches.Rectangle((V_thr - gamma/2, 0), gamma, as_h,
                           linewidth=0, color=CORAL, alpha=0.30)
@@ -87,11 +87,12 @@ ax.annotate("", xy=(V_thr + gamma/2 + 0.30, as_h),
             arrowprops=dict(arrowstyle="<->", color=CORAL, lw=1.2))
 ax.text(V_thr + gamma/2 + 0.40, as_h/2, "$1$  (fixed)",
         fontsize=10, ha="left", va="center", color=CORAL, fontweight="bold")
-ax.set_title("AS-SG:  $x = M - V_{\\rm thr}$", fontsize=11, color=NAVY)
-ax.set_xlim(-1.5, 4); ax.set_ylim(0, 1.15)
+# Title centered above V_thr (not above the whole subplot)
+ax.text(V_thr, 1.32, "AS-SG", ha="center", va="center",
+        fontsize=14, color=NAVY, fontweight="bold")
+ax.set_xlim(-1.5, 4); ax.set_ylim(0, 1.45)
 ax.set_xticks([]); ax.set_yticks([])
 ax.spines[:].set_visible(False)
-ax.legend(loc="upper right", fontsize=9, frameon=False)
 
 # Right: RS-SG  (window scales with V_thr; height = 1/V_thr)
 ax = axes[1]
@@ -99,7 +100,7 @@ mu = 1.5; gamma = 1.0
 V_thr = mu
 ax.fill_between(xs, density(xs, mu), color=NAVY, alpha=0.18)
 ax.plot(xs, density(xs, mu), color=NAVY, lw=1.5)
-ax.axvline(V_thr, color=AMBER, ls=":", lw=1.2)
+ax.axvline(V_thr, color=GRAY, ls=":", lw=1.2)
 window_w = gamma * V_thr
 rs_h = as_h / V_thr  # height inversely scales with V_thr
 rect = patches.Rectangle((V_thr - window_w/2, 0), window_w, rs_h,
@@ -114,10 +115,17 @@ ax.annotate("", xy=(V_thr + window_w/2 + 0.30, rs_h),
             arrowprops=dict(arrowstyle="<->", color="#A07020", lw=1.2))
 ax.text(V_thr + window_w/2 + 0.40, rs_h/2, "$1/V_{\\rm thr}$",
         fontsize=10, ha="left", va="center", color="#A07020", fontweight="bold")
-ax.set_title("RS-SG:  $x = M / V_{\\rm thr} - 1$", fontsize=11, color=NAVY)
-ax.set_xlim(-1.5, 4); ax.set_ylim(0, 1.15)
+# Title centered above V_thr
+ax.text(V_thr, 1.32, "RS-SG", ha="center", va="center",
+        fontsize=14, color=NAVY, fontweight="bold")
+ax.set_xlim(-1.5, 4); ax.set_ylim(0, 1.45)
 ax.set_xticks([]); ax.set_yticks([])
 ax.spines[:].set_visible(False)
+
+# Shared legend at the bottom of the figure
+fig.legend(handles=[density_handle, vthr_handle],
+           loc="lower center", ncol=2, fontsize=9, frameon=False,
+           bbox_to_anchor=(0.5, -0.02))
 
 plt.tight_layout()
 plt.savefig("ppt_assets/gen/sg_windows.png", bbox_inches="tight",
@@ -301,9 +309,11 @@ for f in os.listdir("ppt_assets/gen"):
 # ─── 7. No-training V_thr accuracy — for "Why TrSG Works" S14 ──────
 fig, ax = plt.subplots(figsize=(7.5, 3.0), dpi=200)
 v_thrs = ["0.1", "0.5", "1.0", "1.5", "2.0"]
-ax_vals = [61.59, 75.96, np.nan, 69.97, 18.09]   # AS-SG
-rs_vals = [np.nan, 76.12, np.nan, 71.43,  5.43]   # RS-SG (div. at 0.1)
-tr_vals = [73.99, 76.82, 75.56, 71.97, 64.27]     # TrSG
+# At V_thr=1.0, AS-SG and RS-SG coincide with TrSG (x = M − V_thr = M/V_thr − 1)
+# so we plot the same 75.56 value for all three.
+ax_vals = [61.59, 75.96, 75.56, 69.97, 18.09]   # AS-SG
+rs_vals = [np.nan, 76.12, 75.56, 71.43,  5.43]  # RS-SG (div. at V_thr=0.1)
+tr_vals = [73.99, 76.82, 75.56, 71.97, 64.27]   # TrSG
 
 x = np.arange(len(v_thrs))
 w = 0.27
@@ -311,35 +321,21 @@ b1 = ax.bar(x - w, ax_vals, w, color=CORAL, label="AS-SG", edgecolor="white")
 b2 = ax.bar(x,     rs_vals, w, color=AMBER, label="RS-SG", edgecolor="white")
 b3 = ax.bar(x + w, tr_vals, w, color=TEAL,  label="TrSG",  edgecolor="white")
 
-# Mark missing cells distinctly:
-#   - V_thr=1.0 (idx 2): AS-SG and RS-SG are mathematically identical to TrSG
-#     (paper reports "---" — not run separately).  Show grey "—".
-#   - V_thr=0.1 (idx 0): RS-SG genuinely diverged.  Show coral "div.".
-ax_missing = {2: ("—", GRAY)}                          # AS-SG: only "coincide" case
-rs_missing = {0: ("div.", CORAL), 2: ("—", GRAY)}      # RS-SG: 0.1=div, 1.0=coincide
-
-for xi, val in zip(x, ax_vals):
-    idx = int(xi)
-    if np.isnan(val) and idx in ax_missing:
-        label, color = ax_missing[idx]
-        ax.text(xi - w, 5, label, ha="center", color=color,
-                fontsize=11, fontweight="bold" if label == "div." else "normal")
+# Only RS-SG at V_thr=0.1 (idx 0) genuinely diverged — mark it 'div.'
 for xi, val in zip(x, rs_vals):
-    idx = int(xi)
-    if np.isnan(val) and idx in rs_missing:
-        label, color = rs_missing[idx]
-        ax.text(xi, 5, label, ha="center", color=color,
-                fontsize=11, fontweight="bold" if label == "div." else "normal")
+    if np.isnan(val):
+        ax.text(xi, 5, "div.", ha="center", color=CORAL,
+                fontsize=11, fontweight="bold")
 for bar, val in zip(b3, tr_vals):
     ax.text(bar.get_x() + bar.get_width()/2, val + 1, f"{val:.1f}",
             ha="center", color=TEAL, fontsize=8.5, fontweight="bold")
 for bar, val in zip(b1, ax_vals):
     if not np.isnan(val):
-        ax.text(bar.get_x() + bar.get_width()/2, val + 1, f"{val:.0f}",
+        ax.text(bar.get_x() + bar.get_width()/2, val + 1, f"{val:.1f}",
                 ha="center", color=GRAY, fontsize=8)
 for bar, val in zip(b2, rs_vals):
     if not np.isnan(val):
-        ax.text(bar.get_x() + bar.get_width()/2, val + 1, f"{val:.0f}",
+        ax.text(bar.get_x() + bar.get_width()/2, val + 1, f"{val:.1f}",
                 ha="center", color=GRAY, fontsize=8)
 
 ax.set_xticks(x); ax.set_xticklabels([f"$V_{{\\rm thr}}={v}$" for v in v_thrs], fontsize=10)
@@ -351,10 +347,6 @@ ax.legend(loc="upper center", ncol=3, fontsize=10, frameon=False,
           bbox_to_anchor=(0.5, 1.02))
 ax.set_title("CIFAR-100, ResNet-19, $\\tau=2.0$ frozen — $V_{\\rm thr}$ frozen at varying values",
              fontsize=10.5, color=NAVY, pad=22)
-# Footnote: AS-SG and RS-SG are mathematically identical at V_thr=1.0 (paper convention)
-ax.text(0.5, -0.22,
-        "AS-SG and RS-SG coincide at $V_{\\rm thr}=1.0$ → reported under TrSG only",
-        transform=ax.transAxes, ha="center", fontsize=8.5, color=GRAY, style="italic")
 
 plt.tight_layout()
 plt.savefig("ppt_assets/gen/no_training_acc.png", bbox_inches="tight",
