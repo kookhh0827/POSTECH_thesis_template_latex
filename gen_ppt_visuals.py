@@ -311,13 +311,25 @@ b1 = ax.bar(x - w, ax_vals, w, color=CORAL, label="AS-SG", edgecolor="white")
 b2 = ax.bar(x,     rs_vals, w, color=AMBER, label="RS-SG", edgecolor="white")
 b3 = ax.bar(x + w, tr_vals, w, color=TEAL,  label="TrSG",  edgecolor="white")
 
-# Mark NaNs / divergences
+# Mark missing cells distinctly:
+#   - V_thr=1.0 (idx 2): AS-SG and RS-SG are mathematically identical to TrSG
+#     (paper reports "---" — not run separately).  Show grey "—".
+#   - V_thr=0.1 (idx 0): RS-SG genuinely diverged.  Show coral "div.".
+ax_missing = {2: ("—", GRAY)}                          # AS-SG: only "coincide" case
+rs_missing = {0: ("div.", CORAL), 2: ("—", GRAY)}      # RS-SG: 0.1=div, 1.0=coincide
+
 for xi, val in zip(x, ax_vals):
-    if np.isnan(val):
-        ax.text(xi - w, 5, "—", ha="center", color=GRAY, fontsize=11)
+    idx = int(xi)
+    if np.isnan(val) and idx in ax_missing:
+        label, color = ax_missing[idx]
+        ax.text(xi - w, 5, label, ha="center", color=color,
+                fontsize=11, fontweight="bold" if label == "div." else "normal")
 for xi, val in zip(x, rs_vals):
-    if np.isnan(val):
-        ax.text(xi, 5, "div.", ha="center", color=CORAL, fontsize=9, fontweight="bold")
+    idx = int(xi)
+    if np.isnan(val) and idx in rs_missing:
+        label, color = rs_missing[idx]
+        ax.text(xi, 5, label, ha="center", color=color,
+                fontsize=11, fontweight="bold" if label == "div." else "normal")
 for bar, val in zip(b3, tr_vals):
     ax.text(bar.get_x() + bar.get_width()/2, val + 1, f"{val:.1f}",
             ha="center", color=TEAL, fontsize=8.5, fontweight="bold")
