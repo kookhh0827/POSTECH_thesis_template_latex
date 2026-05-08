@@ -352,8 +352,10 @@ print("Saved no_training_acc.png")
 
 
 # ─── 8. AC vs MAC energy (Horowitz 2014, 45nm) — appendix A2 ─────────
-# Flat aspect ratio so it fits below the 3 cards on slide A2
-fig, ax = plt.subplots(figsize=(8.0, 2.2), dpi=200)
+# Flat aspect ratio so it fits below the 3 cards on slide A2.
+# ylim raised to 6.5 so the DNN:MAC bracket sits ABOVE the FP32 bar (4.6)
+# instead of inside it.
+fig, ax = plt.subplots(figsize=(8.0, 2.5), dpi=200)
 ops = ["INT8\nADD", "INT8\nMULT", "INT8\nMAC", "FP16\nMAC", "FP32\nMAC"]
 energy = [0.03, 0.2, 0.23, 1.5, 4.6]
 colors = [TEAL, AMBER, AMBER, CORAL, CORAL]
@@ -361,8 +363,8 @@ bars = ax.bar(ops, energy, color=colors, width=0.65, edgecolor="white", linewidt
 for bar, val in zip(bars, energy):
     ax.text(bar.get_x() + bar.get_width()/2, val + 0.13, f"{val} pJ",
             ha="center", color=NAVY, fontsize=10, fontweight="bold")
-# Category labels — horizontal underlines above bar groups, no arrows
-# "SNN: AC only" over bar 0 (INT8 ADD) — bar 0 spans x ∈ [-0.325, 0.325]
+# Category brackets — both above the tallest bar in their group (clear of bars and value labels)
+# "SNN: AC only" over bar 0 (INT8 ADD, height 0.03)
 ax.plot([-0.325, 0.325], [1.20, 1.20], color=TEAL, lw=2.0)
 ax.plot([-0.325, -0.325], [1.20, 1.05], color=TEAL, lw=2.0)
 ax.plot([ 0.325,  0.325], [1.20, 1.05], color=TEAL, lw=2.0)
@@ -370,14 +372,14 @@ ax.text(0.0, 1.85, "SNN: AC only",
         ha="center", color=TEAL, fontsize=11, fontweight="bold")
 ax.text(0.0, 1.45, "(spike × W = W or 0)",
         ha="center", color=TEAL, fontsize=10)
-# "DNN: MAC" over bars 2–4 (INT8 MAC, FP16 MAC, FP32 MAC)
-ax.plot([1.675, 4.325], [3.15, 3.15], color=CORAL, lw=2.0)
-ax.plot([1.675, 1.675], [3.15, 3.00], color=CORAL, lw=2.0)
-ax.plot([4.325, 4.325], [3.15, 3.00], color=CORAL, lw=2.0)
-ax.text(3.0, 3.35, "DNN: MAC",
+# "DNN: MAC" above bars 2–4 (max bar = FP32 MAC at 4.6) — bracket at y=5.05
+ax.plot([1.675, 4.325], [5.05, 5.05], color=CORAL, lw=2.0)
+ax.plot([1.675, 1.675], [5.05, 4.90], color=CORAL, lw=2.0)
+ax.plot([4.325, 4.325], [5.05, 4.90], color=CORAL, lw=2.0)
+ax.text(3.0, 5.45, "DNN: MAC",
         ha="center", color=CORAL, fontsize=11, fontweight="bold")
 ax.set_ylabel("Energy per op (pJ)", fontsize=10, color=NAVY)
-ax.set_ylim(0, 5.2)
+ax.set_ylim(0, 6.0)
 ax.set_title("Per-operation energy at 45nm  [Horowitz, ISSCC 2014]",
              fontsize=10.5, color=NAVY, pad=8)
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
@@ -407,12 +409,12 @@ ax.set_title("Keyword spotting on identical task  [Blouw et al. 2019]",
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 ax.tick_params(axis="both", labelsize=9, colors=GRAY)
 ax.invert_yaxis()
-# Speedup annotation — text in upper-right (clear of all bars),
-# arrow tip lands just to the RIGHT of the "0.27 mJ" label on the Loihi row
+# Speedup annotation — text deep in the upper-right empty region;
+# arrow tip lands directly to the RIGHT of the "0.27 mJ" label on the Loihi row
 ax.annotate("≈ 50× lower",
-            xy=(1.45, 0.0), xytext=(7.5, 0.45),
-            fontsize=12, color=TEAL, fontweight="bold",
-            arrowprops=dict(arrowstyle="->", color=TEAL, lw=1.6,
+            xy=(1.55, 0.0), xytext=(11.5, 0.30),
+            fontsize=14, color=TEAL, fontweight="bold",
+            arrowprops=dict(arrowstyle="->", color=TEAL, lw=1.8,
                             connectionstyle="arc3,rad=-0.25"))
 plt.tight_layout()
 plt.savefig("ppt_assets/gen/energy_compare.png", bbox_inches="tight",
