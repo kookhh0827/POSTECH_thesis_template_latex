@@ -101,7 +101,7 @@ def slide_title(slide, txt, sub=None):
         text(slide, 0.5, 1.75, 12.3, 0.4, sub,
              font=SANS, size=14, italic=True, color=GRAY)
 
-def page_footer(slide, n, total=20):
+def page_footer(slide, n, total=21):
     text(slide, 0.5, 7.10, 6, 0.3, "Defense — Hyunho Kook",
          font=SANS, size=10, color=GRAY)
     text(slide, 7.0, 7.10, 5.8, 0.3, f"{n} / {total}",
@@ -289,7 +289,7 @@ page_footer(s, 2)
 # S3 — SNNs in 60 seconds (LIF + surrogate gradient)
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
-section_label(s, "Background · 1/2")
+section_label(s, "Background · 1/3")
 slide_title(s, "Spiking Neurons in 60 Seconds",
             "Three discrete-time updates, plus one trick to get gradients through them")
 
@@ -343,10 +343,71 @@ page_footer(s, 3)
 
 
 # ════════════════════════════════════════════════════════════════════
-# S4 — Diagnosis ① TCS in membrane potential
+# S4 — Surrogate Gradient primer (NEW: paper-style intro before AS/RS-SG)
 # ════════════════════════════════════════════════════════════════════
 s = add_blank()
-section_label(s, "Background · 2/2")
+section_label(s, "Background · 2/3")
+slide_title(s, "Surrogate Gradient — Training Through the Spike",
+            "Spikes are non-differentiable; smooth surrogates re-open backprop")
+
+# Left card: the problem
+card(s, 0.5, 2.45, 6.0, 2.55, fill=CORAL_LT, border=CORAL, border_w=1.5)
+text(s, 0.7, 2.55, 5.6, 0.4,
+     "The problem", font=SANS, size=14, bold=True, color=CORAL)
+text(s, 0.7, 3.00, 5.6, 0.50,
+     "Forward:   S = H( M − V_thr )  ∈  {0, 1}",
+     font="Cambria Math", size=14, color=NAVY)
+text(s, 0.7, 3.55, 5.6, 0.50,
+     "Backward:   ∂S / ∂M  =  δ( M − V_thr )",
+     font="Cambria Math", size=14, color=CORAL)
+text(s, 0.7, 4.20, 5.6, 0.70,
+     "Heaviside has zero gradient almost everywhere, with a delta\n"
+     "spike exactly at threshold — gradient information cannot flow.",
+     font=SANS, size=12, color=INK)
+
+# Right card: the fix
+card(s, 6.85, 2.45, 6.0, 2.55, fill=TEAL_LT, border=TEAL, border_w=1.5)
+text(s, 7.05, 2.55, 5.6, 0.4,
+     "The fix:  surrogate gradient  (SG)", font=SANS, size=14, bold=True, color=TEAL)
+text(s, 7.05, 3.00, 5.6, 0.50,
+     "Forward unchanged.   In backward, replace δ with smooth f'( x ):",
+     font=SANS, size=12, color=INK)
+text(s, 7.05, 3.55, 5.6, 0.50,
+     "∂S / ∂M  ≈  f'( x ),    | x | < γ/2",
+     font="Cambria Math", size=14, color=TEAL)
+text(s, 7.05, 4.20, 5.6, 0.70,
+     "f' is peak-normalized (max = 1), supported on a window of\n"
+     "width γ around 0.   Forward stays binary; gradient flows.",
+     font=SANS, size=12, color=INK)
+
+# Bottom row: 4 surrogate shapes + γ definition + forward reference
+text(s, 0.5, 5.20, 5.5, 0.40,
+     "Common shapes  ·  same window, different curve",
+     font=SANS, size=12, bold=True, color=NAVY)
+text(s, 0.5, 5.65, 5.5, 1.30,
+     "▸  Rectangular   ▸  Triangular   ▸  Arctan   ▸  Sigmoid\n\n"
+     "Shape matters less than scale — TrSG works across all four.\n"
+     "γ controls the active window WIDTH; height is set by the chain rule.",
+     font=SANS, size=12, color=INK)
+
+# Right: callout for forward reference
+callout_box(s, 6.85, 5.20, 6.0, 1.55,
+            fill=NAVY, accent=AMBER,
+            title="Two natural choices for x",
+            body="x = M − V_thr  →  AS-SG  (Absolute scale)\n"
+                 "x = M / V_thr − 1  →  RS-SG  (Relative scale)\n\n"
+                 "Same SG curve, two ways to plug in V_thr → analyzed in Part II.",
+            title_color=AMBER, body_color=WHITE,
+            title_size=12, body_size=11)
+
+page_footer(s, 4, total=21)
+
+
+# ════════════════════════════════════════════════════════════════════
+# S5 — Diagnosis ① TCS in membrane potential
+# ════════════════════════════════════════════════════════════════════
+s = add_blank()
+section_label(s, "Background · 3/3")
 slide_title(s, "Diagnosis ①: TCS Lives in the Membrane Potential")
 
 # Left: prose
@@ -379,7 +440,7 @@ text(s, 7.5, 5.05, 5.4, 0.3,
      "M[t] under tdBN — distribution clearly drifts as t grows",
      font=SANS, size=10, italic=True, color=CORAL, align=PP_ALIGN.CENTER)
 
-page_footer(s, 4)
+page_footer(s, 5)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -431,7 +492,7 @@ callout_box(s, 0.5, 5.4, 12.3, 1.4,
             title_color=AMBER, body_color=WHITE,
             title_size=14, body_size=11)
 
-page_footer(s, 5)
+page_footer(s, 6)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -479,7 +540,7 @@ text(s, 8.0, 5.8, 5.0, 0.7,
      "approaches the stationary π (dashed navy).",
      font=SANS, size=11.5, italic=True, color=GRAY, align=PP_ALIGN.CENTER)
 
-page_footer(s, 6)
+page_footer(s, 7)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -544,7 +605,7 @@ callout_box(s, 0.5, 6.05, 12.3, 0.9,
             title_color=WHITE, body_color=RGBColor(0xE0, 0xF0, 0xEA),
             title_size=13, body_size=11)
 
-page_footer(s, 7)
+page_footer(s, 8)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -641,7 +702,7 @@ text(s, hx + 0.25, 6.05, 4.5, 0.7,
      "Biggest gain in the most latency-critical regime —\nexactly where SNN energy efficiency matters.",
      font=SANS, size=10, color=INK)
 
-page_footer(s, 8)
+page_footer(s, 9)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -688,7 +749,7 @@ callout_box(s, 0.5, 6.65, 12.3, 0.45,
             title="Higher accuracy from more stable training — efficiency-preserving improvements, not accuracy-via-spend.",
             title_color=WHITE, title_size=12)
 
-page_footer(s, 9)
+page_footer(s, 10)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -702,7 +763,7 @@ slide_title(s, "Two Surrogate-Gradient Families",
 # Recap of surrogate gradient (compact)
 callout_box(s, 0.5, 2.4, 12.3, 0.55,
             fill=CREAM, accent=AMBER,
-            title="Recap — Surrogate Gradient: replace H'(x) with smooth f'(x).  Choice of x differs below.",
+            title="Recap — peak-normalized SG (max f' = 1, window width γ).  γ controls width;  height comes from chain rule.",
             title_color=NAVY, title_size=12)
 
 # Left side: definitions stacked vertically
@@ -739,7 +800,7 @@ callout_box(s, 0.5, 6.55, 12.3, 0.4,
             title="Same when V_thr is fixed. Once V_thr trains, AS-SG and RS-SG break in opposite ways.",
             title_color=AMBER, title_size=12)
 
-page_footer(s, 10)
+page_footer(s, 11)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -792,7 +853,7 @@ badge(s, bx0 + 4*(bw+gap), by, bw, 0.75,
       "✓ Balanced",   "TrSG · all regimes",
       fill=TEAL_LT, border=TEAL, sub_color=NAVY)
 
-page_footer(s, 11)
+page_footer(s, 12)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -838,7 +899,7 @@ callout_box(s, 0.5, 6.4, 12.3, 0.6,
             title="Window adapts with V_thr  ·  gradient magnitude is threshold-invariant.",
             title_color=WHITE, title_size=13)
 
-page_footer(s, 12)
+page_footer(s, 13)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -877,7 +938,7 @@ callout_box(s, 0.5, 6.2, 12.3, 0.7,
             title="Standard LIF operators at inference. Hardware compatibility preserved.",
             title_color=WHITE, title_size=13)
 
-page_footer(s, 13)
+page_footer(s, 14)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -993,7 +1054,7 @@ callout_box(s, 0.5, 6.55, 12.3, 0.45,
             title="TrSG keeps all three metrics in the healthy range — at every threshold.",
             title_color=AMBER, title_size=12)
 
-page_footer(s, 14)
+page_footer(s, 15)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -1034,7 +1095,7 @@ callout_box(s, 0.5, 6.65, 12.3, 0.4,
             title="Threshold-robustness is a practical necessity, not a theoretical edge case.",
             title_color=AMBER, title_size=11)
 
-page_footer(s, 15)
+page_footer(s, 16)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -1068,7 +1129,7 @@ callout_box(s, 0.5, 6.7, 12.3, 0.4,
             title="Biggest gain on the most challenging (event-based) dataset — DVS-CIFAR10 +5.23 %pt",
             title_color=AMBER, title_size=11)
 
-page_footer(s, 16)
+page_footer(s, 17)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -1104,7 +1165,7 @@ callout_box(s, 0.5, 6.55, 12.3, 0.55,
             title="The two fixes are orthogonal — diagnoses aim at different components, not the same problem twice.",
             title_color=WHITE, title_size=11)
 
-page_footer(s, 17)
+page_footer(s, 18)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -1154,7 +1215,7 @@ callout_box(s, 0.5, 6.10, 12.3, 0.75,
             title="No architectural changes, no extra losses, no per-timestep parameters — just drop in.",
             title_color=AMBER, title_size=13)
 
-page_footer(s, 18)
+page_footer(s, 19)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -1198,7 +1259,7 @@ takeaway_card(s, 8.9, 3.7, 4.0, 3.0,
               "Generalizes to Transformer SNNs (QKFormer +1.10) and detection (COCO +0.014 mAP).\n\n"
               "All without architectural changes.")
 
-page_footer(s, 19)
+page_footer(s, 20)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -1241,7 +1302,7 @@ amber_underline(s, 0.7, 6.85, w=1.0)
 text(s, 0.7, 6.97, 12, 0.4,
      "Thank you.   Questions?",
      font=SERIF, size=22, bold=True, italic=True, color=AMBER)
-text(s, 11.0, 7.10, 1.8, 0.3, "20 / 20",
+text(s, 11.0, 7.10, 1.8, 0.3, "21 / 21",
      font=SANS, size=10, color=RGBColor(0x80, 0x95, 0xA8), align=PP_ALIGN.RIGHT)
 
 
