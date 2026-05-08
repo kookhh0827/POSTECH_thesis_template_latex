@@ -364,22 +364,20 @@ for bar, val in zip(bars, energy):
     ax.text(bar.get_x() + bar.get_width()/2, val + 0.13, f"{val} pJ",
             ha="center", color=NAVY, fontsize=10, fontweight="bold")
 # Category brackets — both above the tallest bar in their group (clear of bars and value labels)
-# "SNN: AC only" over bar 0 (INT8 ADD, height 0.03)
+# "SNN: AC only" over bar 0 (INT8 ADD, height 0.03) — single-line label
 ax.plot([-0.325, 0.325], [1.20, 1.20], color=TEAL, lw=2.0)
 ax.plot([-0.325, -0.325], [1.20, 1.05], color=TEAL, lw=2.0)
 ax.plot([ 0.325,  0.325], [1.20, 1.05], color=TEAL, lw=2.0)
-ax.text(0.0, 1.85, "SNN: AC only",
+ax.text(0.0, 1.65, "SNN: AC only",
         ha="center", color=TEAL, fontsize=11, fontweight="bold")
-ax.text(0.0, 1.45, "(spike × W = W or 0)",
-        ha="center", color=TEAL, fontsize=10)
-# "DNN: MAC" above bars 2–4 (max bar = FP32 MAC at 4.6) — bracket at y=5.05
-ax.plot([1.675, 4.325], [5.05, 5.05], color=CORAL, lw=2.0)
-ax.plot([1.675, 1.675], [5.05, 4.90], color=CORAL, lw=2.0)
-ax.plot([4.325, 4.325], [5.05, 4.90], color=CORAL, lw=2.0)
-ax.text(3.0, 5.45, "DNN: MAC",
+# "DNN: MAC" above bars 2–4 (max bar = FP32 MAC at 4.6, label tops at 4.73) — bracket lifted to y=5.50
+ax.plot([1.675, 4.325], [5.50, 5.50], color=CORAL, lw=2.0)
+ax.plot([1.675, 1.675], [5.50, 5.30], color=CORAL, lw=2.0)
+ax.plot([4.325, 4.325], [5.50, 5.30], color=CORAL, lw=2.0)
+ax.text(3.0, 5.95, "DNN: MAC",
         ha="center", color=CORAL, fontsize=11, fontweight="bold")
 ax.set_ylabel("Energy per op (pJ)", fontsize=10, color=NAVY)
-ax.set_ylim(0, 6.0)
+ax.set_ylim(0, 6.5)
 ax.set_title("Per-operation energy at 45nm  [Horowitz, ISSCC 2014]",
              fontsize=10.5, color=NAVY, pad=8)
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
@@ -409,13 +407,13 @@ ax.set_title("Keyword spotting on identical task  [Blouw et al. 2019]",
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 ax.tick_params(axis="both", labelsize=9, colors=GRAY)
 ax.invert_yaxis()
-# Speedup annotation — text deep in the upper-right empty region;
-# arrow tip lands directly to the RIGHT of the "0.27 mJ" label on the Loihi row
+# Speedup annotation — straight arrow.  Tip sits in the empty space
+# just above-right of the "0.27 mJ" label so the arrowhead doesn't
+# pass through the label glyphs.
 ax.annotate("≈ 50× lower",
-            xy=(1.55, 0.0), xytext=(11.5, 0.30),
+            xy=(1.55, -0.15), xytext=(11.5, -0.25),
             fontsize=14, color=TEAL, fontweight="bold",
-            arrowprops=dict(arrowstyle="->", color=TEAL, lw=1.8,
-                            connectionstyle="arc3,rad=-0.25"))
+            arrowprops=dict(arrowstyle="->", color=TEAL, lw=1.8))
 plt.tight_layout()
 plt.savefig("ppt_assets/gen/energy_compare.png", bbox_inches="tight",
             facecolor="white")
