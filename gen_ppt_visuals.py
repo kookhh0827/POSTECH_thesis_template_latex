@@ -46,11 +46,12 @@ ax.set_xlim(0, T-1)
 ax.set_ylim(-0.1, 1.7)
 ax.set_xlabel("time t", fontsize=10)
 ax.set_ylabel("membrane potential", fontsize=10)
-ax.legend(loc="upper left", fontsize=10, frameon=False)
+ax.legend(loc="upper right", fontsize=10, frameon=False)
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 ax.tick_params(axis="both", labelsize=9, colors=GRAY)
-ax.text(spikes[0] - 1, V_thr + 0.55, "spike",
-        fontsize=9, color=AMBER, ha="center")
+# Place 'spike' label next to the first spike, well below the legend
+ax.text(spikes[0] + 1.5, V_thr + 0.30, "spike",
+        fontsize=10, color=AMBER, ha="left", fontweight="bold")
 plt.tight_layout()
 plt.savefig("ppt_assets/gen/lif_dynamics.png", bbox_inches="tight",
             facecolor="white")
@@ -65,39 +66,54 @@ xs = np.linspace(-2, 4, 400)
 def density(x, mu, s=0.5):
     return np.exp(-(x - mu)**2 / (2*s**2)) / (s * np.sqrt(2*np.pi))
 
-# Left: AS-SG  (window width = γ regardless of V_thr)
+# Left: AS-SG  (window width = γ regardless of V_thr; height = 1)
 ax = axes[0]
 mu = 1.5; gamma = 1.0
 ax.fill_between(xs, density(xs, mu), color=NAVY, alpha=0.18,
                 label="$M[t]$ density")
 ax.plot(xs, density(xs, mu), color=NAVY, lw=1.5)
-# AS-SG window: V_thr ± γ/2  with V_thr at mu
 V_thr = mu
 ax.axvline(V_thr, color=CORAL, ls=":", lw=1.2, label="$V_{\\rm thr}$")
-rect = patches.Rectangle((V_thr - gamma/2, 0), gamma, 0.85,
+as_h = 0.85
+rect = patches.Rectangle((V_thr - gamma/2, 0), gamma, as_h,
                           linewidth=0, color=CORAL, alpha=0.30)
 ax.add_patch(rect)
-ax.text(V_thr, 0.95, "$\\gamma$ (fixed)", fontsize=9, ha="center", color=CORAL)
+# Width annotation (top)
+ax.text(V_thr, as_h + 0.10, "$\\gamma$ (fixed)",
+        fontsize=10, ha="center", color=CORAL, fontweight="bold")
+# Height annotation (right side)
+ax.annotate("", xy=(V_thr + gamma/2 + 0.30, as_h),
+            xytext=(V_thr + gamma/2 + 0.30, 0),
+            arrowprops=dict(arrowstyle="<->", color=CORAL, lw=1.2))
+ax.text(V_thr + gamma/2 + 0.40, as_h/2, "$1$  (fixed)",
+        fontsize=10, ha="left", va="center", color=CORAL, fontweight="bold")
 ax.set_title("AS-SG:  $x = M - V_{\\rm thr}$", fontsize=11, color=NAVY)
 ax.set_xlim(-1.5, 4); ax.set_ylim(0, 1.15)
 ax.set_xticks([]); ax.set_yticks([])
 ax.spines[:].set_visible(False)
-ax.legend(loc="upper right", fontsize=8, frameon=False)
+ax.legend(loc="upper right", fontsize=9, frameon=False)
 
-# Right: RS-SG  (window scales with V_thr)
+# Right: RS-SG  (window scales with V_thr; height = 1/V_thr)
 ax = axes[1]
 mu = 1.5; gamma = 1.0
 V_thr = mu
 ax.fill_between(xs, density(xs, mu), color=NAVY, alpha=0.18)
 ax.plot(xs, density(xs, mu), color=NAVY, lw=1.5)
 ax.axvline(V_thr, color=AMBER, ls=":", lw=1.2)
-# RS-SG window: V_thr · (1 ± γ/2)  - scales with V_thr
 window_w = gamma * V_thr
-rect = patches.Rectangle((V_thr - window_w/2, 0), window_w, 0.85,
-                          linewidth=0, color=AMBER, alpha=0.45)
+rs_h = as_h / V_thr  # height inversely scales with V_thr
+rect = patches.Rectangle((V_thr - window_w/2, 0), window_w, rs_h,
+                          linewidth=0, color=AMBER, alpha=0.55)
 ax.add_patch(rect)
-ax.text(V_thr, 0.95, "$\\gamma \\cdot V_{\\rm thr}$ (scales)",
-        fontsize=9, ha="center", color="#A07020")
+# Width annotation (top)
+ax.text(V_thr, rs_h + 0.10, "$\\gamma \\cdot V_{\\rm thr}$ (scales)",
+        fontsize=10, ha="center", color="#A07020", fontweight="bold")
+# Height annotation (right side)
+ax.annotate("", xy=(V_thr + window_w/2 + 0.30, rs_h),
+            xytext=(V_thr + window_w/2 + 0.30, 0),
+            arrowprops=dict(arrowstyle="<->", color="#A07020", lw=1.2))
+ax.text(V_thr + window_w/2 + 0.40, rs_h/2, "$1/V_{\\rm thr}$",
+        fontsize=10, ha="left", va="center", color="#A07020", fontweight="bold")
 ax.set_title("RS-SG:  $x = M / V_{\\rm thr} - 1$", fontsize=11, color=NAVY)
 ax.set_xlim(-1.5, 4); ax.set_ylim(0, 1.15)
 ax.set_xticks([]); ax.set_yticks([])
@@ -223,10 +239,12 @@ for bar, v, p in zip(b2, ours, prev_best):
 ax.set_xticks(x)
 ax.set_xticklabels(datasets, fontsize=9, color=NAVY)
 ax.set_ylabel("Top-1 Accuracy (%)", fontsize=10)
-ax.set_ylim(60, 100)
+ax.set_ylim(60, 105)  # extra headroom for legend at top
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 ax.tick_params(axis="y", labelsize=9, colors=GRAY)
-ax.legend(loc="lower right", fontsize=10, frameon=False)
+# Legend at top-center, outside the bar area
+ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.06),
+          ncol=2, fontsize=10, frameon=False)
 
 plt.tight_layout()
 plt.savefig("ppt_assets/gen/main_results_bars.png", bbox_inches="tight",
@@ -341,16 +359,19 @@ energy = [0.03, 0.2, 0.23, 1.5, 4.6]
 colors = [TEAL, AMBER, AMBER, CORAL, CORAL]
 bars = ax.bar(ops, energy, color=colors, width=0.65, edgecolor="white", linewidth=1.5)
 for bar, val in zip(bars, energy):
-    ax.text(bar.get_x() + bar.get_width()/2, val + 0.1, f"{val} pJ",
-            ha="center", color=NAVY, fontsize=9, fontweight="bold")
-# Annotation: SNN is "AC only"
+    ax.text(bar.get_x() + bar.get_width()/2, val + 0.13, f"{val} pJ",
+            ha="center", color=NAVY, fontsize=10, fontweight="bold")
+# Annotation: SNN is "AC only" — arrow tip lands on bar base (well below the value label)
 ax.annotate("SNN: AC only\n(spike × W = W or 0)",
-            xy=(0, 0.03), xytext=(0.6, 1.7),
-            fontsize=10, color=TEAL, ha="left",
-            arrowprops=dict(arrowstyle="->", color=TEAL, lw=1.5))
-ax.annotate("DNN: MAC", xy=(2, 0.23), xytext=(2.3, 2.6),
-            fontsize=10, color=CORAL, ha="left",
-            arrowprops=dict(arrowstyle="->", color=CORAL, lw=1.5))
+            xy=(0.0, 0.0), xytext=(0.55, 2.0),
+            fontsize=11, color=TEAL, ha="left",
+            arrowprops=dict(arrowstyle="->", color=TEAL, lw=1.5,
+                            connectionstyle="arc3,rad=-0.25"))
+# DNN: MAC — arrow tip lands on bar base, no conflict with "0.23 pJ" label
+ax.annotate("DNN: MAC", xy=(2.0, 0.0), xytext=(2.4, 3.2),
+            fontsize=11, color=CORAL, ha="left",
+            arrowprops=dict(arrowstyle="->", color=CORAL, lw=1.5,
+                            connectionstyle="arc3,rad=0.20"))
 ax.set_ylabel("Energy per op (pJ)", fontsize=10, color=NAVY)
 ax.set_ylim(0, 5.2)
 ax.set_title("Per-operation energy at 45nm  [Horowitz, ISSCC 2014]",
@@ -382,11 +403,13 @@ ax.set_title("Keyword spotting on identical task  [Blouw et al. 2019]",
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 ax.tick_params(axis="both", labelsize=9, colors=GRAY)
 ax.invert_yaxis()
-# Speedup annotation
+# Speedup annotation — arrow approaches from below the Loihi row
+# so it does not sit on top of the "0.27 mJ" label
 ax.annotate("≈ 50× lower",
-            xy=(0.27, 0), xytext=(4.5, 0.6),
-            fontsize=10, color=TEAL, fontweight="bold",
-            arrowprops=dict(arrowstyle="->", color=TEAL, lw=1.5))
+            xy=(0.6, 0.40), xytext=(4.0, 0.85),
+            fontsize=11, color=TEAL, fontweight="bold",
+            arrowprops=dict(arrowstyle="->", color=TEAL, lw=1.5,
+                            connectionstyle="arc3,rad=0.20"))
 plt.tight_layout()
 plt.savefig("ppt_assets/gen/energy_compare.png", bbox_inches="tight",
             facecolor="white")

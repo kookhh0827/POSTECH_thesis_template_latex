@@ -270,7 +270,7 @@ text(s, nx + 0.15, ny1, panel_w - 0.6, 0.3,
      font=SANS, size=13, bold=True, color=WHITE)
 text(s, nx + 0.15, ny1 + 0.35, panel_w - 0.6, 0.5,
      "in the membrane potential — invisible to existing remedies.",
-     font=SANS, size=10, color=RGBColor(0xCB, 0xD8, 0xE0))
+     font=SANS, size=12, color=RGBColor(0xCB, 0xD8, 0xE0))
 # accent bar 2
 ab2 = s.shapes.add_shape(MSO_SHAPE.RECTANGLE,
     Inches(nx), Inches(ny2), Inches(0.04), Inches(0.95))
@@ -280,7 +280,7 @@ text(s, nx + 0.15, ny2, panel_w - 0.6, 0.3,
      font=SANS, size=13, bold=True, color=WHITE)
 text(s, nx + 0.15, ny2 + 0.35, panel_w - 0.6, 0.6,
      "when the firing threshold becomes a learnable parameter — never explicitly characterized before.",
-     font=SANS, size=10, color=RGBColor(0xCB, 0xD8, 0xE0))
+     font=SANS, size=12, color=RGBColor(0xCB, 0xD8, 0xE0))
 
 page_footer(s, 2)
 
@@ -737,7 +737,7 @@ img(s, GEN + "/sg_windows.png", 5.95, 3.5, w=7.0)
 callout_box(s, 0.5, 6.55, 12.3, 0.4,
             fill=NAVY, accent=CORAL,
             title="Same when V_thr is fixed. Once V_thr trains, AS-SG and RS-SG break in opposite ways.",
-            title_color=AMBER, title_size=11)
+            title_color=AMBER, title_size=12)
 
 page_footer(s, 10)
 
@@ -817,10 +817,10 @@ def step(slide, x, y, w, h, num, head, eq):
     box.line.color.rgb = TEAL; box.line.width = Pt(1.0)
     text(slide, x + 0.2, y + 0.1, 0.4, 0.4, num,
          font=SANS, size=18, bold=True, color=AMBER)
-    text(slide, x + 0.65, y + 0.15, w - 0.7, 0.3, head,
-         font=SANS, size=11, bold=True, color=NAVY)
-    text(slide, x + 0.65, y + 0.5, w - 0.7, 0.5, eq,
-         font="Cambria Math", size=14, color=INK)
+    text(slide, x + 0.65, y + 0.13, w - 0.7, 0.3, head,
+         font=SANS, size=13, bold=True, color=NAVY)
+    text(slide, x + 0.65, y + 0.50, w - 0.7, 0.5, eq,
+         font="Cambria Math", size=15, color=INK)
 
 step(s, 0.5,  y0, 4.05, 1.05, "1",
      "Relative-scale window", "x = M / V_thr − 1")
@@ -1089,10 +1089,10 @@ text(s, 10.8, 2.5, 2.4, 0.4, "Takeaway",
 # Three pill takeaways
 def pill(slide, x, y, w, h, lab, val, color):
     card(slide, x, y, w, h, fill=CREAM, border=color, border_w=1.3)
-    text(slide, x + 0.15, y + 0.1, w - 0.3, 0.3, lab,
-         font=SANS, size=10, color=GRAY)
-    text(slide, x + 0.15, y + 0.4, w - 0.3, 0.5, val,
-         font=SERIF, size=18, bold=True, color=color)
+    text(slide, x + 0.15, y + 0.1, w - 0.3, 0.32, lab,
+         font=SANS, size=12, bold=True, color=NAVY)
+    text(slide, x + 0.15, y + 0.42, w - 0.3, 0.5, val,
+         font=SERIF, size=20, bold=True, color=color)
 
 pill(s, 10.6, 2.95, 2.5, 1.0, "MP-Init alone",  "+0.5 ~ 0.8", TEAL)
 pill(s, 10.6, 4.05, 2.5, 1.0, "TrSG alone",     "+1.6 ~ 4.2", AMBER)
@@ -1222,7 +1222,7 @@ text(s, 0.7, 2.5, 12, 0.9,
 
 # Limitations + future — main content of this slide (not duplicate cards)
 text(s, 0.7, 4.0, 11, 0.3, "LIMITATIONS",
-     font=SANS, size=11, bold=True, color=AMBER, spacing=400)
+     font=SANS, size=12, bold=True, color=AMBER, spacing=400)
 text(s, 0.7, 4.35, 12.0, 1.1,
      "▸  Per-layer constant approximates π only at the mean — richer parameterizations are open.\n"
      "▸  Hardware with fixed neuron parameters needs quantization-aware adaptation.\n"
@@ -1230,7 +1230,7 @@ text(s, 0.7, 4.35, 12.0, 1.1,
      font=SANS, size=12, color=RGBColor(0xCB, 0xD8, 0xE0))
 
 text(s, 0.7, 5.55, 11, 0.3, "FUTURE  WORK",
-     font=SANS, size=11, bold=True, color=AMBER, spacing=400)
+     font=SANS, size=12, bold=True, color=AMBER, spacing=400)
 text(s, 0.7, 5.9, 12.0, 0.9,
      "▸  Hardware-aware adaptation:  Loihi, Akida, TrueNorth\n"
      "▸  Beyond LIF:  adaptive LIF, Izhikevich, foundation-scale SNNs",
@@ -1511,9 +1511,10 @@ callout_box(s, 8.4, 6.05, 4.6, 0.9,
             title_color=AMBER, body_color=WHITE,
             title_size=11.5, body_size=10.5)
 
-# Citation strip
-text(s, 0.5, 7.0, 12.0, 0.25,
-     "Sources: Blouw et al. 2019 (keyword-spotting benchmark); Davies et al. 2021 (LASSO 48× vs CPU); Horowitz ISSCC 2014 (per-op energy).",
+# Citation strip — sits above footer with safe gap
+text(s, 0.5, 6.30, 7.7, 0.40,
+     "Sources: Blouw et al. 2019 (keyword-spotting benchmark) ·\n"
+     "Davies et al. 2021 (LASSO 48× vs CPU) · Horowitz ISSCC 2014 (per-op energy).",
      font=SANS, size=10, italic=True, color=GRAY)
 
 appendix_footer(s, "A3 / A7")
