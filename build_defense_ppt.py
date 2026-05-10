@@ -207,7 +207,7 @@ text(s, 0.7, 5.55, 9, 0.35, "Committee: Prof. Jungseul Ok · Prof. Jae-Joon Kim"
      font=SANS, size=12, color=RGBColor(0xCB, 0xD8, 0xE0))
 
 text(s, 0.7, 7.05, 12, 0.3,
-     "Department of Computer Science and Engineering · POSTECH · January 2026",
+     "Department of Computer Science and Engineering · POSTECH · May 2026",
      font=SANS, size=10, color=RGBColor(0x80, 0x95, 0xA8))
 
 
