@@ -15,23 +15,23 @@ To tackle this issue, we propose \textbf{MP-Init (Membrane Potential Initializat
 
 \begin{figure}[t!]
   \centering
-  \begin{subfigure}{0.42\linewidth}
-    \includegraphics[width=0.95\linewidth]{fig/density_plot_membrane_potential_tdbn.pdf}
+  \begin{subfigure}{0.48\linewidth}
+    \includegraphics[width=0.99\linewidth]{fig/density_plot_membrane_potential_tdbn.pdf}
     \caption{tdBN}
     \label{fig:membrane_potential_a}
   \end{subfigure}
   \hfill
-  \begin{subfigure}{0.42\linewidth}
-    \includegraphics[width=0.95\linewidth]{fig/density_plot_membrane_potential_tebn.pdf}
+  \begin{subfigure}{0.48\linewidth}
+    \includegraphics[width=0.99\linewidth]{fig/density_plot_membrane_potential_tebn.pdf}
     \caption{TEBN}
   \end{subfigure}
-  \begin{subfigure}{0.42\linewidth}
-    \includegraphics[width=0.95\linewidth]{fig/density_plot_membrane_potential_tab.pdf}
+  \begin{subfigure}{0.48\linewidth}
+    \includegraphics[width=0.99\linewidth]{fig/density_plot_membrane_potential_tab.pdf}
     \caption{TAB}
   \end{subfigure}
   \hfill
-  \begin{subfigure}{0.42\linewidth}
-    \includegraphics[width=0.95\linewidth]{fig/density_plot_membrane_potential_mpinit.pdf}
+  \begin{subfigure}{0.48\linewidth}
+    \includegraphics[width=0.99\linewidth]{fig/density_plot_membrane_potential_mpinit.pdf}
     \caption{MP-Init (ours)}
   \end{subfigure}
   \caption{Membrane potential distributions across timesteps at the third spiking layer of ResNet-19 on CIFAR-100. Existing TCS-aware normalizations (TEBN, TAB) still leave a temporal drift in the membrane potential, while MP-Init aligns the per-timestep distributions.}
@@ -40,23 +40,23 @@ To tackle this issue, we propose \textbf{MP-Init (Membrane Potential Initializat
 
 \begin{figure}[t!]
   \centering
-  \begin{subfigure}{0.42\linewidth}
-    \includegraphics[width=0.95\linewidth]{fig/density_plot_presynaptic_input_tdbn.pdf}
+  \begin{subfigure}{0.48\linewidth}
+    \includegraphics[width=0.99\linewidth]{fig/density_plot_presynaptic_input_tdbn.pdf}
     \caption{tdBN}
     \label{fig:presynaptic_input_a}
   \end{subfigure}
   \hfill
-  \begin{subfigure}{0.42\linewidth}
-    \includegraphics[width=0.95\linewidth]{fig/density_plot_presynaptic_input_tebn.pdf}
+  \begin{subfigure}{0.48\linewidth}
+    \includegraphics[width=0.99\linewidth]{fig/density_plot_presynaptic_input_tebn.pdf}
     \caption{TEBN}
   \end{subfigure}
-  \begin{subfigure}{0.42\linewidth}
-    \includegraphics[width=0.95\linewidth]{fig/density_plot_presynaptic_input_tab.pdf}
+  \begin{subfigure}{0.48\linewidth}
+    \includegraphics[width=0.99\linewidth]{fig/density_plot_presynaptic_input_tab.pdf}
     \caption{TAB}
   \end{subfigure}
   \hfill
-  \begin{subfigure}{0.42\linewidth}
-    \includegraphics[width=0.95\linewidth]{fig/density_plot_presynaptic_input_mpinit.pdf}
+  \begin{subfigure}{0.48\linewidth}
+    \includegraphics[width=0.99\linewidth]{fig/density_plot_presynaptic_input_mpinit.pdf}
     \caption{MP-Init (ours)}
   \end{subfigure}
   \caption{Activation (presynaptic input) distributions of the convolutional layer following the third spiking layer of ResNet-19 on CIFAR-100. The drift visible in TEBN and TAB collapses under MP-Init.}
