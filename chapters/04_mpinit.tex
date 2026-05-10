@@ -310,16 +310,18 @@ We validate this analysis with soft-reset LIF neurons driven by Gaussian inputs,
 
 \begin{figure}[h]
   \centering
-  \begin{subfigure}{0.99\linewidth}
+  \begin{subfigure}{0.49\linewidth}
+    \centering
     \includegraphics[width=0.99\linewidth]{fig/tv_distance_thr_plot.pdf}
     \caption{Impact of varying $V_{\text{thr}}$ on convergence speed.}
   \end{subfigure}
-  \par\medskip
-  \begin{subfigure}{0.99\linewidth}
+  \hfill
+  \begin{subfigure}{0.49\linewidth}
+    \centering
     \includegraphics[width=0.99\linewidth]{fig/tv_distance_tau_plot.pdf}
     \caption{Impact of varying $\tau$ on convergence speed.}
   \end{subfigure}
-  \caption{TV distance of the membrane-potential distribution between timestep~10 and previous timesteps under different $V_{\text{thr}}$ (top) and $\tau$ (bottom). Inputs are sampled from a Gaussian distribution.}
+  \caption{TV distance of the membrane-potential distribution between timestep~10 and previous timesteps under different $V_{\text{thr}}$ (left) and $\tau$ (right). Inputs are sampled from a Gaussian distribution.}
   \label{fig:tv_norm}
 \end{figure}
 

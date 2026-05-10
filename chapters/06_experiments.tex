@@ -415,19 +415,22 @@ The discussion above raises a natural question: \emph{do real trainings actually
 
 \begin{figure}[t!]
   \centering
-  \begin{subfigure}[b]{0.78\linewidth}
+  \begin{subfigure}[b]{0.32\linewidth}
+    \centering
     \includegraphics[width=\linewidth]{fig/threshold_training_cifar100.pdf}
-    \caption{ResNet-19 on CIFAR-100}
+    \caption{ResNet-19, CIFAR-100}
   \end{subfigure}
-  \par\medskip
-  \begin{subfigure}[b]{0.78\linewidth}
+  \hfill
+  \begin{subfigure}[b]{0.32\linewidth}
+    \centering
     \includegraphics[width=\linewidth]{fig/threshold_training_dvscifar10.pdf}
-    \caption{ResNet-19 on DVS-CIFAR10}
+    \caption{ResNet-19, DVS-CIFAR10}
   \end{subfigure}
-  \par\medskip
-  \begin{subfigure}[b]{0.78\linewidth}
+  \hfill
+  \begin{subfigure}[b]{0.32\linewidth}
+    \centering
     \includegraphics[width=\linewidth]{fig/threshold_training_imagenet.pdf}
-    \caption{ResNet-34 on ImageNet}
+    \caption{ResNet-34, ImageNet}
   \end{subfigure}
   \caption{\textbf{Trajectories of trainable $V_{\text{thr}}$ during training.} Early layers tend to settle at lower thresholds, while late or deep layers move toward larger thresholds.}
   \label{fig:vthr_dynamics}

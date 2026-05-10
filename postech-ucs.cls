@@ -734,18 +734,18 @@
 }{  \let\linebreak\@tempbreak          % \linebreak 명령 되돌리기
 }
 
-\newcommand{\summarykorean}{%           % ver 0.1 요약문 생성 명령
+\newenvironment{summarykorean}{%        % ver 0.2: 환경으로 재정의 (begin/end 균형)
     \renewcommand{\linebreak}{\ }      % 차후 버젼에서 삭제 예정
    	\setlength{\parindent}{10pt}
     \ifx\@textlang\@english
         \chapter*{요 약 문}
         \if@PDFdoc\phantomsection\fi\addcontentsline{toc}{chapter}{\rmfamily{Summary (in Korean)}}
-        \fontsize{11pt}{19pt} \selectfont
+        \fontsize{11pt}{19pt}\selectfont
 %        \begin{center}
 %            \noindent\textsf{\Large \@titleKor} \\[6mm]
 %        \end{center}% \setlength{\parindent}{0\p@}
     \fi
-}
+}{\par}                                % 마지막 문단 강제 종료로 spacing 일관성 보장
 
 %%
 %% 감사의 글 및 이력서 생성
