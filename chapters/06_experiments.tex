@@ -415,19 +415,19 @@ The discussion above raises a natural question: \emph{do real trainings actually
 
 \begin{figure}[t!]
   \centering
-  \begin{subfigure}[b]{0.32\linewidth}
+  \begin{subfigure}[b]{0.48\linewidth}
     \centering
     \includegraphics[width=\linewidth]{fig/threshold_training_cifar100.pdf}
     \caption{ResNet-19, CIFAR-100}
   \end{subfigure}
   \hfill
-  \begin{subfigure}[b]{0.32\linewidth}
+  \begin{subfigure}[b]{0.48\linewidth}
     \centering
     \includegraphics[width=\linewidth]{fig/threshold_training_dvscifar10.pdf}
     \caption{ResNet-19, DVS-CIFAR10}
   \end{subfigure}
-  \hfill
-  \begin{subfigure}[b]{0.32\linewidth}
+  \par\medskip
+  \begin{subfigure}[b]{0.48\linewidth}
     \centering
     \includegraphics[width=\linewidth]{fig/threshold_training_imagenet.pdf}
     \caption{ResNet-34, ImageNet}
@@ -575,7 +575,7 @@ As shown in \cref{fig:firing_rate_vs_accuracy_trsg}, the Training curve strictly
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.85\linewidth]{fig/firing_rate_vs_accuracy_trsg.pdf}
+  \includegraphics[width=0.65\linewidth]{fig/firing_rate_vs_accuracy_trsg.pdf}
   \caption{\textbf{Accuracy vs.\ firing rate under TrSG.} We sweep a sparsity loss~\cite{yan:2022} to match global firing rates and compare \emph{Training} (learn $V_{\text{thr}}$ and $\tau$ with TrSG) against \emph{No Training} (both frozen).}
   \label{fig:firing_rate_vs_accuracy_trsg}
 \end{figure}
@@ -621,27 +621,27 @@ Interestingly, in the final layer on both datasets, $\tau$ commonly drops close 
 
 \begin{figure}[h]
   \centering
-  \begin{subfigure}{0.42\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_tau_thr_cifar100_resnet19_soft_reset_with_legend.pdf}\end{subfigure}
+  \begin{subfigure}{0.48\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_tau_thr_cifar100_resnet19_soft_reset_with_legend.pdf}\end{subfigure}
   \hfill
-  \begin{subfigure}{0.42\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_running_mean_cifar100_resnet19_soft_reset_with_legend.pdf}\end{subfigure}
+  \begin{subfigure}{0.48\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_running_mean_cifar100_resnet19_soft_reset_with_legend.pdf}\end{subfigure}
   \par
   \begin{subfigure}{0.99\linewidth}\centering\caption{CIFAR-100 (soft reset)}\label{fig:final_values_cifar100_soft}\end{subfigure}
   \par\smallskip
-  \begin{subfigure}{0.42\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_tau_thr_dvscifar10_resnet19_soft_reset.pdf}\end{subfigure}
+  \begin{subfigure}{0.48\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_tau_thr_dvscifar10_resnet19_soft_reset.pdf}\end{subfigure}
   \hfill
-  \begin{subfigure}{0.42\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_running_mean_dvscifar10_resnet19_soft_reset.pdf}\end{subfigure}
+  \begin{subfigure}{0.48\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_running_mean_dvscifar10_resnet19_soft_reset.pdf}\end{subfigure}
   \par
   \begin{subfigure}{0.99\linewidth}\centering\caption{DVS-CIFAR10 (soft reset)}\label{fig:final_values_dvs_soft}\end{subfigure}
   \par\smallskip
-  \begin{subfigure}{0.42\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_tau_thr_cifar100_resnet19_hard_reset.pdf}\end{subfigure}
+  \begin{subfigure}{0.48\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_tau_thr_cifar100_resnet19_hard_reset.pdf}\end{subfigure}
   \hfill
-  \begin{subfigure}{0.42\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_running_mean_cifar100_resnet19_hard_reset.pdf}\end{subfigure}
+  \begin{subfigure}{0.48\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_running_mean_cifar100_resnet19_hard_reset.pdf}\end{subfigure}
   \par
   \begin{subfigure}{0.99\linewidth}\centering\caption{CIFAR-100 (hard reset)}\label{fig:final_values_cifar100_hard}\end{subfigure}
   \par\smallskip
-  \begin{subfigure}{0.42\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_tau_thr_dvscifar10_resnet19_hard_reset.pdf}\end{subfigure}
+  \begin{subfigure}{0.48\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_tau_thr_dvscifar10_resnet19_hard_reset.pdf}\end{subfigure}
   \hfill
-  \begin{subfigure}{0.42\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_running_mean_dvscifar10_resnet19_hard_reset.pdf}\end{subfigure}
+  \begin{subfigure}{0.48\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_running_mean_dvscifar10_resnet19_hard_reset.pdf}\end{subfigure}
   \par
   \begin{subfigure}{0.99\linewidth}\centering\caption{DVS-CIFAR10 (hard reset)}\label{fig:final_values_dvs_hard}\end{subfigure}
   \caption{Final values of $V_{\text{thr}}$, $\tau$, and the running mean of $U[T]$ after training. ResNet-19 on CIFAR-100 ($T=4$) and DVS-CIFAR10 ($T=10$).}
