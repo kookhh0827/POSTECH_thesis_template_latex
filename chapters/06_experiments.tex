@@ -1,0 +1,650 @@
+\chapter{Experiments}
+\label{ch:experiments}
+
+We evaluate \textbf{MP-Init} and \textbf{TrSG} on both static and event-based vision benchmarks: CIFAR-10, CIFAR-100~\cite{cifar}, ImageNet~\cite{imagenet}, and DVS-CIFAR10~\cite{dvscifar10}, with a variety of backbones (ResNet-19~\cite{zheng:2021}, a 7-layer CNN~\cite{tebn:2022,tab:2024}, ResNet-34~\cite{resnet}, SEW-ResNet-34~\cite{fang:2021_2}). Following tdBN~\cite{zheng:2021}, batch normalization is applied across both temporal and batch dimensions. Baselines are trained under their original configurations, and we strictly follow their reported preprocessing pipelines for fairness. We avoid strong augmentations such as AutoAugment~\cite{autoaug} or Cutout~\cite{cutout} so that the observed gains come solely from our proposed methods. Each configuration is repeated three times and we report mean$\pm$standard deviation.
+
+\section{Experimental Setup}
+\label{sec:exp_setup}
+
+\paragraph{Architectures.}
+For CIFAR-10/100~\cite{cifar} and ImageNet~\cite{imagenet} we use ResNet-19~\cite{zheng:2021} and ResNet-34~\cite{resnet}. On DVS-CIFAR10~\cite{dvscifar10} we additionally use a 7-layer CNN (64C3-AP2-128C3-128C3-AP2-256C3-256C3-AP2-1024FC-10FC) following~\cite{tebn:2022, tab:2024}. We integrate the temporal dimension into the batch dimension to ensure proper normalization, following tdBN~\cite{zheng:2021}.
+
+In MP-Init and TrSG, the running mean of the membrane potential $\mathbb{E}[U[T]]$, the threshold $V_{\text{thr}}$, and the time-decay constant $\tau$ are layer-wise parameters. We also experimented with channel-wise versions but observed only a small difference in performance. We initialize $\mathbb{E}[U[T]]$ to $0.0$, $V_{\text{thr}}$ to $1.0$, and $\tau$ to $2.0$, following common SNN practice~\cite{deng:2022,tebn:2022,fang:2021_2,fang:2021,meng:2023,shen:2024,zhou:2024_2,shi:2024}; we do not retune these per dataset for fair comparison. The first layer acts as the stem layer that generates spikes from the input, while the final layer does not generate spikes~\cite{deng:2022}. On CIFAR-10/100 and DVS-CIFAR10, dropout is added before each fully connected layer, consistent with TEBN/TAB~\cite{tebn:2022,tab:2024}.
+
+\paragraph{Training configuration.}
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+    \item \textbf{CIFAR-10/100.} ResNet-19 with timesteps $\{2,4,6\}$ on a single RTX-3090. SGD with weight decay $5\times10^{-4}$, CosineAnnealing, initial learning rate $0.02$, batch size $64$. Standard random-crop, horizontal flip, and normalization.
+    \item \textbf{DVS-CIFAR10.} 7-layer CNN and ResNet-19 with timesteps $4$ and $10$. Same optimizer/scheduler as above; images cropped to $48\times 48$ and horizontally flipped, following~\cite{tebn:2022, tab:2024}.
+    \item \textbf{ImageNet.} ResNet-34 trained with $T=6$, evaluated at multiple inference timesteps without fine-tuning. SGD with weight decay $4\times10^{-5}$, CosineAnnealing starting at $0.10$, batch size $512$ across $8\times$ A100-80GB with synchronized BN. SEW-ResNet-34 follows the same procedure.
+\end{itemize}
+
+\section{Effectiveness of MP-Init}
+\label{sec:exp_mpinit}
+
+We first evaluate whether MP-Init enhances final performance. \Cref{tab:mpinit_acc_impr} reports ResNet-19 accuracies on CIFAR-100 and DVS-CIFAR10 with and without MP-Init across three baselines. We observe consistent gains, not only in tdBN—which does not account for TCS—but also in TCS-aware methods (TEBN, TAB). This confirms that prior approaches address TCS only partially, while MP-Init provides a more fundamental remedy.
+
+\begin{table}[t]
+\small
+\centering
+\begin{tabular}{cccc}
+\toprule
+\textbf{Dataset}     & \textbf{Method}    & \textbf{Timestep} & \textbf{Accuracy (\%)} \\
+\toprule
+\multirow{6}{*}{CIFAR-100}    & tdBN      & \multirow{2}{*}{4} & 75.55 $\pm$ 0.06 \\
+                             & + MP-Init &                    & \textbf{76.09 $\pm$ 0.04}    \\
+\cline{2-4}
+                             & TEBN      & \multirow{2}{*}{4} & 75.96 $\pm$ 0.68    \\
+                             & + MP-Init &                    & \textbf{76.45 $\pm$ 0.24}    \\
+\cline{2-4}
+                             & TAB       & \multirow{2}{*}{4} & 76.25 $\pm$ 0.49    \\
+                             & + MP-Init &                    & \textbf{77.24 $\pm$ 0.12}    \\
+\hline
+\multirow{6}{*}{DVS-CIFAR10} & tdBN      & \multirow{2}{*}{10} & 76.60 $\pm$ 0.20    \\
+                             & + MP-Init &                     & \textbf{77.37 $\pm$ 0.38}    \\
+\cline{2-4}
+                             & TEBN      & \multirow{2}{*}{10} & 75.17 $\pm$ 0.50    \\
+                             & + MP-Init &                     & \textbf{76.70 $\pm$ 0.78}    \\
+\cline{2-4}
+                             & TAB       & \multirow{2}{*}{4} & 76.43 $\pm$ 0.25    \\
+                             & + MP-Init &                     & \textbf{76.93 $\pm$ 0.38}    \\
+\bottomrule
+\end{tabular}
+\caption{Performance gains from MP-Init using ResNet-19 on CIFAR-100 and DVS-CIFAR10.}
+\label{tab:mpinit_acc_impr}
+\end{table}
+
+\subsection{Impact of TCS and Role of MP-Init}
+\label{subsec:exp_pca}
+
+To visualize the effect of TCS we project the final logits of four randomly chosen classes onto two principal components. \Cref{fig:feature_split_wo_mpinit} shows that without MP-Init, classes remain entangled in early steps and only gradually separate, reflecting TCS-induced output bias. With MP-Init (\cref{fig:feature_split_w_mpinit}), class separation emerges from the very first timestep.
+
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}{0.32\linewidth}\centering\includegraphics[width=0.995\linewidth]{fig/feature_map_not_mp_init_0.pdf}\caption{$t=1$}\end{subfigure}
+  \begin{subfigure}{0.32\linewidth}\centering\includegraphics[width=0.995\linewidth]{fig/feature_map_not_mp_init_1.pdf}\caption{$t=2$}\end{subfigure}
+  \begin{subfigure}{0.32\linewidth}\centering\includegraphics[width=0.995\linewidth]{fig/feature_map_not_mp_init_3.pdf}\caption{$t=4$}\end{subfigure}
+  \caption{PCA of logits without MP-Init. Class clusters stay mixed in early timesteps, reflecting strong TCS.}
+  \label{fig:feature_split_wo_mpinit}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}{0.32\linewidth}\centering\includegraphics[width=0.995\linewidth]{fig/feature_map_mp_init_0.pdf}\caption{$t=1$}\end{subfigure}
+  \begin{subfigure}{0.32\linewidth}\centering\includegraphics[width=0.995\linewidth]{fig/feature_map_mp_init_1.pdf}\caption{$t=2$}\end{subfigure}
+  \begin{subfigure}{0.32\linewidth}\centering\includegraphics[width=0.995\linewidth]{fig/feature_map_mp_init_3.pdf}\caption{$t=4$}\end{subfigure}
+  \caption{PCA of logits with MP-Init. Clear class separation emerges from $t=1$.}
+  \label{fig:feature_split_w_mpinit}
+\end{figure}
+
+This is consistent with the firing-rate dynamics in \cref{fig:firing_rate_at_timestep}: MP-Init stabilizes neuron activations across timesteps, whereas the baseline accumulates activity over time. The class-prediction histograms in \cref{fig:classification} reinforce the picture: without MP-Init, early-step predictions collapse to a single dominant class; with MP-Init, the distribution is balanced from $t=1$.
+
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}{0.49\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/firing_rate_not_mp_init.pdf}\caption{w/o MP-Init}\end{subfigure}
+  \hfill
+  \begin{subfigure}{0.49\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/firing_rate_mp_init.pdf}\caption{w/ MP-Init}\end{subfigure}
+  \caption{Firing rate at each timestep across six layers of ResNet-19 on CIFAR-10.}
+  \label{fig:firing_rate_at_timestep}
+\end{figure}
+
+\begin{figure}[t!]
+  \centering
+  \begin{subfigure}{0.49\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/not_mp_init_output_rate.pdf}\caption{w/o MP-Init}\end{subfigure}
+  \hfill
+  \begin{subfigure}{0.49\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/mp_init_output_rate.pdf}\caption{w/ MP-Init}\end{subfigure}
+  \caption{Class-prediction distributions over timesteps for ResNet-19 on CIFAR-10.}
+  \label{fig:classification}
+\end{figure}
+
+\subsection{Firing Rate vs.\ Accuracy}
+\label{subsec:exp_pareto}
+
+A natural concern is whether MP-Init merely increases firing and thereby harms efficiency. To test this we apply the spike-sparsity regularizer of~\cite{yan:2022} for ResNet-19 on CIFAR-100 and evaluate performance across firing rates (\cref{fig:firing_rate_vs_accuracy_mpinit}). MP-Init does not rely on excessive spiking: it forms a Pareto frontier above the baseline, achieving higher accuracy at matched or lower firing rates. Even at a firing rate of $0.06$, MP-Init outperforms all baseline settings—indicating that MP-Init enables more energy-efficient SNN operation in addition to higher accuracy.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.7\linewidth]{fig/firing_rate_vs_accuracy.pdf}
+  \caption{Accuracy vs.\ firing rate. MP-Init forms a strict Pareto frontier.}
+  \label{fig:firing_rate_vs_accuracy_mpinit}
+\end{figure}
+
+\section{Effectiveness of TrSG}
+\label{sec:exp_trsg}
+
+We compare three SG approaches—\textbf{AS-SG}, \textbf{RS-SG}, and \textbf{TrSG}—when training both $V_{\text{thr}}$ and $\tau$. To ensure fair evaluation, we use the same training recipes across all methods. To assess initialization sensitivity, we sweep the initial values of $V_{\text{thr}}$ and $\tau$.
+
+We evaluate each configuration using both \textit{soft} and \textit{hard} reset LIF neurons and two widely adopted surrogate-derivative shapes:
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+    \item \textbf{Rectangular}~\cite{zheng:2021,rathi:2023,wang:2022}: $f'_{sr}(x)=\tfrac{1}{\gamma}\,\mathds{1}\bigl(|x|<\tfrac{\gamma}{2}\bigr)$
+    \item \textbf{Triangular}~\cite{meng:2023,deng:2022,tab:2024}: $f'_{sr}(x)=\tfrac{1}{\gamma^{2}}\max(0,\gamma-|x|)$
+\end{itemize}
+
+\Cref{fig:unified_fig}(a)--(b) (top row) shows final accuracies on CIFAR-100 with ResNet-19 across various initial $V_{\text{thr}}$. Across all conditions, \textbf{TrSG} consistently outperforms AS-SG and RS-SG, exhibiting robustness to the initial threshold. The bottom row of \cref{fig:unified_fig} shows training-loss and validation-accuracy curves: for both reset regimes, TrSG converges faster and reaches higher final accuracy. A similar trend holds when varying initial $\tau$ and when using different surrogate shapes (Arctan, Sigmoid).
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}\centering\includegraphics[width=\linewidth]{fig/acc_different_thr_rect.pdf}\caption{Rectangular}\label{fig:acc_rect}\end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}\centering\includegraphics[width=\linewidth]{fig/acc_different_thr_tri.pdf}\caption{Triangular}\label{fig:acc_tri}\end{subfigure}
+    \par\medskip
+    \begin{subfigure}[b]{0.24\textwidth}\centering\includegraphics[width=\linewidth]{fig/loss_acc_rect_soft.pdf}\caption{Rect (soft)}\end{subfigure}
+    \begin{subfigure}[b]{0.24\textwidth}\centering\includegraphics[width=\linewidth]{fig/loss_acc_rect_hard.pdf}\caption{Rect (hard)}\end{subfigure}
+    \begin{subfigure}[b]{0.24\textwidth}\centering\includegraphics[width=\linewidth]{fig/loss_acc_tri_soft.pdf}\caption{Tri (soft)}\end{subfigure}
+    \begin{subfigure}[b]{0.24\textwidth}\centering\includegraphics[width=\linewidth]{fig/loss_acc_tri_hard.pdf}\caption{Tri (hard)}\end{subfigure}
+    \caption{\textbf{SG approaches under different surrogate shapes (rectangular vs.\ triangular) and reset types (soft vs.\ hard).}
+    \emph{Top row:} final CIFAR-100 accuracy (ResNet-19, $T=4$) for initial $V_{\text{thr}}\in\{0.5,1.0,2.0\}$ and $\tau=2.0$.
+    \emph{Bottom row:} training loss / validation accuracy curves with $\tau=2.0$, $V_{\text{thr}}=1.0$.
+    TrSG consistently outperforms AS-SG and RS-SG, demonstrating robustness to initial values.}
+    \label{fig:unified_fig}
+\end{figure}
+
+\section{Ablation Study}
+\label{sec:exp_ablation}
+
+\Cref{tab:ablation_table} ablates MP-Init and TrSG on ResNet-19. Both methods independently improve over the baseline; their combination yields the best result, confirming complementary contributions.
+
+\begin{table}[h]
+\small
+\centering
+\begin{tabular}{cccc}
+\toprule
+\textbf{Dataset} & \textbf{MP-Init} & \textbf{TrSG} & \textbf{Accuracy (\%)} \\
+\toprule
+\multirowcell{4}[0pt][c]{CIFAR-100\\(T=4)}
+ & \ding{55} & \ding{55} & 75.55 $\pm$ 0.06 \\
+ & \ding{51} & \ding{55} & 76.09 $\pm$ 0.04 \\
+ & \ding{55} & \ding{51} & 77.15 $\pm$ 0.06 \\
+ & \ding{51} & \ding{51} & \textbf{77.66 $\pm$ 0.15} \\
+\midrule
+\multirowcell{4}[0pt][c]{DVS-CIFAR10\\(T=10)}
+ & \ding{55} & \ding{55} & 76.60 $\pm$ 0.20 \\
+ & \ding{51} & \ding{55} & 77.37 $\pm$ 0.20 \\
+ & \ding{55} & \ding{51} & 80.83 $\pm$ 0.64 \\
+ & \ding{51} & \ding{51} & \textbf{81.43 $\pm$ 0.40} \\
+\bottomrule
+\end{tabular}
+\caption{Ablation of MP-Init and TrSG on ResNet-19.}
+\label{tab:ablation_table}
+\end{table}
+
+Building on these findings—and given their superior quality and stability—we adopt the \textbf{rectangular} surrogate function and \textbf{soft reset} as the default configuration in subsequent comparisons.
+
+\section{Comparison with State-of-the-Art}
+\label{sec:exp_sota}
+
+We compare \textbf{MP-Init + TrSG} (referred to as ``Ours'') against state-of-the-art methods on static datasets (CIFAR-10/100, ImageNet) and the dynamic dataset DVS-CIFAR10, using standard LIF neurons and various backbones. \Cref{tab:comprehensive_results} summarizes the results.
+
+\begin{table}[t!]
+\centering
+\small
+\begin{tabular}{ccccc}
+\toprule
+\textbf{Dataset} & \textbf{Method} & \textbf{Network} & \textbf{Timestep} & \textbf{Accuracy (\%)} \\
+\toprule
+\multirow{5}{*}{CIFAR-10} & tdBN~\cite{zheng:2021} & \multirow{5}{*}{ResNet-19} & 2 / 4 / 6 & 92.34 / 92.92 / 93.16 \\
+& TET~\cite{deng:2022} & & 2 / 4 / 6 & 94.16 / 94.44 / 94.50 \\
+& TEBN~\cite{tebn:2022} & & 2 / 4 / 6 & 94.57 / 94.70 / 94.71 \\
+& TAB~\cite{tab:2024} & & 2 / 4 / 6 & 94.73 / 94.76 / 94.81 \\
+& \textbf{Ours} & & 2 / 4 / 6 & \textbf{95.05 $\pm$ 0.15 / 95.34 $\pm$ 0.06 / 95.50 $\pm$ 0.16} \\
+\midrule
+\multirow{4}{*}{CIFAR-100} & TET~\cite{deng:2022} & \multirow{4}{*}{ResNet-19} & 2 / 4 / 6 & 72.87 / 74.47 / 74.72 \\
+& TEBN~\cite{tebn:2022} & & 2 / 4 / 6 & 75.86 / 76.13 / 76.41 \\
+& TAB~\cite{tab:2024} & & 2 / 4 / 6 & 76.31 / 76.81 / 76.82 \\
+& \textbf{Ours} & & 2 / 4 / 6 & \textbf{76.87 $\pm$ 0.16 / 77.66 $\pm$ 0.15 / 77.91 $\pm$ 0.32} \\
+\midrule
+\multirow{12}{*}{ImageNet} & tdBN~\cite{zheng:2021} & \multirow{4}{*}{ResNet-34} & 6 & 63.72 \\
+& Dspike~\cite{li:2021} & & 6 & 68.19 \\
+& TEBN~\cite{tebn:2022} & & 4 & 64.29 \\
+& TAB~\cite{tab:2024} & & 4 & 67.78 \\
+\cline{2-5}
+& SEW-ResNet~\cite{fang:2021_2} & \multirow{6}{*}{SEW-ResNet-34} & 4 & 67.04 \\
+& TET~\cite{deng:2022} & & 4 & 68.00 \\
+& TEBN~\cite{tebn:2022} & & 4 & 68.28 \\
+& IMP+LTS~\cite{shen:2024} & & 4 & 68.90 \\
+& MPS~\cite{ding:2025} & & 4 & 69.03 \\
+& EAGD~\cite{yang:2025} & & 4 & 68.12 \\
+\cline{2-5}
+& \multirow{2}{*}{\textbf{Ours}} & ResNet-34 & 4 / 6 & 67.15 $\pm$ 0.03 / \textbf{68.73 $\pm$ 0.09} \\
+& & SEW-ResNet-34 & 4 & \textbf{69.67 $\pm$ 0.08} \\
+\midrule
+\multirow{8}{*}{DVS-CIFAR10} & tdBN~\cite{zheng:2021} & \multirow{3}{*}{ResNet-19} & 10 & 67.80 \\
+& MPBN~\cite{guo:2023_2} & & 10 & 74.40 $\pm$ 0.20 \\
+& RMP-Loss~\cite{guo:2023} & & 10 & 76.20 $\pm$ 0.20 \\
+\cline{2-5}
+& BNTT~\cite{bntt:2020} & \multirow{3}{*}{7-layer CNN} & 20 & 63.20 \\
+& TEBN~\cite{tebn:2022} & & 10 & 75.10 \\
+& TAB~\cite{tab:2024} & & 4 & 76.70 \\
+\cline{2-5}
+& \multirow{2}{*}{\textbf{Ours}} & ResNet-19 & 10 & \textbf{81.43 $\pm$ 0.40} \\
+&  & 7-layer CNN & 4 & \textbf{79.27 $\pm$ 0.75} \\
+\bottomrule
+\end{tabular}
+\caption{Comprehensive comparison of our methods on static and dynamic datasets.}
+\label{tab:comprehensive_results}
+\end{table}
+
+\paragraph{CIFAR-10/100.} Ours achieves the best accuracy across all evaluated timesteps. On CIFAR-10 we reach $95.50\%$ at $T=6$, improving over the previous best (TAB at $94.81\%$) by $0.69$\%pt. On CIFAR-100 we obtain $77.91\%$ at $T=6$, surpassing the strongest baseline (TAB at $76.82\%$) by $1.09$\%pt. Our results at fewer timesteps already outperform baselines at larger timesteps, highlighting improved efficiency.
+
+\paragraph{ImageNet.} With ResNet-34, our method reaches $68.73\%$ top-1 accuracy at $T=6$. With SEW-ResNet-34 we further reach $69.67\%$ at $T=4$, outperforming IMP+LTS~\cite{shen:2024} ($68.90\%$) and MPS~\cite{ding:2025} ($69.03\%$). Unlike those approaches, ours adds negligible overhead and does not require neuron-specific extra parameters or complex optimization.
+
+\paragraph{DVS-CIFAR10.} With ResNet-19 at $T=10$ we obtain $81.43\%$, exceeding the previous best (RMP-Loss at $76.20\%$). With a lightweight 7-layer CNN we still reach $79.27\%$ at $T=4$.
+
+\section{Extensions to Advanced Architectures and Tasks}
+\label{sec:exp_extensions}
+
+We further evaluate MP-Init and TrSG on \textbf{Transformer-based SNNs}. On DVS-CIFAR10 (10 timesteps) our method improves SpikeFormer2 from $78.90\%$ to \textbf{$80.10\%$} and QKFormer from $83.80\%$ to \textbf{$84.80\%$}. On ImageNet (4 timesteps) SpikingResformer rises from $74.34\%$ to \textbf{$75.62\%$}, and QKFormer from $78.80\%$ to \textbf{$79.90\%$} (\cref{tab:advanced_snn}). The +$1.0$--$1.3$\%pt gains indicate that MP-Init and TrSG transfer cleanly to advanced Transformer backbones without architectural changes.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llc}
+\toprule
+\textbf{Dataset} & \textbf{Architecture} & \textbf{Accuracy (\%)} \\
+\midrule
+\multirow{7}{*}{DVS-CIFAR10}
+& Spikformer~\cite{zhou2023spikformer} & 80.90 \\
+& Spikingformer~\cite{zhou2023spikingformer} & 81.30 \\
+& S-Transformer~\cite{yao2023stransformer} & 80.00 \\
+& SpikeFormer2~\cite{zhou:2024} & 78.90 \\
+& \quad + \textbf{Ours} & \textbf{80.10} \\
+& QKFormer~\cite{zhou:2024_2} & 83.80 \\
+& \quad + \textbf{Ours} & \textbf{84.80} \\
+\midrule
+\multirow{7}{*}{ImageNet}
+& Spikformer~\cite{zhou2023spikformer} & 70.24 \\
+& Spikingformer~\cite{zhou2023spikingformer} & 72.45 \\
+& S-Transformer~\cite{yao2023stransformer} & 72.28 \\
+& SpikingResformer~\cite{shi:2024} & 74.34 \\
+& \quad + \textbf{Ours} & \textbf{75.62} \\
+& QKFormer~\cite{zhou:2024_2} & 78.80 \\
+& \quad + \textbf{Ours} & \textbf{79.90} \\
+\bottomrule
+\end{tabular}
+\caption{Transformer-based SNNs with and without our method. DVS-CIFAR10 is evaluated at 10 timesteps; ImageNet at 4 timesteps. Baselines are matched in parameter budget.}
+\label{tab:advanced_snn}
+\end{table}
+
+Beyond classification, we validate task generality on COCO-2017 detection with EMS-ResNet10~\cite{su:2023}. With identical training configurations (100 epochs) for the baseline and ours, MP-Init + TrSG improves mAP from $0.291$ to \textbf{$0.305$} (mAP@0.5) and from $0.138$ to \textbf{$0.147$} (mAP@0.5:0.95), as summarized in \cref{tab:object_detection}.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lc}
+\toprule
+\textbf{Architecture} & \textbf{COCO2017 (mAP@0.5 / mAP@0.5:0.95)} \\
+\midrule
+EMS-ResNet10~\cite{su:2023} & 0.291 / 0.138 \\
+\quad + \textbf{Ours} & \textbf{0.305 / 0.147} \\
+\bottomrule
+\end{tabular}
+\caption{Object detection on COCO-2017 with EMS-ResNet10 ($T=3$).}
+\label{tab:object_detection}
+\end{table}
+
+\section{How Does MP-Init Impact Training?}
+\label{sec:exp_mpinit_impact}
+
+TEBN~\cite{tebn:2022} and TAB~\cite{tab:2024} have shown that temporal covariate shift indeed occurs, and \cref{ch:mpinit} demonstrated that MP-Init effectively resolves it. Prior studies, however, did not provide direct evidence of \emph{how} TCS impairs training. Inspired by the ensemble interpretation of SNNs in MPS~\cite{ding:2025}, we revisit this question with a gradient-conflict experiment on ResNet-19 with CIFAR-100. We compute the gradients applied to a given layer at each timestep and measure the cosine similarity across timesteps.
+
+As shown in \cref{fig:gradient_conflict_tcs}, without MP-Init (left) the gradients at $t=1$ exhibit strong conflicts with later timesteps, indicating severe inconsistency across the temporal ensemble members. With MP-Init (right), these conflicts are largely alleviated and the overall cosine similarity improves. This provides direct evidence that TCS not only degrades inference consistency but also hinders gradient alignment during training, and confirms that MP-Init effectively stabilizes optimization.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.99\linewidth]{fig/grad_collision.pdf}
+    \caption{\textbf{Gradient conflicts across timesteps with and without MP-Init.} Cosine similarity of gradients across timesteps in ResNet-19 on CIFAR-100. \emph{Left:} Without MP-Init, the gradient from $t=1$ strongly conflicts with later timesteps, reflecting the temporal inconsistency highlighted by MPS~\cite{ding:2025}. \emph{Right:} With MP-Init, conflicts are largely resolved and similarities improve, indicating that MP-Init aligns temporal ensemble members and stabilizes training.}
+    \label{fig:gradient_conflict_tcs}
+\end{figure}
+
+\section{How Does TrSG Impact Training?}
+\label{sec:exp_trsg_impact}
+
+We analyze the gradient flow of ResNet-19 on CIFAR-100 with $T=4$ for 200 epochs. To isolate the effect of the SG formulation, we \emph{fix} $\tau=2.0$ and freeze both $V_{\text{thr}}$ and $\tau$. We use a rectangular surrogate with $\gamma=1$ and a soft-reset mechanism.
+
+\paragraph{Stability metrics.}
+We quantify gradient stability with three complementary metrics computed over the convolutional weights of a given layer:
+\begin{align}
+\text{AbsStr} &= \operatorname*{mean}_{i} |g_{i}|, \\
+\text{RatioAG} &= \frac{1}{N}\sum_{i} \mathds{1}\!\bigl(|x_{i}|<\tfrac{\gamma}{2}\bigr), \\
+\text{GradCV} &= \frac{\operatorname{std}_{i}(|g_{i}|)}{\operatorname*{mean}_{i}(|g_{i}|)},
+\end{align}
+where $g_{i}=\partial \mathcal{L}/\partial W_{i}$ and $x_{i}$ is the surrogate argument. \textbf{AbsStr} measures average gradient magnitude—very low values indicate vanishing, very high values indicate explosion, and stable training requires moderate values. \textbf{RatioAG} is the fraction of neurons receiving nonzero gradients—too low yields gradient starvation, too high yields gradient flood, and an intermediate range is ideal. \textbf{GradCV} captures variability of gradient magnitudes—a low CV ($<1$) implies smooth, balanced updates handled by a single learning rate, whereas $\mathrm{CV}\gg1$ means some weights update disproportionately faster than others, destabilizing training. TrSG is designed to maintain moderate AbsStr, healthy RatioAG, and low GradCV simultaneously.
+
+\subsection{Reference Case: $V_{\text{thr}}=1.0$}
+\label{subsec:exp_trsg_metric_ref}
+
+With the widely used threshold $V_{\text{thr}}=1.0$, all SG variants behave identically (\cref{tab:metrics_ref}). Although $1.0$ is not necessarily optimal, it serves as a sanity check: from epoch~1 to epoch~100 we observe steadily improving yet stable gradients across AS-SG, RS-SG, and TrSG.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{ccccc}
+\toprule
+\textbf{Epoch} & $V_{\text{thr}}{=}1.0$ & \textbf{AbsStr} & \textbf{RatioAG (\%)} & \textbf{GradCV} \\
+\midrule
+1   & any SG & 0.0122 & 6.72  & 0.818 \\
+100 & any SG & 0.0211 & 18.97 & 0.571 \\
+\bottomrule
+\end{tabular}
+\caption{Reference case where all SG variants behave identically (ResNet-19, CIFAR-100, $T=4$, $\tau=2.0$).}
+\label{tab:metrics_ref}
+\end{table}
+
+\subsection{Low Threshold Stress Test: $V_{\text{thr}}=0.1$}
+\label{subsec:exp_trsg_metric_low}
+
+This stress test exposes small-threshold failure modes (\cref{tab:metrics_low}). At epoch~1, AS-SG floods (its wide window covers a too-large fraction of the membrane distribution), RS-SG explodes due to the $1/V_{\text{thr}}$ factor (AbsStr is over $1700\times$ larger than TrSG's), while TrSG remains stable. By epoch~100, AS-SG still shows instability with $\mathrm{RatioAG}=90.20\%$ (extreme flooding), and RS-SG diverges to NaN. TrSG trains smoothly throughout. The accuracy outcomes of \cref{tab:no_training_results} below are consistent with these dynamics.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{ccccc}
+\toprule
+\textbf{Epoch} & $V_{\text{thr}}{=}0.1$ & \textbf{AbsStr} & \textbf{RatioAG (\%)} & \textbf{GradCV} \\
+\midrule
+\multirow{3}{*}{1} & AS-SG & 0.2756 & 31.25 & 5.01  \\
+                   & RS-SG & 7.8191 & 0.01  & 37.11 \\
+                   & TrSG  & 0.0046 & 3.05  & \textbf{0.861} \\
+\midrule
+\multirow{3}{*}{100} & AS-SG & 0.0145 & 90.20 & 1.22  \\
+                     & RS-SG & NaN    & 0.00  & NaN   \\
+                     & TrSG  & 0.0153 & 21.45 & \textbf{0.865} \\
+\bottomrule
+\end{tabular}
+\caption{Low-threshold stress test (CIFAR-100, $T=4$, $\tau=2.0$). RS-SG diverges, AS-SG floods, while TrSG remains stable.}
+\label{tab:metrics_low}
+\end{table}
+
+\subsection{High Threshold Stress Test: $V_{\text{thr}}=2.0$}
+\label{subsec:exp_trsg_metric_high}
+
+For the large threshold $V_{\text{thr}}=2.0$, the absolute window of AS-SG is too narrow and the $1/V_{\text{thr}}$ factor in RS-SG suppresses signals (\cref{tab:metrics_high}). AS-SG starves (its activation ratio collapses to $0\%$ by epoch~100, with literally zero gradient flow), and RS-SG vanishes with high variance ($\mathrm{GradCV}=2.247$). TrSG preserves stable updates throughout.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{ccccc}
+\toprule
+\textbf{Epoch} & $V_{\text{thr}}{=}2.0$ & \textbf{AbsStr} & \textbf{RatioAG (\%)} & \textbf{GradCV} \\
+\midrule
+\multirow{3}{*}{1} & AS-SG & 0.0058 & 0.78 & 17.14 \\
+                   & RS-SG & 0.0066 & 1.64 & 0.639 \\
+                   & TrSG  & 0.0092 & 1.62 & \textbf{0.961} \\
+\midrule
+\multirow{3}{*}{100} & AS-SG & 0.0000 & 0.00 & 0.000 \\
+                     & RS-SG & 0.0021 & 0.10 & 2.247 \\
+                     & TrSG  & 0.0323 & 6.90 & \textbf{0.731} \\
+\bottomrule
+\end{tabular}
+\caption{High-threshold stress test (CIFAR-100, $T=4$, $\tau=2.0$). AS-SG starves, RS-SG vanishes, TrSG preserves stable updates.}
+\label{tab:metrics_high}
+\end{table}
+
+\subsection{Accuracy with Frozen Internal Parameters}
+\label{subsec:exp_no_training}
+
+\Cref{tab:no_training_results} reports final accuracy when both $V_{\text{thr}}$ and $\tau$ are \emph{frozen} (so as to isolate the SG effect), with $\tau=2.0$ and $V_{\text{thr}}\in\{0.1,0.5,1.0,1.5,2.0\}$. Conventional SGs fail outside a narrow range—exploding at $0.1$, starving or vanishing at $2.0$—while TrSG remains robust across all thresholds.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{cc|ccccc}
+\toprule
+\textbf{Reset} & \textbf{SG} & \multicolumn{5}{c}{$\boldsymbol{V_{\text{thr}}}$} \\
+\cmidrule(lr){3-7}
+\multicolumn{2}{c|}{} & 0.1 & 0.5 & 1.0 & 1.5 & 2.0 \\
+\midrule
+\multirow{3}{*}{\textbf{Soft}}
+  & AS-SG          & 61.59          & 75.96          & ---            & 69.97          & 18.09 \\
+  & RS-SG          & \emph{div.}    & 76.12          & ---            & 71.43          & 5.43  \\
+  & \textbf{TrSG}  & \textbf{73.99} & \textbf{76.82} & \textbf{75.56} & \textbf{71.97} & \textbf{64.27} \\
+\midrule
+\multirow{3}{*}{\textbf{Hard}}
+  & AS-SG          & 67.71          & \textbf{76.34} & ---            & 68.42          & 12.27 \\
+  & RS-SG          & 10.36          & 75.85          & ---            & 72.51          & 52.10 \\
+  & \textbf{TrSG}  & \textbf{68.94} & 76.33          & \textbf{75.72} & \textbf{73.86} & \textbf{68.42} \\
+\bottomrule
+\end{tabular}
+\caption{Accuracy (\%) with fixed $\tau=2.0$ and \emph{frozen} $V_{\text{thr}}$ to isolate SG effects. TrSG remains robust across thresholds, while AS-SG and RS-SG fail outside a narrow range.}
+\label{tab:no_training_results}
+\end{table}
+
+\subsection{Trajectories of Trainable Thresholds}
+\label{subsec:exp_threshold_trajectories}
+
+The discussion above raises a natural question: \emph{do real trainings actually visit such extreme thresholds?} The answer is yes. When $V_{\text{thr}}$ is trainable, many layers drift toward \emph{lower} thresholds (often $\ll 1$), while late or deep layers move \emph{upward} toward larger values (around $\sim2$ on CIFAR-100, and even higher on ImageNet). \Cref{fig:vthr_dynamics} summarizes these trajectories. CIFAR-100 and DVS-CIFAR10 show several early layers dropping below $1$ and the last layer increasing, whereas ImageNet exhibits a wider spread with some deep layers rising well beyond $2$. These observations confirm that the brittle regimes identified for AS-SG and RS-SG are encountered in practice—precisely where TrSG's threshold-robustness is most beneficial.
+
+\begin{figure}[t!]
+  \centering
+  \begin{subfigure}[b]{0.32\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{fig/threshold_training_cifar100.pdf}
+    \caption{ResNet-19, CIFAR-100}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.32\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{fig/threshold_training_dvscifar10.pdf}
+    \caption{ResNet-19, DVS-CIFAR10}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.32\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{fig/threshold_training_imagenet.pdf}
+    \caption{ResNet-34, ImageNet}
+  \end{subfigure}
+  \caption{\textbf{Trajectories of trainable $V_{\text{thr}}$ during training.} Early layers tend to settle at lower thresholds, while late or deep layers move toward larger thresholds.}
+  \label{fig:vthr_dynamics}
+\end{figure}
+
+\paragraph{Implications.}
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+    \item \Cref{tab:metrics_ref,tab:metrics_low,tab:metrics_high} explain \emph{why} TrSG is superior: it maintains moderate AbsStr, healthy RatioAG, and low GradCV—simultaneously avoiding flooding/starvation and explosion/vanishing.
+    \item The threshold trajectories in \cref{fig:vthr_dynamics} show that real trainings visit the regimes where AS-SG and RS-SG break down, so threshold-robustness is not a corner case but a practical necessity.
+    \item Even when $V_{\text{thr}}$ and $\tau$ are \emph{not} trained, TrSG is the best choice across thresholds (\cref{tab:no_training_results}); using TrSG is strictly beneficial, with no downside in practice.
+\end{itemize}
+
+\section{Validation on More Surrogate Functions}
+\label{sec:exp_more_surrogates}
+
+In \cref{ch:trsg} we introduced TrSG using the rectangular surrogate as the primary example. \Cref{sec:exp_trsg} extended the experiments to the triangular surrogate. We now demonstrate TrSG's generality by evaluating it with the Arctan-based~\cite{fang:2021} and Sigmoid-based~\cite{wu:2018} surrogates while varying the initial threshold $V_{\text{thr}}$.
+
+\paragraph{Arctan surrogate.}
+The derivative of the Arctan-based surrogate is
+\begin{equation}
+\frac{\partial f_{sr}(x)}{\partial x}
+\;=\;
+\frac{\gamma}{2\bigl(1+(\tfrac{\pi}{2}\,\gamma\,x)^{2}\bigr)}.
+\end{equation}
+
+\paragraph{Sigmoid surrogate.}
+The derivative of the Sigmoid-based surrogate is
+\begin{equation}
+\frac{\partial f_{sr}(x)}{\partial x}
+\;=\;
+\frac{1}{\gamma}\cdot\frac{e^{x/\gamma}}{(1+e^{x/\gamma})^{2}}.
+\end{equation}
+Here $\gamma$ is the steepness parameter. As before, we compare AS-SG, RS-SG, and TrSG under both soft and hard reset.
+
+\Cref{fig:acc_different_thr_atan_sig} shows that TrSG consistently outperforms AS-SG and RS-SG under both Arctan and Sigmoid surrogates, regardless of the initial threshold. Together with the rectangular and triangular results of \cref{sec:exp_trsg}, this confirms that TrSG's threshold-robustness extends across all common surrogate-gradient shapes.
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}{0.49\linewidth}
+    \centering
+    \includegraphics[width=0.99\linewidth]{fig/acc_different_thr_atan.pdf}
+    \caption{Arctan surrogate}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.49\linewidth}
+    \centering
+    \includegraphics[width=0.99\linewidth]{fig/acc_different_thr_sigmoid.pdf}
+    \caption{Sigmoid surrogate}
+  \end{subfigure}
+  \caption{\textbf{Accuracy under different initial $V_{\text{thr}}\in\{0.5,1.0,2.0\}$ for Arctan and Sigmoid surrogates ($\tau=2.0$).} We compare AS-SG, RS-SG, and TrSG on ResNet-19 (CIFAR-100, $T=4$), evaluating both soft- and hard-reset LIF neurons.}
+  \label{fig:acc_different_thr_atan_sig}
+\end{figure}
+
+\section{Varying Initial \texorpdfstring{$\tau$}{tau} with a Fixed Initial \texorpdfstring{$V_{\text{thr}}$}{V\_thr}}
+\label{sec:exp_varying_tau}
+
+To complement the experiments in \cref{sec:exp_trsg,sec:exp_more_surrogates} (which varied $V_{\text{thr}}$), we now fix $V_{\text{thr}}=1.0$ and vary the initial leakage constant $\tau\in\{1.33,2.0,3.0\}$. \Cref{fig:acc_different_tau_all} reports accuracy across all four surrogate shapes—rectangular, triangular, Arctan, and Sigmoid—each evaluated with both soft and hard resets. Across every configuration, TrSG consistently outperforms AS-SG and RS-SG, maintaining high accuracy regardless of the initial $\tau$ and reaffirming the robustness observed under varying $V_{\text{thr}}$.
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}{0.49\linewidth}
+    \centering
+    \includegraphics[width=0.99\linewidth]{fig/acc_different_tau_rect.pdf}
+    \caption{Rectangular}
+    \label{fig:acc_different_tau_rect}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.49\linewidth}
+    \centering
+    \includegraphics[width=0.99\linewidth]{fig/acc_different_tau_tri.pdf}
+    \caption{Triangular}
+    \label{fig:acc_different_tau_tri}
+  \end{subfigure}
+  \par\medskip
+  \begin{subfigure}{0.49\linewidth}
+    \centering
+    \includegraphics[width=0.99\linewidth]{fig/acc_different_tau_atan.pdf}
+    \caption{Arctan}
+    \label{fig:acc_different_tau_atan}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.49\linewidth}
+    \centering
+    \includegraphics[width=0.99\linewidth]{fig/acc_different_tau_sigmoid.pdf}
+    \caption{Sigmoid}
+    \label{fig:acc_different_tau_sigmoid}
+  \end{subfigure}
+  \caption{\textbf{Accuracy under different initial $\tau\in\{1.33,2.0,3.0\}$ with $V_{\text{thr}}=1.0$, across all four surrogate shapes.} (a) Rectangular, (b) triangular, (c) Arctan, (d) Sigmoid—each evaluated with both soft and hard resets. ResNet-19 on CIFAR-100, $T=4$. TrSG consistently outperforms AS-SG and RS-SG in every panel.}
+  \label{fig:acc_different_tau_all}
+\end{figure}
+
+\section{Impact of Trainable Parameters on Accuracy}
+\label{sec:exp_trainable_impact}
+
+To analyze the impact of training the threshold $V_{\text{thr}}$ and the leakage constant $\tau$, we run an ablation study (\cref{tab:trainable_ablation}). Training only $\tau$ slightly degrades accuracy compared with fixed parameters. Training only $V_{\text{thr}}$ yields a noticeable improvement. Training both jointly produces the best result ($77.22\%$). Although $\tau$ alone is not beneficial, its effect becomes synergistic when combined with $V_{\text{thr}}$ training: the network jointly adapts the integration time and the firing threshold to balance convergence speed and stability.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{ccc}
+\toprule
+$\boldsymbol{\tau}$ \textbf{trainable} & $\boldsymbol{V_{\text{thr}}}$ \textbf{trainable} & \textbf{Accuracy (\%)} \\
+\midrule
+\ding{55} & \ding{55} & 75.56 \\
+\ding{51} & \ding{55} & 74.61 \\
+\ding{55} & \ding{51} & 76.98 \\
+\ding{51} & \ding{51} & \textbf{77.22} \\
+\bottomrule
+\end{tabular}
+\caption{Ablation of trainable internal LIF parameters on ResNet-19, CIFAR-100, $T=4$. Initial values are $V_{\text{thr}}=1.0$ and $\tau=2.0$.}
+\label{tab:trainable_ablation}
+\end{table}
+
+\section{Ablation on Advanced Architecture}
+\label{sec:exp_qkformer_ablation}
+
+We further ablate the surrogate-gradient choice on a large-scale Transformer SNN, QKFormer~\cite{zhou:2024_2}, using the official training protocol while keeping all settings fixed and changing only the SG variant (\cref{tab:qkformer_ablation}). With MP-Init enabled across the board, TrSG is the only variant that reliably improves over the baseline ($+1.10$\,\%pt). AS-SG underperforms ($-1.71$\,\%pt) and RS-SG essentially matches or slightly underperforms ($-0.10$\,\%pt). These results indicate that even on advanced Transformer-based SNNs, TrSG provides consistent benefits, and that conventional SGs can in fact \emph{degrade} performance—underscoring TrSG as the safer and superior choice for modern large-scale SNN architectures.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lc}
+\toprule
+\textbf{Method} & \textbf{Top-1 (\%)} \\
+\midrule
+QKFormer (HST-10-384)              & 78.80 \\
+\quad + AS-SG                      & 77.09 \\
+\quad + RS-SG                      & 78.70 \\
+\quad + \textbf{TrSG}              & \textbf{79.90} \\
+\bottomrule
+\end{tabular}
+\caption{Ablation of the surrogate-gradient choice on QKFormer (HST-10-384), ImageNet, $T=4$. All runs follow the official training recipe with only the SG variant differing. MP-Init is enabled in every case.}
+\label{tab:qkformer_ablation}
+\end{table}
+
+\section{Accuracy vs.\ Firing Rate under TrSG}
+\label{sec:exp_firing_rate_trsg}
+
+\Cref{subsec:exp_pareto} showed that MP-Init forms a Pareto front over firing rate. A natural question is whether training the internal parameters $V_{\text{thr}}$ and $\tau$ with TrSG merely increases spike counts to boost accuracy. To decouple these effects, we sweep the same sparsity regularization loss~\cite{yan:2022} as before and compare \emph{Training} (TrSG updates $V_{\text{thr}}$ and $\tau$) against \emph{No Training} (both frozen).
+
+As shown in \cref{fig:firing_rate_vs_accuracy_trsg}, the Training curve strictly dominates the No-Training curve at all firing rates, indicating that TrSG's improvement stems from well-adapted neuron dynamics rather than excessive spiking. This is consistent with the threshold trajectories of \cref{fig:vthr_dynamics}, where layers evolve toward operating points that favor stable, informative spikes.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.85\linewidth]{fig/firing_rate_vs_accuracy_trsg.pdf}
+  \caption{\textbf{Accuracy vs.\ firing rate under TrSG.} We sweep a sparsity loss~\cite{yan:2022} to match global firing rates and compare \emph{Training} (learn $V_{\text{thr}}$ and $\tau$ with TrSG) against \emph{No Training} (both frozen).}
+  \label{fig:firing_rate_vs_accuracy_trsg}
+\end{figure}
+
+\section{Energy Cost}
+\label{sec:exp_energy}
+
+Since the firing rate tightly correlates with accumulate operations (ACs)—and therefore energy—the analyses in \cref{subsec:exp_pareto,sec:exp_firing_rate_trsg} can be viewed as an energy--accuracy trade-off. To quantify this, we measure ACs and multiply--accumulate operations (MACs) and compute the corresponding energy following~\cite{energy}; \cref{tab:energy_calculation} reports the result. At similar firing rates (and hence similar energy cost), training the internal neuron parameters with TrSG yields consistently higher accuracy. In short, TrSG improves accuracy at nearly the same energy cost—the gains come from better adaptation of $V_{\text{thr}}$ and $\tau$, not from increasing spike counts.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{ccccc}
+\toprule
+\textbf{MP-Init} & \textbf{TrSG} & \textbf{ACs / MACs (G)} & \textbf{Energy (mJ)} & \textbf{Acc (\%)} \\
+\midrule
+\ding{55} & \ding{55} & 1.03 / 0.14 & 1.57 & 75.58 \\
+\ding{51} & \ding{55} & 1.01 / 0.14 & 1.57 & 76.20 \\
+\ding{55} & \ding{51} & 1.13 / 0.14 & 1.68 & 77.13 \\
+\ding{51} & \ding{51} & 1.12 / 0.14 & 1.67 & \textbf{77.68} \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Energy at comparable firing rates.} Accumulate operations (ACs), multiply--accumulate operations (MACs), and computed energy cost. ResNet-19, CIFAR-100, $T=4$.}
+\label{tab:energy_calculation}
+\end{table}
+
+\section{Final Values of Neuron Parameters}
+\label{sec:exp_final_values}
+
+In addition to learning the network weights, our approach optimizes the neuron parameters $V_{\text{thr}}$ and $\tau$, while MP-Init tracks an internal running mean of the membrane potential at the last timestep, $U[T]$. To investigate how these three quantities evolve through training, we visualize their final layer-wise values for both CIFAR-100 and DVS-CIFAR10 in \cref{fig:final_values}, considering soft and hard resets.
+
+\paragraph{Running mean of $U[T]$.}
+The running mean of $U[T]$ typically settles at about half of $V_{\text{thr}}$ in the soft-reset case (\cref{fig:final_values_cifar100_soft,fig:final_values_dvs_soft}) and roughly a quarter of $V_{\text{thr}}$ for hard-reset neurons (\cref{fig:final_values_cifar100_hard,fig:final_values_dvs_hard}). This indicates that the average post-synaptic potential remains below the learned threshold in most layers yet remains sufficiently high to generate spikes when needed.
+
+\paragraph{Threshold $V_{\text{thr}}$.}
+Across both datasets and reset types, the learned $V_{\text{thr}}$ commonly falls below $0.5$ in earlier and intermediate layers, suggesting that moderate thresholds facilitate stable spiking activity.
+
+\paragraph{Decay constant $\tau$.}
+We observe a consistent trend of $\tau$ converging around $1.5$--$2.0$ in most layers for CIFAR-100, while on DVS-CIFAR10, $\tau$ tends to reach larger values (e.g., near $2.5$--$3.0$). This implies that dynamic event-driven data benefit from neurons accumulating input more slowly, whereas CIFAR-100's static images favor a shorter effective integration time.
+
+\paragraph{Last-layer behavior.}
+Interestingly, in the final layer on both datasets, $\tau$ commonly drops close to $1$, effectively making it a binary layer. The layer may act as a gating mechanism, helping the model classify features decisively without excessive temporal integration.
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}{0.49\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_tau_thr_cifar100_resnet19_soft_reset_with_legend.pdf}\end{subfigure}
+  \begin{subfigure}{0.49\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_running_mean_cifar100_resnet19_soft_reset_with_legend.pdf}\end{subfigure}
+  \par
+  \begin{subfigure}{0.99\linewidth}\centering\caption{CIFAR-100 (soft reset)}\label{fig:final_values_cifar100_soft}\end{subfigure}
+  \par\medskip
+  \begin{subfigure}{0.49\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_tau_thr_dvscifar10_resnet19_soft_reset.pdf}\end{subfigure}
+  \begin{subfigure}{0.49\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_running_mean_dvscifar10_resnet19_soft_reset.pdf}\end{subfigure}
+  \par
+  \begin{subfigure}{0.99\linewidth}\centering\caption{DVS-CIFAR10 (soft reset)}\label{fig:final_values_dvs_soft}\end{subfigure}
+  \par\medskip
+  \begin{subfigure}{0.49\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_tau_thr_cifar100_resnet19_hard_reset.pdf}\end{subfigure}
+  \begin{subfigure}{0.49\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_running_mean_cifar100_resnet19_hard_reset.pdf}\end{subfigure}
+  \par
+  \begin{subfigure}{0.99\linewidth}\centering\caption{CIFAR-100 (hard reset)}\label{fig:final_values_cifar100_hard}\end{subfigure}
+  \par\medskip
+  \begin{subfigure}{0.49\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_tau_thr_dvscifar10_resnet19_hard_reset.pdf}\end{subfigure}
+  \begin{subfigure}{0.49\linewidth}\centering\includegraphics[width=0.99\linewidth]{fig/final_value_running_mean_dvscifar10_resnet19_hard_reset.pdf}\end{subfigure}
+  \par
+  \begin{subfigure}{0.99\linewidth}\centering\caption{DVS-CIFAR10 (hard reset)}\label{fig:final_values_dvs_hard}\end{subfigure}
+  \caption{Final values of $V_{\text{thr}}$, $\tau$, and the running mean of $U[T]$ after training. ResNet-19 on CIFAR-100 ($T=4$) and DVS-CIFAR10 ($T=10$).}
+  \label{fig:final_values}
+\end{figure}
+
+\section{Discussion}
+\label{sec:exp_discussion}
+
+The empirical results corroborate the analytical claims of \cref{ch:mpinit,ch:trsg}: MP-Init removes the residual TCS that prior normalization-based remedies miss, and TrSG removes the threshold-induced gradient pathologies that prior surrogate-gradient designs suffer from. Their effects are complementary—as evidenced by the $2$--$5$\,\%pt cumulative gain on DVS-CIFAR10—and they generalize cleanly across architectures, datasets, and downstream tasks while preserving the standard LIF inference pipeline. The stability metrics in \cref{sec:exp_trsg_impact}, the threshold trajectories in \cref{subsec:exp_threshold_trajectories}, and the converged neuron parameters in \cref{sec:exp_final_values} together provide a coherent narrative: the gains stem from well-behaved gradient flow and well-adapted neuron dynamics, not from spurious effects such as inflated firing rates.

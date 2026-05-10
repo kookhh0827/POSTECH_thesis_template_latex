@@ -620,17 +620,17 @@
         \begin{flushright}
 		\Large
 		\@refereeMonth. \@refereeDay. \@refereeYear \\ \vspace{2\baselineskip}
-	\begin{tabular}{r c r}   % 심사위원명단
+	\begin{tabular}{r@{\quad}c@{\quad}r}   % 심사위원명단 (각 컬럼 사이 \quad 간격)
                 \@ifundefined{@refereeChief}{}
-                    {\\[4pt] Committee Chair & \ \makebox[\width]{\@refereeChief}  & \ (Seal)}
+                    {Committee Chair & \@refereeChief & (Seal)\\[4pt]}
                 \@ifundefined{@refereeSecond}{}
-                    {\\[4pt] Member   & \ \makebox[\width]{\@refereeSecond} & \ (Seal)}
+                    {Member & \@refereeSecond & (Seal)\\[4pt]}
                 \@ifundefined{@refereeThird}{}
-                    {\\[4pt] Member   & \ \makebox[\width]{\@refereeThird}  & \ (Seal)}
+                    {Member & \@refereeThird & (Seal)\\[4pt]}
                 \@ifundefined{@refereeFourth}{}
-                    {\\[4pt] Member   & \ \makebox[\width]{\@refereeFourth} & \ (Seal)}
+                    {Member & \@refereeFourth & (Seal)\\[4pt]}
                 \@ifundefined{@refereeFifth}{}
-                    {\\[4pt] Member   & \ \makebox[\width]{\@refereeFifth} & \ (Seal)}
+                    {Member & \@refereeFifth & (Seal)\\[4pt]}
             \end{tabular}
         \end{flushright}
     \end{minipage}
@@ -734,18 +734,18 @@
 }{  \let\linebreak\@tempbreak          % \linebreak 명령 되돌리기
 }
 
-\newcommand{\summarykorean}{%           % ver 0.1 요약문 생성 명령
+\newenvironment{summarykorean}{%        % ver 0.2: 환경으로 재정의 (begin/end 균형)
     \renewcommand{\linebreak}{\ }      % 차후 버젼에서 삭제 예정
    	\setlength{\parindent}{10pt}
     \ifx\@textlang\@english
         \chapter*{요 약 문}
         \if@PDFdoc\phantomsection\fi\addcontentsline{toc}{chapter}{\rmfamily{Summary (in Korean)}}
-        \fontsize{11pt}{19pt} \selectfont
+        \fontsize{11pt}{19pt}\selectfont
 %        \begin{center}
 %            \noindent\textsf{\Large \@titleKor} \\[6mm]
 %        \end{center}% \setlength{\parindent}{0\p@}
     \fi
-}
+}{\par}                                % 마지막 문단 강제 종료로 spacing 일관성 보장
 
 %%
 %% 감사의 글 및 이력서 생성
@@ -1010,7 +1010,7 @@
     \@starttoc{lot}%
     \if@restonecol\twocolumn\fi
     \newpage \setcounter{pagemarker}{\value{page}}% pagemarker에 다시 저장
-%    \pagenumbering{arabic}                        % arabic 페이지번호로 재시작
+    \pagenumbering{arabic}                        % arabic 페이지번호로 재시작
 }
 
 %%

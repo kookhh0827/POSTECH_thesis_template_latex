@@ -1,284 +1,182 @@
 %%
 %% TeX:UTF-8
 %%
-%% POSTECH 학위논문양식 LaTeX용 (ver 0.4) 예시
+%% POSTECH Master's Thesis - Hyunho Kook
 %%
-%% @version 0.6
-%% @author  박준신 Junshin Park (mailto:lonelywing@postech.ac.kr)
-%% @date    2021. 3. 24.
+%% MP-Init & TrSG: Stabilizing Direct Training of SNNs
 %%
-%% @requirement
-%% teTeX, fpTeX, teTeX 등의 LaTeX2e 배포판
-%% + 은광희 님의 HLaTeX 0.991 이상 버젼 또는 홍석호 님의 HPACK 1.0
-%% : 설치에 대한 자세한 정보는 http://www.ktug.or.kr을 참조바랍니다.
-%%
-%% @Tested in
-%% Windows 7, Texlive 2014.
-%% Ubuntu 14.04 LTS, Texlive 2016.
-%% Compatibility with miktex has not been tested yet.
-%%
-%% @note for international students
-%% Present format is intended for both Korean and international students.
-%% For those control statements or arguments that need guidance,
-%% comments are added in both languages for convenience. You may however delete the Korean comments
-%% if your specific environment does not support Korean.
-%% For more information or help, please contact the author of which email address is written above.
-%%
-%%
-%% @acknowledgement
-%% 본 latex template은 kaist 채승병님의 template을 바탕으로 만들어졌음을 밝힙니다.
-%% Alpha test 및 본 thesis 예시 내용은 컴퓨터공학과 졸업생이신 오수영 학우의 도움으로 작성되었습니다.
-%% 또한, Sae Hee Ryu의 지원이 한 스푼 들어갔습니다.
-%% -------------------------------------------------------------------
-%% @information
-%% 이 예제 파일은 hangul-ucs를 사용합니다. UTF-8 입력 인코딩으로
-%% 작성되었습니다. hlatex의 hfont는 이용하지 않습니다. --2006/02/11
 
+% @class    postech-ucs.cls
+% @options  master, english, final
+% - master  : 석사과정 (3-member committee)
+% - english : 영문논문 (본문은 영어, 국문요약 별도)
+% - final   : 최종판 (앞표지/속표지/제출승인서/심사완료검인 자동생성)
+% - pdfdoc  : (선택) 북마크/colorlink 활성화
+\documentclass[master,english,final]{postech-ucs}
 
-
-% @class postech-ucs.cls
-% @options [default: doctor, korean, final]
-% - doctor: 박사과정 | master : 석사과정
-% - korean: 한글논문 | english: 영문논문
-% - final : 최종판   | draft  : 시험판
-% - pdfdoc : 선택하지 않으면 북마크와 colorlink를 만들지 않습니다.(Generate bookmark and colorlink if enabled)
-\documentclass[doctor,english,final]{postech-ucs}
-%\documentclass[master,english,final]{postech-ucs}
-% If you want make pdf document (include bookmark, colorlink)
-%\documentclass[doctor,english,final,pdfdoc]{postech-ucs}
-
-% postech-ucs.cls 에서는 기본으로 dhucs, ifpdf, graphicx, afterpage, refcount 패키지가 로드됩니다.
-% (postech-ucs.cls by default loads dhucs, ifpdf,refcount and graphicx packages. Please load any additional packages if needed)
-% 추가로 필요한 패키지가 있다면 주석을 풀고 적어넣으십시오,
-%\usepackage{...}
-\usepackage{amsmath}
+%% ─────────────────────────────────────────────────────────────────────
+%%  Packages required for the imported WACV manuscript
+%% ─────────────────────────────────────────────────────────────────────
+\usepackage{amsmath,amssymb,amsthm}
 \usepackage{enumitem}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{comment}
-\usepackage{physics}
 \usepackage{anyfontsize}
-\usepackage{lipsum}
-% \usepackage{bbm}
-% \renewcommand{\thealgorithm}{}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{boldline}
+\usepackage{pifont}
+\usepackage{dsfont}
+\usepackage{wrapfig}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{xcolor}
+\usepackage{cleveref}
+
+%% Cross-reference labels: capitalize for sentence start
+\crefname{section}{Section}{Sections}
+\crefname{subsection}{Section}{Sections}
+\crefname{chapter}{Chapter}{Chapters}
+\crefname{figure}{Figure}{Figures}
+\crefname{table}{Table}{Tables}
+\crefname{equation}{Eq.}{Eqs.}
+\crefname{algorithm}{Algorithm}{Algorithms}
+
+%% Theorem/Lemma/Assumption environments (used in MP-Init chapter)
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{assumption}{Assumption}[chapter]
+\newtheorem{proposition}[theorem]{Proposition}
+
+%% Inline annotation helpers carried over from WACV preamble
+\newcommand{\red}[1]{{\color{red}#1}}
+\newcommand{\todo}[1]{{\color{red}#1}}
+\newcommand{\TODO}[1]{\textbf{\color{red}[TODO: #1]}}
+\definecolor{mypink}{rgb}{0.858, 0.188, 0.478}
+
+%% Math operators used in the thesis
 \newcommand{\argmax}{\operatornamewithlimits{arg\,max}}
 
-% @command title 논문 제목(title of thesis)
-% @options [default: (none)]
-% - korean: 한글제목(korean title) | english: 영문제목(english title)
-\title[korean]{한글 제목}
-\title[english]{Placeholder of placeholder}
+%% Allow LaTeX to find figures inside the WACV source tree without copying.
+\graphicspath{{./}{_WACV2026__MPInit_TrSG/}}
 
-% @note 표지에 출력되는 제목을 강제로 줄바꿈하려면 \linebreak 을 삽입.
-%       \\ 나 \newline 등을 사용하면 안됩니다. (아래는 예시)
-%
-% If you want to begin a new line in cover, use \linebreak .
-% See examples above.
-%
+%% ─────────────────────────────────────────────────────────────────────
+%%  Document metadata
+%% ─────────────────────────────────────────────────────────────────────
 
+% @command title 논문 제목 / Thesis title
+\title[korean]{스파이킹 신경망의 직접 학습 안정화를 위한 막전위 초기화와 임계값 강건성 기반 서러게이트 그래디언트}
+\title[english]{Enhancing Stability in Direct Training of Spiking Neural Networks through Membrane Potential Initialization and Threshold-Robust Surrogate Gradients}
 
-% @command author 저자 이름
-% @param   family_name, given_name 성, 이름을 구분해서 입력
-% @options [default: (none)]
-% - korean: 한글이름 | chinese: 한문이름 | english: 영문이름
-% ex) \author[english]{family name in english}{given name in english}
-%
-% If you are a foreigner (this means you have no korean name),
-% You must fill the korean name as blank, instead of deleting it or commenting it out.
-% \author[korean]{}{}
-% \author[english]{Donald}{Trump}
-%
-%
-\author[korean]{홍}{길 동}
-\author[english]{Hong}{Gil Dong}
+% @command author 저자
+% Korean ㄱ분과 영문 표기
+\author[korean]{국}{현 호}
+\author[english]{Kook}{Hyunho}
 
-% @command advisor 지도교수 이름 (복수가능)
-% @usage   \advisor[options]{...한글이름...}{...영문이름...}{signed|nosign}
-% @options [default: major]
-% - major: 주 지도교수  | coopr: 공동 지도교수
-\advisor[major]{홍 상 직}{Sangjik Hong}{nosign}
-\advisor[coopr]{옥 영 향}{Younghyang Ok}{nosign}
-%
-% 지도교수 한글이름은 입력하지 않아도 됩니다.
-% You may not input advisor's korean name
-% like this \advisor[major]{}{Chang, Kee Joo}{signed}
-%
+% @command advisor (석사: 단독 지도교수)
+\advisor[major]{박 은 혁}{Eunhyeok Park}{signed}
 
-% @command department {학과이름}{학위종류} - 아래 표에 따라 코드를 입력
-% @command department {department code}{degree field}
-%
-% department code table (2026 지침 참조 5/13 기준)
-% https://postech.ac.kr/admission-education/graduate/ 정보 및 순서를 따름
-% MA    // 수학                 Department of Mathematics
-% PH    // 물리                 Department of Physics
-% CH    // 화학                 Department of Chemistry
-% LS    // 생명                 Department of Life Sciences
-% MS    // 신소재               Department of Materials Science and Engineering
-% ME    // 기계                 Department of Mechanical Engineering
-% IME   // 산경                 Department of Industrial and Management Engineering
-% EE    // 전자                 Department of Electrical Engineering
-% CSE   // 컴공                 Department of Computer Science and Engineering
-% CE    // 화공                 Department of Chemical Engineering
-% CITE  // IT융합공학           Department of Convergence IT Engineering
-% EV    // 환경공학             Division of Environmental Science and Engineering
-% GSAI  // 인공지능대학원       Graduate School of Artificial Intelligence
-% ITCE  // 정보전자융합공학     Division of IT Convergence Engineering
-% AMS   // 첨단재료과학         Division of Advanced Material Science
-% IBB   // 융합생명공학         Division of Integrative Biosciences and Biotechnology
-% DANE  // 첨단원자력공학       Division of Advanced Nuclear Engineering
-% I-BIO // 시스템생명공학       School of Interdisciplinary Bioscience and Bioengineering
-% TIM   // 기술경영과정         Graduate Program for Technology and Innovation Management
-% GIFT  // 친환경소재대학원     Graduate Institute of Ferrous & Eco Materials Technology
-% ST    // 반도체대학원         Graduate School of Semiconductor Technology
-% FT    // 친환경소재학과       Department of Ferrous & Eco Materials Technology
-% BE    // 배터리공학과         Department of Battery Engineering
-% MED   // 융합대학원 의과학 전공            Major in Medical Science and Engineering
-% DST   // 융합대학원 국방과학기술 전공      Major in Defense Science and Technology
-% SDS   // 융합대학원 소셜데이터사이언스 전공  Major in Social Data Science
-% QIS   // 융합대학원 양자정보과학 전공      Major in Quantum Information Science
-% IDS   // 융합대학원 산업데이터사이언스 전공  Major in Industrial Data Science (석사)
-% CFT   // 융합대학원 푸드테크융합 전공      Major in Convergence Food Technology (석사)
-% MSIP  // 융합대학원 철강경영 전공          Major in Management in the Steel Industry (석사)
+% @command department {학과 코드}{학위종류}
+% CSE = 컴퓨터공학과, science = Master of Science
+\department{CSE}{science}
 
-%
-% science: 이학 | engineering: 공학 | business : 경영학
-% 박사논문의 경우는 학위종류를 입력하지 않아도 됩니다.
-% If you write Ph.D. dissertation, you cannot input degree field.
+% @command studentid 학번
+\studentid{20242015}
 
-\department{PH}{}
+% @command referee 심사위원 (석사 = 위원장 포함 3인)
+\referee[1]{Eunhyeok Park}      % 심사위원장 (지도교수)
+\referee[2]{Jungseul Ok}        % 심사위원
+\referee[3]{Jae-Joon Kim}       % 심사위원
 
-% @command studentid 학번(ID)
-\studentid{20219999}
+% @command approvaldate / refereedate / gradyear
+% TODO: 실제 일자 확정 후 수정
+\approvaldate{2026}{05}{18}
+\refereedate{2026}{05}{18}
+\gradyear{2026}
 
-% @command referee 심사위원 (석사과정 3인, 박사과정 5인)
-\referee[1]{Sangjik Hong}
-\referee[2]{Younghyang Ok}
-\referee[3]{Sangjik Hong}
-\referee[4]{Younghyang Ok}
-\referee[5]{Sangjik Hong}
-% Of course english name is available
-
-% @command approvaldate 지도교수논문승인일
-% @param   year,month,day 연,월,일 순으로 입력
-\approvaldate{2021}{01}{31}
-
-% @command refereedate 심사위원논문심사일
-% @param   year,month,day 연,월,일 순으로 입력
-\refereedate{2021}{01}{31}
-
-% @command gradyear 졸업년도
-\gradyear{2021}
-
-% 본문 시작
+%% ─────────────────────────────────────────────────────────────────────
+%%  Body
+%% ─────────────────────────────────────────────────────────────────────
 \begin{document}
 
-    % 앞표지, 속표지, 학위논문 제출승인서, 학위논문 심사완료 검인서는
-    % 클래스 옵션을 final로 지정해주면 자동으로 생성되며,
-    % 반대로 옵션을 draft로 지정해주면 생성되지 않습니다.
+    %% 앞표지·속표지·제출승인서·심사완료검인서는 final 옵션으로 자동 생성됨
 
-    % 영문초록 (abstract)
+    % 영문 초록 (1,000 단어 이내)
     \begin{abstract}
-        \lipsum[1]
+        \input{chapters/abstract_en}
     \end{abstract}
 
-    % 목차 (Table of Contents) 생성
+    % 백색별지는 abstract 뒤에 자동 삽입됨 (postech-ucs.cls v0.7+)
+
+    % 목차
     \tableofcontents
 
-    % 표목차 (List of Tables) 생성
-%    \listoftables
-
-    % 그림목차 (List of Figures) 생성
+    % 그림목차
     \listoffigures
 
-    % 위의 세 종류의 목차는 한꺼번에 다음 명령으로 생성할 수도 있습니다.
-    %\makecontents
+    % 표목차
+    \listoftables
 
-%% 이하의 본문은 LaTeX 표준 클래스 report 양식에 준하여 작성하시면 됩니다.
-%% 하지만 part는 사용하지 못하도록 제거하였으므로, chapter가 문서 내의
-%% 최상위 분류 단위가 됩니다.
-%% You cannot use 'part'
+    %% ─────────────────────────────────────────────────────────────
+    %%  Main body
+    %% ─────────────────────────────────────────────────────────────
+    \input{chapters/01_introduction}
+    \input{chapters/02_background}
+    \input{chapters/03_preliminaries}
+    \input{chapters/04_mpinit}
+    \input{chapters/05_trsg}
+    \input{chapters/06_experiments}
+    \input{chapters/07_conclusion}
 
-\chapter{Introduction}
-\lipsum
+    %% ─────────────────────────────────────────────────────────────
+    %%  Korean summary (영문논문 의무, 지침 참조 9)
+    %% ─────────────────────────────────────────────────────────────
+    \begin{summarykorean}
+        \input{chapters/summary_korean}
+    \end{summarykorean}
 
-\chapter{Citation}
-It is a citation example~\cite{Moin1998}.
+    %% ─────────────────────────────────────────────────────────────
+    %%  References
+    %% ─────────────────────────────────────────────────────────────
+    \bibliographystyle{unsrt}
+    \bibliography{thesis}
 
-%%
-%% 한글요약문 시작 (Korean summary)
-%%
-%% Note. 영문논문일 경우에만 필요하니 한글논문의 경우에는 작성하지 마십시오.
-%%
-\begin{summarykorean}
+    %% ─────────────────────────────────────────────────────────────
+    %%  Acknowledgements
+    %% ─────────────────────────────────────────────────────────────
+    \acknowledgement[english]
+    \input{chapters/acknowledgement}
 
-\end{summarykorean}
+    %% ─────────────────────────────────────────────────────────────
+    %%  Curriculum Vitae (개인정보 보호: Name/Education/Experience/Affiliation만)
+    %% ─────────────────────────────────────────────────────────────
+    \curriculumvitae[english]
 
-%%
-%% 참고문헌 시작
-%% Refences
-%%
+        \begin{personaldata}
+            \name{Hyunho Kook}
+        \end{personaldata}
 
-\bibliographystyle{unsrt}
-\bibliography{mybib}
+        \begin{education}
+            \item[2024. 02.\ --\ 2026. 08.] M.S., Department of Computer Science and Engineering, Pohang University of Science and Technology
+            \item[2018. 02.\ --\ 2024. 02.] B.S., Department of Computer Science and Engineering, Pohang University of Science and Technology
+        \end{education}
 
-%%
-%% 감사의 글 시작
-%% Acknowledgement
-%%
-% @command acknowledgement 감사의글
-% @options [default: 클래스 옵션 korean|english ]
-% - korean : 한글타이틀 | english : 영문타이틀
+        % \begin{experience}
+        % \end{experience}
 
-\acknowledgement[korean]
+        % \begin{affiliation}
+        % \end{affiliation}
 
+    %% 저작권 위임 (지침 1.바.②) ─ 논문 끝에 명기 의무
+    \vspace*{\fill}
+    \noindent
+    본 학위논문 내용에 관하여 학술 $\cdot$ 교육 목적으로 사용할 모든 권리를 포항공과대학교에 위임함.
 
-    %%때로는 엄하고 때로는 부드러운 모습으로 지도 해주신 한준희 교수님, 감사드립니다.
-%%
-%% 이력서 시작
-%% Curriculum Vitae
-%%
-% @command curriculumvitae 이력서
-% @options [default: 클래스 옵션 korean|english ]
-% - korean : 한글이력서 | english : 영문이력서
-\curriculumvitae[korean]
+    \afterpage{\blankpage}      % 마지막 백색별지
 
-    % @environment personaldata 개인정보
-    % @command     name         이름
-        % input data only you want
-    \begin{personaldata}
-        \name       {Gil Dong Hong}
-    \end{personaldata}
-
-    % @environment education 학력
-    % @options [default: (none)] - 수학기간을 입력
-    \begin{education}
-%	\item[2013. 03.\ --\ 2021. 02.] Department of Physics, POSTECH (Ph.D.)
-%	\item[2009. 03.\ --\ 2013. 02.] Department of Physics, POSTECH (B.S.)
-	\item[2013. 03.\ --\ 2021. 02.] Department of Physics, Pohang University of Science and Technology (Ph.D.)
-	\item[2009. 03.\ --\ 2013. 02.] Department of Physics, Pohang University of Science and Technology (B.S.)
-    \end{education}
-
-    % @environment experience 경력
-    % @options [default: (none)] - 해당기간을 입력
-   \begin{experience}
-	\item[2016. 08.\ --\ 2019. 09.] Technical Research Personnel, Alternative military service
-	\item[2014. 03.\ --\ 2015. 09.] Developing endstation for spin-ARPES beamline in PAL beamline 4A2 (Institute for Basic Science)
-   \end{experience}
-
-    % @environment activity 학회활동
-    % @options [default: (none)] - 활동내용을 입력
-%    \begin{affiliation}
-
-%    \end{affiliation}
-
-%%
-%% 저작권 위임 (2026 지침 1.바.② - 논문 끝에 명기 의무)
-%%
-\vspace*{\fill}
-\noindent
-본 학위논문 내용에 관하여 학술 $\cdot$ 교육 목적으로 사용할 모든 권리를 포항공과대학교에 위임함.
-
-    \afterpage{\blankpage}  % 마지막장 백색별지
-
-%% 본문 끝
 \end{document}

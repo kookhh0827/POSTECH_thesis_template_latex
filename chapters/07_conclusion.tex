@@ -1,0 +1,46 @@
+\chapter{Conclusion}
+\label{ch:conclusion}
+
+\section{Summary of Contributions}
+\label{sec:conclusion_summary}
+
+This thesis presented two complementary methods for stabilizing the direct training of Spiking Neural Networks.
+
+\textbf{MP-Init} (\cref{ch:mpinit}) traced temporal covariate shift to its root cause—the membrane potential—and proved that the layer-wise membrane potential converges geometrically to a unique stationary distribution under mild conditions. Building on this convergence theorem, MP-Init initializes each layer's membrane potential to a per-layer running mean that approximates the stationary mean. The method eliminates TCS while preserving the standard LIF inference pipeline and adding negligible parameter or computational overhead.
+
+\textbf{TrSG} (\cref{ch:trsg}) classified existing surrogate-gradient methods into Absolute-Scale (AS-SG) and Relative-Scale (RS-SG) families, and showed how each becomes unstable when the threshold voltage is trainable—producing either gradient flooding/starvation or gradient explosion/vanishing. TrSG combines the relative-scale active window with a threshold-multiplied forward path, yielding gradients whose magnitudes are invariant to the threshold scale. Inference reverts to standard binary spikes through a simple weight rescaling, ensuring full hardware compatibility.
+
+\textbf{Empirical validation} (\cref{ch:experiments}) on CIFAR-10/100, ImageNet, and DVS-CIFAR10 showed that the combination of MP-Init and TrSG achieves state-of-the-art accuracy across both static and dynamic benchmarks. The methods further transfer cleanly to Transformer-based SNN backbones and to event-based object detection, indicating broad applicability beyond classification.
+
+\section{Limitations}
+\label{sec:conclusion_limitations}
+
+Despite the gains demonstrated in this thesis, several limitations remain.
+
+First, MP-Init mitigates TCS efficiently but uses the simplest possible approximation of the stationary distribution—a per-layer constant mean. Richer parameterizations (e.g., per-channel or distribution-shape-aware initialization) could yield further improvement, at the cost of additional parameters; we did not explore these in depth.
+
+Second, training the internal LIF parameters $V_{\text{thr}}$ and $\tau$ may be incompatible with neuromorphic hardware that fixes these to constants in silicon. While inference under TrSG reverts to standard LIF dynamics by absorbing $V_{\text{thr}}$ into adjacent weights, hardware that does not support per-layer $\tau$ would still require quantization or rounding of the trained values.
+
+Third, the convergence theorem in \cref{ch:mpinit} assumes i.i.d.\ presynaptic inputs; while we provided empirical support (Ljung--Box tests, bounded $|U|$, geometric TV decay) for trained networks, the assumption may be violated in untrained or pathological networks. A complete characterization of the regime in which the assumption holds is left for future work.
+
+\section{Future Directions}
+\label{sec:conclusion_future}
+
+Several directions seem promising for future research.
+
+\paragraph{Hardware-aware adaptation.}
+Adapting MP-Init and TrSG for hardware with constrained neuron parameters—through quantization-aware training, distillation to fixed-parameter neurons, or hybrid analog-digital schemes—would broaden deployment options.
+
+\paragraph{Beyond LIF.}
+The principles behind MP-Init (initialization at the stationary distribution) and TrSG (threshold-invariant gradient) are not specific to LIF neurons. Extending them to alternative spiking models (e.g., adaptive LIF, Izhikevich) is a natural next step.
+
+\paragraph{Theoretical refinement.}
+Tighter convergence rates, removing the i.i.d.\ assumption, and analyzing the joint dynamics of $\tau$ and $V_{\text{thr}}$ during training are open theoretical questions.
+
+\paragraph{Scaling further.}
+Combining MP-Init and TrSG with very large SNN architectures—including SNN versions of vision transformers and modern foundation models—remains an open empirical frontier.
+
+\section{Closing Remarks}
+\label{sec:conclusion_closing}
+
+Spiking neural networks offer a promising path toward energy-efficient AI, but their adoption hinges on closing the accuracy gap with conventional deep networks while preserving hardware compatibility. By identifying and resolving two long-standing instabilities of direct SNN training—temporal covariate shift in the membrane potential, and gradient pathology of learnable thresholds—this thesis takes a concrete step in that direction.
